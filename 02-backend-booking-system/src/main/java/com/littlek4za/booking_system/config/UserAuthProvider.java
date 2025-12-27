@@ -26,7 +26,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.littlek4za.booking_system.dao.UserRepository;
 import com.littlek4za.booking_system.dto.JwtUserDto;
 import com.littlek4za.booking_system.entities.User;
-import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.JwtAuthException;
 import com.littlek4za.booking_system.mapper.DtoMapper;
 
 import jakarta.annotation.PostConstruct;
@@ -101,9 +101,9 @@ public class UserAuthProvider {
 
         // double check with db, and use db user to create jwtUserDto
         User user = userRepository.findByUsernameWithRoles(decodedJWT.getSubject())
-                                    .orElseThrow(()-> new AppException("Unknown User", HttpStatus.UNAUTHORIZED));
+                                    .orElseThrow(()-> new JwtAuthException("Unknown User", HttpStatus.UNAUTHORIZED));
         
-        JwtUserDto jwtUserDto = dtoMapper.toJwtUserDto(user);
+        JwtUserDto jwtUserDto = dtoMapper.userToJwtUserDto(user);
         
         Set<GrantedAuthority> authoritySet = user.getRoleSet()
                                                         .stream()

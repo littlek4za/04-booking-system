@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.littlek4za.booking_system.config.UserAuthProvider;
 import com.littlek4za.booking_system.dto.CredentialsDto;
 import com.littlek4za.booking_system.dto.JwtUserDto;
+import com.littlek4za.booking_system.dto.SignUpDto;
 import com.littlek4za.booking_system.services.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 public class AuthController {
@@ -29,8 +32,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ReponseEntity<JwTUserDto> register(@RequestBody SignUpDto signUpDto)
-
-
+    public ResponseEntity<JwtUserDto> register(@Valid @RequestBody SignUpDto signUpDto){
+        JwtUserDto jwtUserDto = userService.register(signUpDto);
+        return ResponseEntity.ok(jwtUserDto);
+        
+    }
 
 }

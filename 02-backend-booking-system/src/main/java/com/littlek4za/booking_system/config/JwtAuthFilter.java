@@ -1,15 +1,19 @@
 package com.littlek4za.booking_system.config;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.littlek4za.booking_system.exception.AppException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.littlek4za.booking_system.dto.ErrorDto;
+import com.littlek4za.booking_system.exception.JwtAuthException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -57,24 +61,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     }
                 } catch (JWTVerificationException e) {
                     SecurityContextHolder.clearContext();
-                    log.error("mylog JWTVerificationException: {}", e.getMessage(), e);
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\":\"" + e.getMessage() + "\"}");
+                    log.warn("mylog JWT Verfication failed: {}", e.getMessage());
+                    writeJson(response, HttpStatus.UNAUTHORIZED, e.getMessage(), request.getRequestURI());
                     return;
-                } catch (AppException e) {
+                } catch (JwtAuthException e) {
                     SecurityContextHolder.clearContext();
-                    log.error("mylog AppException: {}", e.getMessage(), e);
-                    response.setStatus(e.getHttpStatus().value());
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\":\"" + e.getMessage() + "\"}");
-                    return;
-                } catch (Exception e) {
-                    SecurityContextHolder.clearContext();
-                    log.error("mylog Exception: {}", e.getMessage(), e);
-                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\":\"" + e.getMessage() + "\"}");
+                    log.warn("mylog JWT Auth Exception: {}", e.getMessage());
+                    writeJson(response, e.getHttpStatus(), e.getMessage(), request.getRequestURI());
                     return;
                 }
             }
@@ -83,4 +76,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
 
     }
+
+    private void writeJson(HttpServletResponse response, HttpStatus httpStatus, String message, String path)
+            throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+
+        ErrorDto errorDto = new ErrorDto(
+                httpStatus.value(),
+                httpStatus.getReasonPhrase(),
+                message,
+                Instant.now(),
+                path);
+
+        ObjectMapper mapper = new ObjectMapper();
+        response.getWriter().write(mapper.writeValueAsString(errorDto));
+    }
+
 }

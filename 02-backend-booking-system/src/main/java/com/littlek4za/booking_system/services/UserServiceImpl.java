@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.littlek4za.booking_system.dao.UserRepository;
 import com.littlek4za.booking_system.dto.CredentialsDto;
 import com.littlek4za.booking_system.dto.JwtUserDto;
+import com.littlek4za.booking_system.dto.SignUpDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.mapper.DtoMapper;
@@ -31,9 +32,24 @@ public class UserServiceImpl implements UserService {
                     .orElseThrow(()-> new AppException("Unknown user", HttpStatus.NOT_FOUND));
 
         if(passwordEncoder.matches(CharBuffer.wrap(credentialsDto.password()),user.getPassword())) {
-            return dtoMapper.toJwtUserDto(user);
+            return dtoMapper.userToJwtUserDto(user);
         }
         throw new AppException("Invalid password", HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    public JwtUserDto register(SignUpDto signUpDto) {
+
+        if(userRepository.existsByUsername(signUpDto.username())) {
+            throw new AppException("Username already exists", HttpStatus.BAD_REQUEST);
+        }
+
+        User user = dtoMapper.signUpToUser(signUpDto);
+        user.setPassword(passwordEncoder.encode(signUpDto.password()));
+
+        User savedUser = userRepository.save(user);
+
+        return dtoMapper.userToJwtUserDto(savedUser);
     }
 
 }

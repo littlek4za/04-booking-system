@@ -3,13 +3,14 @@ package com.littlek4za.booking_system.mapper;
 import java.util.stream.Collectors;
 
 import com.littlek4za.booking_system.dto.JwtUserDto;
+import com.littlek4za.booking_system.dto.SignUpDto;
 import com.littlek4za.booking_system.dto.UserDto;
 import com.littlek4za.booking_system.entities.User;
 
 public class DtoMapperImpl implements DtoMapper {
 
     @Override
-    public UserDto toUserDto(User user) {
+    public UserDto userToUserDto(User user) {
 
         UserDto userDto = UserDto.builder()
                             .createdAt(user.getCreatedAt())
@@ -29,7 +30,7 @@ public class DtoMapperImpl implements DtoMapper {
     }
 
     @Override
-    public JwtUserDto toJwtUserDto(User user) {
+    public JwtUserDto userToJwtUserDto(User user) {
         return JwtUserDto.builder()
                             .email(user.getEmail())
                             .firstName(user.getFirstName())
@@ -40,6 +41,15 @@ public class DtoMapperImpl implements DtoMapper {
                                             .collect(Collectors.toSet()))
                             .username(user.getUsername())
                             .build();
+    }
+
+    @Override
+    public User signUpToUser(SignUpDto signUpDto) {
+        return new User(
+            signUpDto.username(), 
+            signUpDto.email(), 
+            signUpDto.firstName(), 
+            signUpDto.lastName());
     }
 
 }
