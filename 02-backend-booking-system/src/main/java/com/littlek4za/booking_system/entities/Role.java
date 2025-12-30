@@ -23,7 +23,7 @@ public class Role {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "role_name")
+    @Column(name = "role_name", unique = true)
     private String roleName;
 
     @ManyToMany(mappedBy = "roleSet", fetch = FetchType.LAZY)

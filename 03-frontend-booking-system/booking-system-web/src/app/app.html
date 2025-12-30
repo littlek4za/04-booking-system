@@ -1,0 +1,13 @@
+<!-- @if (!(authService.authStatus$| async)) { -->
+<button routerLink="/login">Login</button>
+<!-- } -->
+<!-- @if (authService.authStatus$| async) { -->
+<button (click)="authService.logout()">Logout</button>
+<!-- } -->
+<!-- @if (!(authService.authStatus$| async)) { -->
+<button routerLink="/register">Register</button>
+<!-- } -->
+<button routerLink="/welcome">Welcome</button>
+<button routerLink="/roleSelect">Role Selection</button>
+<button routerLink="/authDebug">Debug-Auth</button>
+<router-outlet></router-outlet>

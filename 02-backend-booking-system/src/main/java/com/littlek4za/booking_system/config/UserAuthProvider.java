@@ -100,7 +100,7 @@ public class UserAuthProvider {
         DecodedJWT decodedJWT = verifier.verify(token);
 
         // double check with db, and use db user to create jwtUserDto
-        User user = userRepository.findByUsernameWithRoles(decodedJWT.getSubject())
+        User user = userRepository.findByUsername(decodedJWT.getSubject())
                                     .orElseThrow(()-> new JwtAuthException("Unknown User", HttpStatus.UNAUTHORIZED));
         
         JwtUserDto jwtUserDto = dtoMapper.userToJwtUserDto(user);

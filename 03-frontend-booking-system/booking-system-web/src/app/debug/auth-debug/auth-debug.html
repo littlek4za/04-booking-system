@@ -1,0 +1,8 @@
+<p>auth-debug works!</p>
+@if (hasToken) {
+    <div>Has Token in localStorage</div>
+}
+@if (!hasToken) {
+    <div>No Token in localStorage</div>
+}
+<button (click)="authService.logout()">Logout</button>

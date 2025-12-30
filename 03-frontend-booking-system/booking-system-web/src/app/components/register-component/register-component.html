@@ -1,0 +1,100 @@
+<p>register-component works!</p>
+
+<form class="row g-3 needs-validation" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div class="col-md-4">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" formControlName="username">
+        @if (registerForm.controls['username'].invalid && (registerForm.controls['username'].touched ||
+        registerForm.controls['username'].dirty)){
+        <div class="text-danger">
+            Username must be 3-30 characters, only letters, digits, and special character !@#$%^&*; cannot start or end
+            with special character
+        </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Password</label>
+        <input [type]="showPassword ? 'text' : 'password'" class="form-control" formControlName="password">
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="showPassword" (change)="showPassword = !showPassword" />
+            <label class="form-check-label" for="showPassword">
+                Show password
+            </label>
+        </div>
+        @if (registerForm.controls['password'].invalid && (registerForm.controls['password'].touched ||
+        registerForm.controls['password'].dirty)){
+        <div class="text-danger">
+            Password must be 8-40 characters, include uppercase, lowercase, digit, and special character !@#$%^&*
+        </div>
+        }
+
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Confirm Password</label>
+        <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control" formControlName="confirmPassword">
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="showConfirmPassword" (change)="showConfirmPassword = !showConfirmPassword" />
+            <label class="form-check-label" for="showConfirmPassword">
+                Show password
+            </label>
+        </div>
+        @if (registerForm.hasError('passwordMatched') &&
+        (registerForm.controls['confirmPassword'].touched||
+        registerForm.controls['confirmPassword'].dirty)){
+        <div class="text-danger">
+            Password do not match
+        </div>
+        }
+
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Email</label>
+        <input type="text" class="form-control" formControlName="email">
+        @if (registerForm.controls['email'].invalid && (registerForm.controls['email'].touched ||
+        registerForm.controls['email'].dirty)){
+        <div class="text-danger">
+            Invalid Email Address
+        </div>
+        }
+
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">First Name</label>
+        <input type="text" class="form-control" formControlName="firstName">
+        @if (registerForm.controls['firstName'].invalid && (registerForm.controls['firstName'].touched ||
+        registerForm.controls['firstName'].dirty)){
+        <div class="text-danger">
+            First Name must be between 1 and 100 characters
+        </div>
+        }
+
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Last Name</label>
+        <input type="text" class="form-control" formControlName="lastName">
+        @if (registerForm.controls['lastName'].invalid && (registerForm.controls['lastName'].touched ||
+        registerForm.controls['lastName'].dirty)){
+        <div class="text-danger">
+            Last Name must be between 1 and 100 characters
+        </div>
+        }
+
+    </div>
+    <div class="col-12">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" formControlName="isAgree">
+            <label class="form-check-label">
+                Agree to terms and conditions
+            </label>
+            @if (registerForm.controls['isAgree'].invalid && registerForm.controls['isAgree'].touched){
+            <div class="text-danger">
+                You must agree before submitting.
+            </div>
+            }
+
+        </div>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit" [disabled]="registerForm.invalid">Submit form</button>
+    </div>
+</form>

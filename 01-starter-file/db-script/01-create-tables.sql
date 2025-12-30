@@ -14,13 +14,13 @@ CREATE TABLE users (
 );
 
 CREATE TABLE roles (
-	id SERIAL PRIMARY KEY,
+	id BIGSERIAL PRIMARY KEY,
 	role_name VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE users_roles (
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-	role_id INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+	role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
 	PRIMARY KEY (user_id, role_id)
 );
 
@@ -77,9 +77,9 @@ VALUES
 
 INSERT INTO users (username, password, email, first_name,last_name)
 VALUES 
-	('admin','password','admin@test.com','booking','admin'),
-	('organizer','password','organizer@test.com','booking','organizer'),
-	('attendee','password','attendee@test.com','booking','attendee');
+	('admin','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','admin@test.com','booking','admin'),
+	('organizer','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','organizer@test.com','booking','organizer'),
+	('attendee','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','attendee@test.com','booking','attendee');
 
 INSERT INTO users_roles (user_id, role_id)
 VALUES

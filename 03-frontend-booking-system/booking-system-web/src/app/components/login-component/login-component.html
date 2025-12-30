@@ -1,0 +1,42 @@
+<p>login-component works!</p>
+
+<form class="row g-3 needs-validation" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="col-md-4">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" formControlName="username">
+        @if (loginForm.controls['username'].invalid && (loginForm.controls['username'].touched ||
+        loginForm.controls['username'].dirty)){
+        <div class="text-danger">
+            Username is empty!
+        </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" formControlName="password">
+        @if (loginForm.controls['password'].invalid && (loginForm.controls['password'].touched ||
+        loginForm.controls['password'].dirty)){
+        <div class="text-danger">
+            Password is empty!
+        </div>
+        }
+
+    </div>
+    <div class="col-12">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" formControlName="isAgree">
+            <label class="form-check-label">
+                Agree to terms and conditions
+            </label>
+            @if (loginForm.controls['isAgree'].invalid && loginForm.controls['isAgree'].touched){
+            <div class="text-danger">
+                You must agree before submitting.
+            </div>
+            }
+
+        </div>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit" [disabled]="loginForm.invalid">Submit form</button>
+    </div>
+</form>

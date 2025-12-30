@@ -1,5 +1,6 @@
 package com.littlek4za.booking_system.config;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,6 +15,9 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.littlek4za.booking_system.dto.ErrorDto;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -42,13 +46,15 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
                             log.warn("Authentication failed: {}", e.getMessage());
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"error\":\"Token missing or invalid\"}");
+                            ErrorDto errorDto = new ErrorDto(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
+                                    "Token missing or invalid", Instant.now(), request.getServletPath());
+                            ObjectMapper mapper = new ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(errorDto));
                         }))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .cors(cors->{});
+                .cors(cors -> {
+                });
 
         return http.build();
     }
@@ -57,7 +63,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        corsConfiguration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setAllowedHeaders(List.of("*"));
 

@@ -2,11 +2,14 @@ package com.littlek4za.booking_system.mapper;
 
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
+
 import com.littlek4za.booking_system.dto.JwtUserDto;
 import com.littlek4za.booking_system.dto.SignUpDto;
 import com.littlek4za.booking_system.dto.UserDto;
 import com.littlek4za.booking_system.entities.User;
 
+@Component
 public class DtoMapperImpl implements DtoMapper {
 
     @Override
