@@ -5,11 +5,12 @@ CREATE SCHEMA public;
 
 CREATE TABLE users (
 	id BIGSERIAL PRIMARY KEY,
-	username VARCHAR(50) NOT NULL UNIQUE,
-	password VARCHAR(80) NOT NULL,
+	username VARCHAR(50) UNIQUE, -- remove NULL
+	password VARCHAR(80), -- remove NULL
 	email VARCHAR(255) NOT NULL UNIQUE,
 	first_name VARCHAR(255) NOT NULL,
 	last_name VARCHAR(255) NOT NULL,
+	guest BOOLEAN NOT NULL, -- NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -29,6 +30,11 @@ CREATE TABLE events (
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	event_name TEXT NOT NULL,
 	event_description TEXT,
+	event_location_name TEXT NOT NULL, -- NEW
+	include_position BOOLEAN NOT NULL DEFAULT FALSE, -- NEW
+	latitude DOUBLE PRECISION, -- NEW
+	longitude DOUBLE PRECISION, -- NEW
+	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -40,7 +46,7 @@ CREATE TABLE slots (
 	slot_start_time TIMESTAMPTZ NOT NULL,
 	slot_end_time TIMESTAMPTZ NOT NULL,
 	max_book INT DEFAULT 1,
-	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE'
+	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' -- Removed
 	slot_interval_minutes INT,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	CONSTRAINT unique_event_slot_name UNIQUE (event_id, slot_name)
@@ -54,6 +60,7 @@ CREATE TABLE bookings (
 	booked_start_time TIMESTAMPTZ NOT NULL,
 	booked_end_time TIMESTAMPTZ NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+	access_token UUID NOT NULL UNIQUE, -- NEW
 	deleted_at TIMESTAMPTZ,
 	deleted_by VARCHAR(20)
 );
@@ -75,11 +82,11 @@ VALUES
 	(2,'ROLE_ORGANIZER'),
 	(3,'ROLE_ATTENDEE');
 
-INSERT INTO users (username, password, email, first_name,last_name)
+INSERT INTO users (username, password, email, first_name,last_name, guest)
 VALUES 
-	('admin','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','admin@test.com','booking','admin'),
-	('organizer','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','organizer@test.com','booking','organizer'),
-	('attendee','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','attendee@test.com','booking','attendee');
+	('admin','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','admin@test.com','booking','admin', false),
+	('organizer','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','organizer@test.com','booking','organizer', false),
+	('attendee','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','attendee@test.com','booking','attendee', false);
 
 INSERT INTO users_roles (user_id, role_id)
 VALUES

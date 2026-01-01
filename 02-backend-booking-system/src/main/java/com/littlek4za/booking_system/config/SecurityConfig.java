@@ -17,7 +17,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.littlek4za.booking_system.dto.ErrorDto;
+import com.littlek4za.booking_system.dto.ErrorResponseDto;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -46,10 +46,10 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
                             log.warn("Authentication failed: {}", e.getMessage());
-                            ErrorDto errorDto = new ErrorDto(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
+                            ErrorResponseDto errorResponseDto = new ErrorResponseDto(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
                                     "Token missing or invalid", Instant.now(), request.getServletPath());
                             ObjectMapper mapper = new ObjectMapper();
-                            response.getWriter().write(mapper.writeValueAsString(errorDto));
+                            response.getWriter().write(mapper.writeValueAsString(errorResponseDto));
                         }))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())

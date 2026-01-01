@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.entities;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -16,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,7 +52,10 @@ public class Booking {
     private Instant bookedEndTime;
 
     @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted;
+    private boolean isDeleted = false;
+
+    @Column(name = "access_token", nullable = false, unique = true)
+    private UUID accessToken;
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
@@ -68,6 +73,13 @@ public class Booking {
         this.slot = slot;
         this.bookedStartTime = bookedStartTime;
         this.bookedEndTime = bookedEndTime;
+    }
+
+    @PrePersist
+    private void initToken() {
+        if(accessToken == null) {
+            accessToken = UUID.randomUUID();
+        }
     }
 
 }

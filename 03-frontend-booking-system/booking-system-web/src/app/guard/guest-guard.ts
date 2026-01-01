@@ -14,7 +14,7 @@ export class GuestGuard implements CanActivate {
     return this.authService.authStatus$.pipe(
       map(isAuth => {
         if (isAuth) {
-          alert("Already Log in");
+          alert("Only For Guest User");
           return false;
         }
         return true;

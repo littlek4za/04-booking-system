@@ -1,13 +1,13 @@
 package com.littlek4za.booking_system.services;
 
-import com.littlek4za.booking_system.dto.CredentialsDto;
-import com.littlek4za.booking_system.dto.JwtUserDto;
-import com.littlek4za.booking_system.dto.SignUpDto;
+import com.littlek4za.booking_system.dto.LoginRequestDto;
+import com.littlek4za.booking_system.dto.LoginResponseDto;
+import com.littlek4za.booking_system.dto.SignUpRequestDto;
 
 public interface UserService {
 
-    JwtUserDto login(CredentialsDto credentialsDto);
+    LoginResponseDto login(LoginRequestDto loginRequestDto);
 
-    JwtUserDto register(SignUpDto signUpDto);
+    LoginResponseDto register(SignUpRequestDto signUpRequestDto);
 
 }

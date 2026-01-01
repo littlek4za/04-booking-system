@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CredentialsDto } from '../../common/credentials-dto';
+import { LoginRequestDto } from '../../common/login-request-dto';
 import { AuthService } from '../../services/auth-service';
 import { Router } from '@angular/router';
 
@@ -29,11 +29,11 @@ export class LoginComponent {
       return;
     }
 
-    const credentialsDto = new CredentialsDto();
-    credentialsDto.username = this.loginForm.value.username;
-    credentialsDto.password = this.loginForm.value.password;
+    const loginRequestDto = new LoginRequestDto();
+    loginRequestDto.username = this.loginForm.value.username;
+    loginRequestDto.password = this.loginForm.value.password;
 
-    this.authService.login(credentialsDto).subscribe({
+    this.authService.login(loginRequestDto).subscribe({
       next: (response) => {
         console.log('Login success', response);
         this.router.navigate(['/roleSelect']);

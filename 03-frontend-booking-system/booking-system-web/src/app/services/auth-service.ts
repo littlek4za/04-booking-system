@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { CredentialsDto } from '../common/credentials-dto';
+import { LoginRequestDto } from '../common/login-request-dto';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { SignupDto } from '../common/signup-dto';
+import { SignupRequestDto } from '../common/signup-request-dto';
 import { Router } from '@angular/router';
 import { LoginResponseDto } from '../common/login-response-dto';
 
@@ -19,8 +19,8 @@ export class AuthService {
   constructor(private httpClient: HttpClient, private router: Router) {
   }
 
-  login(credentialsDto: CredentialsDto): Observable<LoginResponseDto> {
-    return this.httpClient.post<LoginResponseDto>(this.loginUrl, credentialsDto).pipe(
+  login(loginRequestDto: LoginRequestDto): Observable<LoginResponseDto> {
+    return this.httpClient.post<LoginResponseDto>(this.loginUrl, loginRequestDto).pipe(
       tap(
         {
           next: (res) => {
@@ -32,8 +32,8 @@ export class AuthService {
     );
   }
 
-  register(signupDto: SignupDto): Observable<any> {
-    return this.httpClient.post<SignupDto>(this.registerUrl, signupDto);
+  register(signupRequestDto: SignupRequestDto): Observable<any> {
+    return this.httpClient.post<SignupRequestDto>(this.registerUrl, signupRequestDto);
   }
 
   hasValidToken(): boolean {

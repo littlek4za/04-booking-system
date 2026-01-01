@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthFormValidator } from '../../validators/auth-form-validator';
-import { SignupDto } from '../../common/signup-dto';
+import { SignupRequestDto } from '../../common/signup-request-dto';
 import { Router } from '@angular/router';
 
 @Component({
@@ -56,14 +56,14 @@ export class RegisterComponent {
     if (this.registerForm.invalid) {
       return;
     }
-    const signupDto = new SignupDto;
-    signupDto.username = this.registerForm.value.username;
-    signupDto.password = this.registerForm.value.password;
-    signupDto.email = this.registerForm.value.email;
-    signupDto.firstName = this.registerForm.value.firstName;
-    signupDto.lastName = this.registerForm.value.lastName;
+    const signupRequestDto = new SignupRequestDto;
+    signupRequestDto.username = this.registerForm.value.username;
+    signupRequestDto.password = this.registerForm.value.password;
+    signupRequestDto.email = this.registerForm.value.email;
+    signupRequestDto.firstName = this.registerForm.value.firstName;
+    signupRequestDto.lastName = this.registerForm.value.lastName;
 
-    this.authService.register(signupDto).subscribe({
+    this.authService.register(signupRequestDto).subscribe({
       next: (response) => {
         console.log('Register success', response);
         alert("Registration Success! Please proceed to log in");

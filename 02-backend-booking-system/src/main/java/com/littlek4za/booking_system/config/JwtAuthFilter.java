@@ -12,7 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.littlek4za.booking_system.dto.ErrorDto;
+import com.littlek4za.booking_system.dto.ErrorResponseDto;
 import com.littlek4za.booking_system.exception.JwtAuthException;
 
 import jakarta.servlet.FilterChain;
@@ -82,7 +82,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
 
-        ErrorDto errorDto = new ErrorDto(
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 httpStatus.value(),
                 httpStatus.getReasonPhrase(),
                 message,
@@ -90,7 +90,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 path);
 
         ObjectMapper mapper = new ObjectMapper();
-        response.getWriter().write(mapper.writeValueAsString(errorDto));
+        response.getWriter().write(mapper.writeValueAsString(errorResponseDto));
     }
 
 }

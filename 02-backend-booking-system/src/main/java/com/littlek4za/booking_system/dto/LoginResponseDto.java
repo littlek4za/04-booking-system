@@ -2,7 +2,7 @@ package com.littlek4za.booking_system.dto;
 
 import java.util.Set;
 
-public class JwtUserDto {
+public class LoginResponseDto {
 
     private String username;
 
@@ -16,10 +16,10 @@ public class JwtUserDto {
 
     private String token;
 
-    public JwtUserDto() {
+    public LoginResponseDto() {
     }
 
-    public JwtUserDto(String username, String email, String firstName, String lastName,
+    public LoginResponseDto(String username, String email, String firstName, String lastName,
             Set<String> roleSet, String token) {
         this.username = username;
         this.email = email;
@@ -98,7 +98,7 @@ public class JwtUserDto {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        JwtUserDto other = (JwtUserDto) obj;
+        LoginResponseDto other = (LoginResponseDto) obj;
         if (username == null) {
             if (other.username != null)
                 return false;
@@ -180,8 +180,8 @@ public class JwtUserDto {
             return this;
         }
 
-        public JwtUserDto build() {
-            JwtUserDto dto = new JwtUserDto();
+        public LoginResponseDto build() {
+            LoginResponseDto dto = new LoginResponseDto();
             dto.setUsername(username);
             dto.setEmail(email);
             dto.setFirstName(firstName);

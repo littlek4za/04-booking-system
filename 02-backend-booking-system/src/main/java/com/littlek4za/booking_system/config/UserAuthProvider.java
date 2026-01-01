@@ -24,7 +24,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.littlek4za.booking_system.dao.UserRepository;
-import com.littlek4za.booking_system.dto.JwtUserDto;
+import com.littlek4za.booking_system.dto.LoginResponseDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.JwtAuthException;
 import com.littlek4za.booking_system.mapper.DtoMapper;
@@ -51,19 +51,19 @@ public class UserAuthProvider {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
-    public String createToken(JwtUserDto jwtUserDto){
+    public String createToken(LoginResponseDto loginResponseDto){
         Instant now = Instant.now();
         Instant expiry = now.plus(1, ChronoUnit.HOURS);
 
         return JWT.create()
                     .withIssuer(issuerString)
-                    .withSubject(jwtUserDto.getUsername())
+                    .withSubject(loginResponseDto.getUsername())
                     .withIssuedAt(now)
                     .withExpiresAt(expiry)
-                    .withClaim("firstName", jwtUserDto.getFirstName())
-                    .withClaim("lastName", jwtUserDto.getLastName())
-                    .withClaim("email",jwtUserDto.getEmail())
-                    .withClaim("roles", new ArrayList<>(jwtUserDto.getRoleSet()))
+                    .withClaim("firstName", loginResponseDto.getFirstName())
+                    .withClaim("lastName", loginResponseDto.getLastName())
+                    .withClaim("email",loginResponseDto.getEmail())
+                    .withClaim("roles", new ArrayList<>(loginResponseDto.getRoleSet()))
                     .sign(Algorithm.HMAC256(secretKey));
 
     }
@@ -76,8 +76,8 @@ public class UserAuthProvider {
         List<String> rolesFromToken = decodedJWT.getClaim("roleSet").asList(String.class);
         Set<String>roleSet = new HashSet<>(rolesFromToken);
 
-        // directly assign decodedJWT as jwtUserDto wihtout touching the db
-        JwtUserDto jwtUserDto = JwtUserDto.builder()
+        // directly assign decodedJWT as LoginResponseDto wihtout touching the db
+        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
                                     .email(decodedJWT.getClaim("email").asString())
                                     .firstName(decodedJWT.getClaim("firstName").asString())
                                     .lastName(decodedJWT.getClaim("lastName").asString())
@@ -85,12 +85,12 @@ public class UserAuthProvider {
                                     .username(decodedJWT.getSubject())
                                     .build();
         
-        Set<GrantedAuthority> authoritySet = jwtUserDto.getRoleSet()
+        Set<GrantedAuthority> authoritySet = loginResponseDto.getRoleSet()
                                                         .stream()
                                                         .map(role -> new SimpleGrantedAuthority(role))
                                                         .collect(Collectors.toSet());
         
-        return new UsernamePasswordAuthenticationToken(jwtUserDto, null, authoritySet);
+        return new UsernamePasswordAuthenticationToken(loginResponseDto, null, authoritySet);
         
     }
 
@@ -99,18 +99,18 @@ public class UserAuthProvider {
         JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuerString).build();
         DecodedJWT decodedJWT = verifier.verify(token);
 
-        // double check with db, and use db user to create jwtUserDto
+        // double check with db, and use db user to create loginResponseDto
         User user = userRepository.findByUsername(decodedJWT.getSubject())
                                     .orElseThrow(()-> new JwtAuthException("Unknown User", HttpStatus.UNAUTHORIZED));
         
-        JwtUserDto jwtUserDto = dtoMapper.userToJwtUserDto(user);
+        LoginResponseDto loginResponseDto = dtoMapper.userToLoginResponseDto(user);
         
         Set<GrantedAuthority> authoritySet = user.getRoleSet()
                                                         .stream()
                                                         .map(role -> new SimpleGrantedAuthority(role.getRoleName()))
                                                         .collect(Collectors.toSet());
         
-        return new UsernamePasswordAuthenticationToken(jwtUserDto, null, authoritySet);
+        return new UsernamePasswordAuthenticationToken(loginResponseDto, null, authoritySet);
     }
 
 }

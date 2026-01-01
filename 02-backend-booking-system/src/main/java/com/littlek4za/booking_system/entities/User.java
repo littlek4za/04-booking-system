@@ -19,6 +19,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.AssertTrue;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,10 +34,10 @@ public class User {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "username", nullable = false, unique = true)
+    @Column(name = "username", unique = true)
     private String username;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
 
     @Column(name = "email", nullable = false, unique = true)
@@ -48,12 +49,15 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Booking> bookingList = new ArrayList<>();
+    @Column(name = "guest", nullable = false)
+    private Boolean guest;
 
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Booking> bookingList = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -62,15 +66,39 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<Event> eventSet = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Invitation> invitationSet = new HashSet<>();
+
     protected User() {
     }
 
-    public User(String username, String email,
-            String firstName, String lastName) {
-        this.username = username;
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public static User createRegistered(String username, String password, String email, String firstName,
+            String lastName) {
+        User user = new User();
+        user.guest = false;
+        user.username = username;
+        user.password = password;
+        user.email = email;
+        user.firstName = firstName;
+        user.lastName = lastName;
+        return user;
+    }
+
+    public static User createGuest(String email, String firstName, String lastName) {
+        User user = new User();
+        user.guest = true;
+        user.email = email;
+        user.firstName = firstName;
+        user.lastName = lastName;
+        return user;
+    }
+
+    @AssertTrue(message = "username and password must be provided when guest is false")
+    private boolean isCredentialValid() {
+        if (!Boolean.TRUE.equals(guest)) {
+            return true; // username password not required
+        }
+        return username != null && password != null;
     }
 
     public void addRole(Role role) {

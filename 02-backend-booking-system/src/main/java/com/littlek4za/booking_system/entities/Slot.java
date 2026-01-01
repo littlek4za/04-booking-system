@@ -4,12 +4,10 @@ import java.time.Instant;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.littlek4za.booking_system.models.SlotType;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +35,7 @@ public class Slot {
 
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
+    @JsonBackReference
     private Event event;
 
     @Column(name = "slot_name", nullable = false)
@@ -54,10 +53,6 @@ public class Slot {
     @Column(name = "max_book", nullable = false)
     private int maxBook = 1;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "slot_type", nullable = false)
-    private SlotType slotType;
-
     @Column(name = "slot_interval_minutes", nullable = false)
     private int slotIntervalMinutes = 30;
 
@@ -69,14 +64,13 @@ public class Slot {
     }
 
     public Slot(Event event, String slotName, String slotDescription, Instant slotStartTime,
-            Instant slotEndTime, int maxBook, SlotType slotType) {
+            Instant slotEndTime, int maxBook) {
         this.event = event;
         this.slotName = slotName;
         this.slotDescription = slotDescription;
         this.slotStartTime = slotStartTime;
         this.slotEndTime = slotEndTime;
         this.maxBook = maxBook;
-        this.slotType = slotType;
     }
 
 }

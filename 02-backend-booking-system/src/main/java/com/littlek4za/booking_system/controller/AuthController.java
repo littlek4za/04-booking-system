@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.littlek4za.booking_system.config.UserAuthProvider;
-import com.littlek4za.booking_system.dto.CredentialsDto;
-import com.littlek4za.booking_system.dto.JwtUserDto;
-import com.littlek4za.booking_system.dto.SignUpDto;
+import com.littlek4za.booking_system.dto.LoginRequestDto;
+import com.littlek4za.booking_system.dto.LoginResponseDto;
+import com.littlek4za.booking_system.dto.SignUpRequestDto;
 import com.littlek4za.booking_system.services.UserService;
 
 import jakarta.validation.Valid;
@@ -25,16 +25,16 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtUserDto> login(@RequestBody CredentialsDto credentialsDto){
-        JwtUserDto jwtUserDto = userService.login(credentialsDto);
-        jwtUserDto.setToken(userAuthProvider.createToken(jwtUserDto));
-        return ResponseEntity.ok(jwtUserDto);
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
+        LoginResponseDto loginResponseDto = userService.login(loginRequestDto);
+        loginResponseDto.setToken(userAuthProvider.createToken(loginResponseDto));
+        return ResponseEntity.ok(loginResponseDto);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<JwtUserDto> register(@Valid @RequestBody SignUpDto signUpDto){
-        JwtUserDto jwtUserDto = userService.register(signUpDto);
-        return ResponseEntity.ok(jwtUserDto);
+    public ResponseEntity<LoginResponseDto> register(@Valid @RequestBody SignUpRequestDto signUpRequestDto){
+        LoginResponseDto loginResponseDto = userService.register(signUpRequestDto);
+        return ResponseEntity.ok(loginResponseDto);
         
     }
 
