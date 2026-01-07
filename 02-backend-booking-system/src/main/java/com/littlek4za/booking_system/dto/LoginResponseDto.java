@@ -4,6 +4,8 @@ import java.util.Set;
 
 public class LoginResponseDto {
 
+    private Long id;
+
     private String username;
 
     private String email;
@@ -19,14 +21,19 @@ public class LoginResponseDto {
     public LoginResponseDto() {
     }
 
-    public LoginResponseDto(String username, String email, String firstName, String lastName,
+    public LoginResponseDto(Long id, String username, String email, String firstName, String lastName,
             Set<String> roleSet, String token) {
+        this.id = id;
         this.username = username;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.roleSet = roleSet;
         this.token = token;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getUsername() {
@@ -77,10 +84,12 @@ public class LoginResponseDto {
         this.token = token;
     }
 
+ 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((username == null) ? 0 : username.hashCode());
         result = prime * result + ((email == null) ? 0 : email.hashCode());
         result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
@@ -99,6 +108,11 @@ public class LoginResponseDto {
         if (getClass() != obj.getClass())
             return false;
         LoginResponseDto other = (LoginResponseDto) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
         if (username == null) {
             if (other.username != null)
                 return false;
@@ -191,4 +205,5 @@ public class LoginResponseDto {
             return dto;
         }
     }
+
 }

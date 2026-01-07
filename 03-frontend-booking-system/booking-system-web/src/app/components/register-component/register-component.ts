@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthFormValidator } from '../../validators/auth-form-validator';
+import { passwordMatchedValidator } from '../../validators/custom-validator';
 import { SignupRequestDto } from '../../common/signup-request-dto';
 import { Router } from '@angular/router';
+import { extractFieldErrorMessage } from '../../utils/error-utils';
 
 @Component({
   selector: 'app-register-component',
@@ -13,11 +14,17 @@ import { Router } from '@angular/router';
 })
 export class RegisterComponent {
 
-  registerForm: FormGroup;
+  registerForm!: FormGroup;
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor(private authService: AuthService, private router: Router) { }
+
+  ngOnInit(): void {
+    this.initRegisterForm();
+  }
+
+  private initRegisterForm() {
     this.registerForm = new FormGroup({
       username: new FormControl<string>("",
         [Validators.required,
@@ -46,9 +53,8 @@ export class RegisterComponent {
       isAgree: new FormControl<boolean>(false,
         [Validators.requiredTrue])
     },
-      { validators: AuthFormValidator.passwordMatched }
+      { validators: passwordMatchedValidator }
     );
-
   }
 
   onSubmit() {
@@ -71,7 +77,8 @@ export class RegisterComponent {
       },
       error: (err) => {
         console.log('Register failed', err);
-        alert(err.error.message);
+        let alertMessage = extractFieldErrorMessage(err);
+        alert(alertMessage);
       },
       complete: () => {
         console.log('Request complete.');

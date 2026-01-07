@@ -1,8 +1,21 @@
 <p>auth-debug works!</p>
 @if (hasToken) {
-    <div>Has Token in localStorage</div>
+    <h4>Token Value</h4>
+    <pre>{{ token }}</pre>
+    @if (decodeError) {
+        <p class="text-danger">Decode Error: {{ decodeError }}</p>
+    }
+    @if (!decodeError){
+        <h4>Header:</h4>
+        <pre>{{ tokenHeader | json }}</pre>
+
+        <h4>Payload:</h4>
+        <pre>{{ tokenPayload | json }}</pre>
+
+        <h5>Expiry:</h5>
+        <pre>{{ hasTokenExpired }}</pre>
+    }
 }
 @if (!hasToken) {
     <div>No Token in localStorage</div>
 }
-<button (click)="authService.logout()">Logout</button>

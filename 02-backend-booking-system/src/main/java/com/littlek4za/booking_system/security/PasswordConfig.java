@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.config;
+package com.littlek4za.booking_system.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

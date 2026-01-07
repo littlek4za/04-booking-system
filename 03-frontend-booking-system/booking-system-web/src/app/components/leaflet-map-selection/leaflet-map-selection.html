@@ -1,0 +1,16 @@
+<div class="map-wrapper">
+  <div class="map-container">
+    <div id="map" class="map"></div>
+  </div>
+  <div>
+    @if (selectedLatLng) {
+    <p>
+      Current Position:
+      Lat: {{ selectedLatLng.lat.toFixed(5)}},
+      Lng: {{ selectedLatLng.lng.toFixed(5)}}
+    </p>
+    }
+  </div>
+  <button type="button" (click)="submitLocation()">Select Location</button>
+  <button type="button" (click)="clearLocation()">Clear Location</button>
+</div>

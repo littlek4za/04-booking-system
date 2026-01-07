@@ -38,7 +38,7 @@
                 Show password
             </label>
         </div>
-        @if (registerForm.hasError('passwordMatched') &&
+        @if (registerForm.hasError('passwordUnmatched') &&
         (registerForm.controls['confirmPassword'].touched||
         registerForm.controls['confirmPassword'].dirty)){
         <div class="text-danger">

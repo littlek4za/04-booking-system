@@ -1,8 +1,7 @@
-package com.littlek4za.booking_system.config;
+package com.littlek4za.booking_system.security;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
@@ -25,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final UserAuthProvider userAuthProvider;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthFilter(UserAuthProvider userAuthProvider) {
+    public JwtAuthFilter(UserAuthProvider userAuthProvider, ObjectMapper objectMapper) {
         this.userAuthProvider = userAuthProvider;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -38,9 +39,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader((HttpHeaders.AUTHORIZATION));
         String path = request.getServletPath();
-        Set<String> ignorePaths = new HashSet<>();
-        ignorePaths.add("/login");
-        ignorePaths.add("/register");
+        Set<String> ignorePaths = Set.of(
+                "/api/v1/login",
+                "/api/v1/register");
 
         if (ignorePaths.contains(path)) {
             filterChain.doFilter(request, response);
@@ -52,13 +53,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (authElements.length == 2 && "Bearer".equals(authElements[0])) {
                 try {
-                    if ("GET".equals(request.getMethod())) {
-                        SecurityContextHolder.getContext()
-                                .setAuthentication(userAuthProvider.validateToken(authElements[1]));
-                    } else {
-                        SecurityContextHolder.getContext()
-                                .setAuthentication(userAuthProvider.validateTokenStrongly(authElements[1]));
-                    }
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(userAuthProvider.validateTokenStrongly(authElements[1]));
                 } catch (JWTVerificationException e) {
                     SecurityContextHolder.clearContext();
                     log.warn("mylog JWT Verfication failed: {}", e.getMessage());
@@ -87,10 +83,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 httpStatus.getReasonPhrase(),
                 message,
                 Instant.now(),
-                path);
+                path,
+                null);
 
-        ObjectMapper mapper = new ObjectMapper();
-        response.getWriter().write(mapper.writeValueAsString(errorResponseDto));
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
     }
 
 }

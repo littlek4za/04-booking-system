@@ -1,0 +1,14 @@
+.map-wrapper {
+  max-width: 95%;
+  margin: 0 auto;
+}
+
+.map-container {
+  height: 400px;
+  width: 100%;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}

@@ -1,16 +1,13 @@
-package com.littlek4za.booking_system.config;
+package com.littlek4za.booking_system.security;
 
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,7 +24,6 @@ import com.littlek4za.booking_system.dao.UserRepository;
 import com.littlek4za.booking_system.dto.LoginResponseDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.JwtAuthException;
-import com.littlek4za.booking_system.mapper.DtoMapper;
 
 import jakarta.annotation.PostConstruct;
 
@@ -35,7 +31,6 @@ import jakarta.annotation.PostConstruct;
 public class UserAuthProvider {
 
     private final UserRepository userRepository;
-    private final DtoMapper dtoMapper;
 
     @Value("${security.jwt.token.secret-key:dev-secret-key}")
     private String secretKey;
@@ -43,7 +38,6 @@ public class UserAuthProvider {
 
     public UserAuthProvider(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.dtoMapper = null;
     }
 
     @PostConstruct // run after bean is created
@@ -53,7 +47,7 @@ public class UserAuthProvider {
 
     public String createToken(LoginResponseDto loginResponseDto){
         Instant now = Instant.now();
-        Instant expiry = now.plus(1, ChronoUnit.HOURS);
+        Instant expiry = now.plus(10, ChronoUnit.SECONDS);
 
         return JWT.create()
                     .withIssuer(issuerString)
@@ -68,49 +62,32 @@ public class UserAuthProvider {
 
     }
 
-    public Authentication validateToken(String token) { // use for Http reuqest GET, speedy
+    public Authentication validateTokenStrongly(String token) {
         Algorithm algorithm = Algorithm.HMAC256(secretKey);
-        JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuerString).build();
-        DecodedJWT decodedJWT = verifier.verify(token);
-
-        List<String> rolesFromToken = decodedJWT.getClaim("roleSet").asList(String.class);
-        Set<String>roleSet = new HashSet<>(rolesFromToken);
-
-        // directly assign decodedJWT as LoginResponseDto wihtout touching the db
-        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
-                                    .email(decodedJWT.getClaim("email").asString())
-                                    .firstName(decodedJWT.getClaim("firstName").asString())
-                                    .lastName(decodedJWT.getClaim("lastName").asString())
-                                    .roleSet(roleSet)
-                                    .username(decodedJWT.getSubject())
+        JWTVerifier verifier = JWT.require(algorithm)
+                                    .withIssuer(issuerString)
                                     .build();
-        
-        Set<GrantedAuthority> authoritySet = loginResponseDto.getRoleSet()
-                                                        .stream()
-                                                        .map(role -> new SimpleGrantedAuthority(role))
-                                                        .collect(Collectors.toSet());
-        
-        return new UsernamePasswordAuthenticationToken(loginResponseDto, null, authoritySet);
-        
-    }
-
-    public @Nullable Authentication validateTokenStrongly(String token) { // use for Http request other than GET, slower but secure
-        Algorithm algorithm = Algorithm.HMAC256(secretKey);
-        JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuerString).build();
         DecodedJWT decodedJWT = verifier.verify(token);
 
         // double check with db, and use db user to create loginResponseDto
         User user = userRepository.findByUsername(decodedJWT.getSubject())
                                     .orElseThrow(()-> new JwtAuthException("Unknown User", HttpStatus.UNAUTHORIZED));
-        
-        LoginResponseDto loginResponseDto = dtoMapper.userToLoginResponseDto(user);
+
+        AuthUserPrincipal userAuthPrincipal = new AuthUserPrincipal(
+                                                    user.getId(),
+                                                    user.getUsername(),
+                                                    user.getEmail(),
+                                                    user.getRoleSet()
+                                                    .stream()
+                                                    .map(role -> role.getRoleName())
+                                                    .collect(Collectors.toSet()));
         
         Set<GrantedAuthority> authoritySet = user.getRoleSet()
                                                         .stream()
                                                         .map(role -> new SimpleGrantedAuthority(role.getRoleName()))
                                                         .collect(Collectors.toSet());
         
-        return new UsernamePasswordAuthenticationToken(loginResponseDto, null, authoritySet);
+        return new UsernamePasswordAuthenticationToken(userAuthPrincipal, null, authoritySet);
     }
 
 }

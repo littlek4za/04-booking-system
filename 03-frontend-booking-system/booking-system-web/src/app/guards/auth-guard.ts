@@ -1,24 +1,35 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
+import { AuthService } from '../services/auth-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private authService: AuthService) { }
 
   canActivate(route: ActivatedRouteSnapshot): boolean {
 
     const token = localStorage.getItem('authToken');
-
+    // check token availability
     if (!token) {
       alert('Please login to continue');
       this.router.navigate(['/login']);
       return false;
     }
 
-    const payload = JSON.parse(atob(token.split('.')[1])); //decode JWT payload
+    //decode JWT payload
+    const payload = JSON.parse(atob(token.split('.')[1])); 
+
+    // check expiry
+    const timeNow = Math.floor(Date.now()/1000);
+    if(payload.exp && payload.exp < timeNow){
+      this.authService.logoutByExpiry();
+      return false;
+    }
+
+    // check role
     const allowedRoles: string[] = route.data['roles'] || [];
     const userRoles: string[] = payload.roles || [];
 

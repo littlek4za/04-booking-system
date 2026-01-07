@@ -11,8 +11,8 @@ import { LoginResponseDto } from '../common/login-response-dto';
 })
 export class AuthService {
 
-  private loginUrl = "http://localhost:8080/login";
-  private registerUrl = "http://localhost:8080/register";
+  private loginUrl = "http://localhost:8080/api/v1/login";
+  private registerUrl = "http://localhost:8080/api/v1/register";
   private authStatus = new BehaviorSubject<boolean>(this.hasValidToken());
   authStatus$ = this.authStatus.asObservable();
 
@@ -44,9 +44,11 @@ export class AuthService {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const timeNow = Math.floor(Date.now() / 1000);
-      return payload.exp && payload.exp > timeNow;
+      if (!payload.exp || payload.exp < timeNow) {
+        return false;
+      }
+      return true;
     } catch (e) {
-      localStorage.removeItem('authToken');
       return false;
     }
   }
@@ -55,7 +57,16 @@ export class AuthService {
     localStorage.removeItem("authToken");
     this.authStatus.next(false);
     alert("Logout Successfully.");
-    // this.router.navigate(['/welcome']);
+    this.router.navigate(['/welcome']);
+  }
+
+  logoutByExpiry(): void {
+    localStorage.removeItem("authToken");
+    this.authStatus.next(false);
+    alert("Your session has expired. Please log in again.");
+    setTimeout(() => {
+      this.router.navigate(['/login']);
+    }, 0);
   }
 }
 

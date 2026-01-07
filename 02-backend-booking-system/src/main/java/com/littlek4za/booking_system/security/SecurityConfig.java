@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.config;
+package com.littlek4za.booking_system.security;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -35,21 +35,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
         http
-                .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthFilter(userAuthProvider, objectMapper), BasicAuthenticationFilter.class)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        request -> request.requestMatchers(HttpMethod.POST, "/login", "/register").permitAll()
+                        request -> request.requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
                                 .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
                             log.warn("Authentication failed: {}", e.getMessage());
-                            ErrorResponseDto errorResponseDto = new ErrorResponseDto(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
-                                    "Token missing or invalid", Instant.now(), request.getServletPath());
-                            ObjectMapper mapper = new ObjectMapper();
-                            response.getWriter().write(mapper.writeValueAsString(errorResponseDto));
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                                HttpServletResponse.SC_UNAUTHORIZED, 
+                                "Unauthorized",
+                                "Token missing or invalid", 
+                                Instant.now(), 
+                                request.getServletPath(),
+                                null);
+                            response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
                         }))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())

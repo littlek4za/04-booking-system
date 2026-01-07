@@ -1,6 +1,6 @@
 package com.littlek4za.booking_system.dto;
 
-import com.littlek4za.booking_system.models.SlotType;
+import com.littlek4za.booking_system.customValidator.ValidSlotType;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMax;
@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record EventRequestDto(
+public record EventSaveRequestDto(
 
         @NotBlank(message = "is required")
         @Size(min = 1, max = 350, message = "Event Name must be between 1 and 350 characters")
@@ -33,7 +33,8 @@ public record EventRequestDto(
         @DecimalMax(value = "180.0", message = "Longitude must be <= 180")
         Double longitude,
 
-        SlotType slotType) {
+        @ValidSlotType
+        String slotType) {
 
     @AssertTrue(message = "Latitude and longitude must be provided when includePosition is true")
     private boolean isPositionValid() {
