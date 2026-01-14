@@ -30,12 +30,13 @@ CREATE TABLE events (
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	event_name TEXT NOT NULL,
 	event_description TEXT,
-	event_location_name TEXT NOT NULL, -- NEW
+	event_location_address TEXT NOT NULL, -- NEW
 	include_position BOOLEAN NOT NULL DEFAULT FALSE, -- NEW
 	latitude DOUBLE PRECISION, -- NEW
 	longitude DOUBLE PRECISION, -- NEW
 	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
-	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );
 
 CREATE TABLE slots (

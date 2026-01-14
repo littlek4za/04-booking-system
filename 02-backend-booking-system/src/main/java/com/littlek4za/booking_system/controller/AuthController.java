@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.littlek4za.booking_system.dto.LoginRequestDto;
-import com.littlek4za.booking_system.dto.LoginResponseDto;
-import com.littlek4za.booking_system.dto.SignUpRequestDto;
+import com.littlek4za.booking_system.dtos.LoginRequestDto;
+import com.littlek4za.booking_system.dtos.LoginResponseDto;
+import com.littlek4za.booking_system.dtos.SignUpRequestDto;
 import com.littlek4za.booking_system.security.UserAuthProvider;
 import com.littlek4za.booking_system.services.UserService;
 

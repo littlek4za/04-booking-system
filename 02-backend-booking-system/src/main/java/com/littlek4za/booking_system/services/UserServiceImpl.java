@@ -6,14 +6,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.littlek4za.booking_system.dao.RoleRepository;
-import com.littlek4za.booking_system.dao.UserRepository;
-import com.littlek4za.booking_system.dto.LoginRequestDto;
-import com.littlek4za.booking_system.dto.LoginResponseDto;
-import com.littlek4za.booking_system.dto.SignUpRequestDto;
+import com.littlek4za.booking_system.dtos.LoginRequestDto;
+import com.littlek4za.booking_system.dtos.LoginResponseDto;
+import com.littlek4za.booking_system.dtos.SignUpRequestDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.mapper.DtoMapper;
+import com.littlek4za.booking_system.repos.RoleRepository;
+import com.littlek4za.booking_system.repos.UserRepository;
 
 @Service
 public class UserServiceImpl implements UserService {

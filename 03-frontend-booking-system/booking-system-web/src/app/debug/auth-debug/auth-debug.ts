@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AuthService } from '../../services/auth-service';
+import { AuthService } from '../../features/auth/auth-service';
 import { JsonPipe } from '@angular/common';
 
 @Component({

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.littlek4za.booking_system.models.SlotType;
@@ -12,6 +14,7 @@ import com.littlek4za.booking_system.models.SlotType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -26,6 +29,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Setter
 @Getter
 @Table(name = "events")
@@ -46,8 +50,8 @@ public class Event {
     @Column(name = "event_description")
     private String eventDescription;
 
-    @Column(name = "event_location_name", nullable = false)
-    private String eventLocationName;
+    @Column(name = "event_location_address", nullable = false)
+    private String eventLocationAddress;
 
     @Column(name = "include_position", nullable = false)
     private Boolean includePosition = false;
@@ -66,6 +70,10 @@ public class Event {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Slot> slotList = new ArrayList<>();
@@ -73,12 +81,12 @@ public class Event {
     protected Event() {
     }
 
-    public Event(User user, String eventName, String eventDescription, String eventLocationName,
+    public Event(User user, String eventName, String eventDescription, String eventLocationAddress,
             Boolean includePosition, SlotType slotType) {
         this.user = user;
         this.eventName = eventName;
         this.eventDescription = eventDescription;
-        this.eventLocationName = eventLocationName;
+        this.eventLocationAddress = eventLocationAddress;
         this.includePosition = includePosition;
         this.slotType = slotType;
     }

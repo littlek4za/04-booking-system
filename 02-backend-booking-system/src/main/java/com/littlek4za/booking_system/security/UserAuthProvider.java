@@ -20,10 +20,10 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.littlek4za.booking_system.dao.UserRepository;
-import com.littlek4za.booking_system.dto.LoginResponseDto;
+import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.entities.User;
-import com.littlek4za.booking_system.exception.JwtAuthException;
+import com.littlek4za.booking_system.exception.filter.JwtAuthFilterException;
+import com.littlek4za.booking_system.repos.UserRepository;
 
 import jakarta.annotation.PostConstruct;
 
@@ -47,7 +47,7 @@ public class UserAuthProvider {
 
     public String createToken(LoginResponseDto loginResponseDto){
         Instant now = Instant.now();
-        Instant expiry = now.plus(10, ChronoUnit.SECONDS);
+        Instant expiry = now.plus(10, ChronoUnit.HOURS);
 
         return JWT.create()
                     .withIssuer(issuerString)
@@ -71,7 +71,7 @@ public class UserAuthProvider {
 
         // double check with db, and use db user to create loginResponseDto
         User user = userRepository.findByUsername(decodedJWT.getSubject())
-                                    .orElseThrow(()-> new JwtAuthException("Unknown User", HttpStatus.UNAUTHORIZED));
+                                    .orElseThrow(()-> new JwtAuthFilterException("Unknown User", HttpStatus.NOT_FOUND));
 
         AuthUserPrincipal userAuthPrincipal = new AuthUserPrincipal(
                                                     user.getId(),

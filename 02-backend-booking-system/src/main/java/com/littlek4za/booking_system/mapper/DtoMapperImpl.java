@@ -4,7 +4,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.littlek4za.booking_system.dto.LoginResponseDto;
+import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
+import com.littlek4za.booking_system.dtos.LoginResponseDto;
+import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.User;
 
 @Component
@@ -22,6 +24,23 @@ public class DtoMapperImpl implements DtoMapper {
                         .collect(Collectors.toSet()))
                 .username(user.getUsername())
                 .build();
+    }
+
+    @Override
+    public EventWithSlotCountReponseDto eventToEListResponseDto(Event event, Long slotCount) {
+        return new EventWithSlotCountReponseDto(
+                    event.getId(),
+                    event.getEventName(),
+                    event.getEventDescription(),
+                    event.getEventLocationAddress(),
+                    event.getIncludePosition(),
+                    event.getLatitude(),
+                    event.getLongitude(),
+                    event.getSlotType().toString(),
+                    event.getCreatedAt(),
+                    event.getUpdatedAt(),
+                    slotCount
+                );
     }
 
 }

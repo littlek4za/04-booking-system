@@ -1,18 +1,12 @@
 package com.littlek4za.booking_system.security;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.littlek4za.booking_system.dto.ErrorResponseDto;
-import com.littlek4za.booking_system.exception.JwtAuthException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,11 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final UserAuthProvider userAuthProvider;
-    private final ObjectMapper objectMapper;
 
-    public JwtAuthFilter(UserAuthProvider userAuthProvider, ObjectMapper objectMapper) {
+    public JwtAuthFilter(UserAuthProvider userAuthProvider) {
         this.userAuthProvider = userAuthProvider;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -37,7 +29,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String authHeader = request.getHeader((HttpHeaders.AUTHORIZATION));
         String path = request.getServletPath();
         Set<String> ignorePaths = Set.of(
                 "/api/v1/login",
@@ -48,45 +39,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (authHeader != null) {
-            String[] authElements = authHeader.split(" ");
+        String authHeader = request.getHeader((HttpHeaders.AUTHORIZATION));
 
-            if (authElements.length == 2 && "Bearer".equals(authElements[0])) {
-                try {
-                    SecurityContextHolder.getContext()
-                            .setAuthentication(userAuthProvider.validateTokenStrongly(authElements[1]));
-                } catch (JWTVerificationException e) {
-                    SecurityContextHolder.clearContext();
-                    log.warn("mylog JWT Verfication failed: {}", e.getMessage());
-                    writeJson(response, HttpStatus.UNAUTHORIZED, e.getMessage(), request.getRequestURI());
-                    return;
-                } catch (JwtAuthException e) {
-                    SecurityContextHolder.clearContext();
-                    log.warn("mylog JWT Auth Exception: {}", e.getMessage());
-                    writeJson(response, e.getHttpStatus(), e.getMessage(), request.getRequestURI());
-                    return;
-                }
-            }
+        // to allow without header, will need to declare the path at security config, and jwtauthfilter ignorePaths
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // writeJson(response, HttpStatus.UNAUTHORIZED,
+            //         "Missing or invalid Authorization header",
+            //         request.getRequestURI());
+            // return; 
+            throw new InsufficientAuthenticationException("Missing or invalid Authorization header");
         }
 
+        
+            String token = authHeader.substring(7);
+            SecurityContextHolder.getContext()
+                    .setAuthentication(userAuthProvider.validateTokenStrongly(token));
+        
+
         filterChain.doFilter(request, response);
-
-    }
-
-    private void writeJson(HttpServletResponse response, HttpStatus httpStatus, String message, String path)
-            throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                httpStatus.value(),
-                httpStatus.getReasonPhrase(),
-                message,
-                Instant.now(),
-                path,
-                null);
-
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
     }
 
 }

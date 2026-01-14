@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './components/login-component/login-component';
-import { WelcomeComponent } from './components/welcome-component/welcome-component';
-import { NoPageComponent } from './components/no-page-component/no-page-component';
-import { RegisterComponent } from './components/register-component/register-component';
-import { RoleSelectComponent } from './components/role-select-component/role-select-component';
-import { AuthGuard } from './guards/auth-guard';
-import { GuestGuard } from './guards/guest-guard';
+import { LoginComponent } from './features/auth/login-component/login-component';
+import { WelcomeComponent } from './shared/components/welcome-component/welcome-component';
+import { NoPageComponent } from './shared/components/no-page-component/no-page-component';
+import { RegisterComponent } from './features/auth/register-component/register-component';
+import { RoleSelectComponent } from './shared/components/role-select-component/role-select-component';
+import { AuthGuard } from './core/guards/auth-guard';
+import { GuestGuard } from './core/guards/guest-guard';
 import { AuthDebug } from './debug/auth-debug/auth-debug';
-import { EventDashboardComponent } from './components/event-dashboard-component/event-dashboard-component';
-import { InvitationManagerComponent } from './components/invitation-manager-component/invitation-manager-component';
-import { AddSlotWizard } from './components/add-slot-wizard/add-slot-wizard';
-import { LeafletMapSelection } from './components/leaflet-map-selection/leaflet-map-selection';
+import { EventDashboardComponent } from './features/events/event-dashboard-component/event-dashboard-component';
+import { InvitationManagerComponent } from './features/invitations/invitation-manager-component/invitation-manager-component';
+import { AddSlotWizard } from './features/events/add-slot-wizard/add-slot-wizard';
+import { LeafletMapSelection } from './shared/components/leaflet-map-selection/leaflet-map-selection';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },

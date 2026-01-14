@@ -1,0 +1,91 @@
+<p>update-event-wizard works!</p>
+<button (click)="closeWizard()">close</button>
+<form class="row g-3 needs-validation" [formGroup]="updateEventForm" (ngSubmit)="onSubmit()">
+  <div class="col-md-4">
+    <label class="form-label">Event Name</label>
+    <input type="text" class="form-control" formControlName="eventName">
+    @if (updateEventForm.controls['eventName'].invalid && (updateEventForm.controls['eventName'].touched ||
+    updateEventForm.controls['eventName'].dirty)){
+    <div class="text-danger">
+      Event Name must be between 1 and 350 characters
+    </div>
+    }
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Event Description</label>
+    <input type="text" class="form-control" formControlName="eventDescription">
+    @if (updateEventForm.controls['eventDescription'].invalid && (updateEventForm.controls['eventDescription'].touched
+    ||
+    updateEventForm.controls['eventDescription'].dirty)){
+    <div class="text-danger">
+      Event Description must not exceed 2500 characters
+    </div>
+    }
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Event Location</label>
+    <input type="text" class="form-control" formControlName="eventLocationAddress">
+    @if (updateEventForm.controls['eventLocationAddress'].invalid &&
+    (updateEventForm.controls['eventLocationAddress'].touched ||
+    updateEventForm.controls['eventLocationAddress'].dirty)){
+    <div class="text-danger">
+      Event Location Name must be between 1 and 1000 characters
+    </div>
+    }
+  </div>
+  <div class="col-12">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="" formControlName="includePosition">
+      <label class="form-check-label">
+        Include Map Location
+      </label>
+    </div>
+  </div>
+  @if (updateEventForm.get('includePosition')?.value) {
+  <div>
+    <app-leaflet-map-selection [inputLatLng]="userLatLng" (selectedLocationEmit)="selectLocation($event)"
+      (clearLocationEmit)="clearLocation()"></app-leaflet-map-selection>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Latitude</label>
+    <input type="text" class="form-control" formControlName="latitude">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Longitude</label>
+    <input type="text" class="form-control" formControlName="longitude">
+  </div>
+  }
+  @if (updateEventForm.hasError('positionRequired') &&
+  (updateEventForm.controls['longitude'].touched|| updateEventForm.controls['longitude'].touched)){
+  <div class="text-danger">
+    Please select location.
+  </div>
+  }
+  <div class="col-md-4">
+    <label class="form-label">Event Type</label>
+    <select formControlName="slotType">
+      <option value="" disabled>Select slot type</option>
+      @for (type of slotTypeList; track $index ) {
+      <option [value]="type">
+        {{ type }}
+      </option>
+      }
+    </select>
+    @if (updateEventForm.controls['slotType'].invalid && (updateEventForm.controls['slotType'].touched ||
+    updateEventForm.controls['slotType'].dirty)){
+    <div class="text-danger">
+      Require selection
+    </div>
+    }
+    @if (eventData && eventData.slotCount>0) {
+    <div class="text-info">
+      Not Updateable when there is Slot under Event.
+    </div>
+    }
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit" [disabled]="updateEventForm.invalid">Submit form</button>
+  </div>
+
+</form>
