@@ -5,6 +5,6 @@ export class EventRequestDto {
     includePosition!:boolean;
     latitude?:number;
     longitude?:number;
-    slotType!: 'FIXED'|'FLEXIBLE'|'BUSINESS'|'TESTFAIL';
+    eventType!: 'FIXED'|'FLEXIBLE'|'BUSINESS'|'TESTFAIL';
 
 }

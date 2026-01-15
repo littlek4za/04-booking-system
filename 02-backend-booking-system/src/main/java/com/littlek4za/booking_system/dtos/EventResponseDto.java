@@ -11,7 +11,7 @@ public record EventResponseDto(
     Boolean includePosition,
     Double latitude,
     Double longitude,
-    String slotType,
+    String eventType,
     Instant createdAt,
     Instant updateAt
 ) {}

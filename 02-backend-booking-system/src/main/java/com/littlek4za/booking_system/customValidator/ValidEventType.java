@@ -4,11 +4,11 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = SlotTypeValidator.class)
+@Constraint(validatedBy = EventTypeValidator.class)
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ValidSlotType {
-    String message() default "Invalid slot type"; // will appear in fieldErrorList
+public @interface ValidEventType {
+    String message() default "Invalid event type"; // will appear in fieldErrorList
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

@@ -60,16 +60,16 @@
   }
   <div class="col-md-4">
     <label class="form-label">Event Type</label>
-    <select formControlName="slotType">
+    <select formControlName="eventType">
       <option value="" disabled>Select slot type</option>
-      @for (type of slotTypeList; track $index ) {
+      @for (type of eventTypeList; track $index ) {
       <option [value]="type">
         {{ type }}
       </option>
       }
     </select>
-    @if (eventForm.controls['slotType'].invalid && (eventForm.controls['slotType'].touched ||
-    eventForm.controls['slotType'].dirty)){
+    @if (eventForm.controls['eventType'].invalid && (eventForm.controls['eventType'].touched ||
+    eventForm.controls['eventType'].dirty)){
     <div class="text-danger">
       Require selection
     </div>

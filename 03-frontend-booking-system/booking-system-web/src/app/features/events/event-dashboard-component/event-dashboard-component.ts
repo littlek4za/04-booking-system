@@ -1,19 +1,16 @@
 import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { AddEventWizard } from '../add-event-wizard/add-event-wizard';
-import { AddSlotWizard } from '../add-slot-wizard/add-slot-wizard';
-import { EventResponseDto } from '../dtos/event-response-dto';
+import { AddSlotWizard } from '../../slots/add-slot-wizard/add-slot-wizard';
 import { EventService } from '../event-service';
 import { UpdateEventWizard } from '../update-event-wizard/update-event-wizard';
-import { extractFieldErrorMessage } from '@shared/utils/error-utils';
-import { EventWithSlotCountResponseDto } from '../dtos/event-with-slot-count-response-dto';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, startWith, switchMap, tap } from 'rxjs';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from "@angular/router";
 
 @Component({
-  selector: 'app-event-dashboard-component',
   standalone: true,
-  imports: [AddEventWizard, UpdateEventWizard, AddSlotWizard, DatePipe],
+  selector: 'app-event-dashboard-component',
+  imports: [AddEventWizard, UpdateEventWizard, DatePipe, RouterLink],
   templateUrl: './event-dashboard-component.html',
   styleUrl: './event-dashboard-component.css',
 })
@@ -70,11 +67,11 @@ export class EventDashboardComponent {
     });
   }
 
-  openCreateEventWizard() {
+  openAddEventWizard() {
     this.createEventWizard = true;
   }
 
-  closeCreateEventWizard() {
+  closeAddEventWizard() {
     this.createEventWizard = false;
   }
 
@@ -85,13 +82,5 @@ export class EventDashboardComponent {
 
   closeUpdateEventWizard() {
     this.updateEventWizard = false;
-  }
-
-  openSlotWizard() {
-    this.slotWizard = true;
-  }
-
-  closeSlotWizard() {
-    this.slotWizard = false;
   }
 }

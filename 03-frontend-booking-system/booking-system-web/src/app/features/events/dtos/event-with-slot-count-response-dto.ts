@@ -6,7 +6,7 @@ export class EventWithSlotCountResponseDto {
     includePosition!: boolean;
     latitude?: number;
     longitude?: number;
-    slotType!: 'FIXED' | 'FLEXIBLE' | 'BUSINESS';
+    eventType!: 'FIXED' | 'FLEXIBLE' | 'BUSINESS';
     createdAt!: string;
     updatedAt!: string;
     slotCount!: number;

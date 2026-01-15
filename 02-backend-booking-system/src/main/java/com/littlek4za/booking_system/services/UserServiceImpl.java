@@ -11,9 +11,9 @@ import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SignUpRequestDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
-import com.littlek4za.booking_system.mapper.DtoMapper;
 import com.littlek4za.booking_system.repos.RoleRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
+import com.littlek4za.booking_system.utils.DtoMapper;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException("Unknown user", HttpStatus.NOT_FOUND));
 
         if (passwordEncoder.matches(CharBuffer.wrap(loginRequestDto.password()), user.getPassword())) {
-            return dtoMapper.userToLoginResponseDto(user);
+            return dtoMapper.toLoginResponseDto(user);
         }
         throw new AppException("Invalid password", HttpStatus.BAD_REQUEST);
     }
@@ -62,7 +62,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        return dtoMapper.userToLoginResponseDto(savedUser);
+        return dtoMapper.toLoginResponseDto(savedUser);
     }
 
 }

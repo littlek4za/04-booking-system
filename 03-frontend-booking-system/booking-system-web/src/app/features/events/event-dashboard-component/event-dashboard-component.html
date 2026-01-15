@@ -1,12 +1,11 @@
 <p>event-dashboard-component works!</p>
 
-<button (click)="openCreateEventWizard()">+ Create Event</button>
-<button (click)="openSlotWizard()">+ Create Slot</button>
+<button (click)="openAddEventWizard()">+ Create Event</button>
 
 @if (createEventWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-add-event-wizard (close)="closeCreateEventWizard()"></app-add-event-wizard>
+  <app-add-event-wizard (close)="closeAddEventWizard()"></app-add-event-wizard>
 </div>
 }
 
@@ -16,14 +15,6 @@
   <app-update-event-wizard [eventId]="updateEventId" (close)="closeUpdateEventWizard()"></app-update-event-wizard>
 </div>
 }
-
-@if(slotWizard === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-  <app-add-slot-wizard (close)="closeSlotWizard()"></app-add-slot-wizard>
-</div>
-}
-
 
 <table class="table table-striped table-dark">
   <thead>
@@ -55,7 +46,7 @@
       } @else {
       <td>Location position not included</td>
       }
-      <td>{{event.slotType}}</td>
+      <td>{{event.eventType}}</td>
       <td>
         <button type="button" class="btn btn-outline-warning" (click)="openUpdateEventWizard(event.id)">
           Update
@@ -64,12 +55,15 @@
           Delete
         </button>
       </td>
-      <td>{{event.slotCount}}</td>
+      <td>
+        <div>{{event.slotCount}}</div>
+        <button type="button" [routerLink]="['/eventDashboard', event.id, 'slots']">Manage Slot</button>
+      </td>
       <td>{{event.updatedAt | date:'yyyy-MM-dd HH:mm:ss'}}</td>
     </tr>
     } @empty {
     <tr>
-      <td colspan="8" class="text-center">No events found.</td>
+      <td colspan="9" class="text-center">No events found.</td>
     </tr>
     }
   </tbody>

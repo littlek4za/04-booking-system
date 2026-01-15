@@ -13,13 +13,13 @@ import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
-import com.littlek4za.booking_system.mapper.DtoMapper;
-import com.littlek4za.booking_system.models.SlotType;
+import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.repos.projections.EventSlotCount;
 import com.littlek4za.booking_system.security.SecurityUtil;
+import com.littlek4za.booking_system.utils.DtoMapper;
 
 import jakarta.transaction.Transactional;
 
@@ -46,7 +46,7 @@ public class EventServiceImpl implements EventService {
         public EventResponseDto createEvent(EventRequestDto eRequestDto) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
                                 .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
-                SlotType slotTypeEnum = stringtoSlotType(eRequestDto.slotType());
+                EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
 
                 Event newEvent = new Event(
                                 user,
@@ -54,7 +54,7 @@ public class EventServiceImpl implements EventService {
                                 eRequestDto.eventDescription(),
                                 eRequestDto.eventLocationAddress(),
                                 eRequestDto.includePosition(),
-                                slotTypeEnum);
+                                eventTypeEnum);
 
                 if (Boolean.TRUE.equals(newEvent.getIncludePosition())) {
                         newEvent.setPosition(eRequestDto.latitude(), eRequestDto.longitude());
@@ -71,7 +71,7 @@ public class EventServiceImpl implements EventService {
                                 savedEvent.getIncludePosition(),
                                 savedEvent.getLatitude(),
                                 savedEvent.getLongitude(),
-                                savedEvent.getSlotType().toString(),
+                                savedEvent.getEventType().toString(),
                                 savedEvent.getCreatedAt(),
                                 savedEvent.getUpdatedAt());
         }
@@ -87,7 +87,7 @@ public class EventServiceImpl implements EventService {
                 Map<Long, Long> slotCountMap = slotCountList.stream()
                                 .collect(Collectors.toMap(EventSlotCount::getEventId, EventSlotCount::getSlotCount));
                 List<EventWithSlotCountReponseDto> eResponseDtoList = eventList.stream()
-                                .map(event -> dtoMapper.eventToEListResponseDto(event,
+                                .map(event -> dtoMapper.toEventWithSlotCountResponseDto(event,
                                                 slotCountMap.getOrDefault(event.getId(), 0L)))
                                 .toList();
                 return eResponseDtoList;
@@ -100,8 +100,8 @@ public class EventServiceImpl implements EventService {
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("No event found with this Id and User",
                                                 HttpStatus.NOT_FOUND));
-                Long slotCount = slotRepository.countSlotByEventId(eventId);
-                EventWithSlotCountReponseDto eResponseDtoList = dtoMapper.eventToEListResponseDto(event, slotCount);
+                long slotCount = slotRepository.countSlotByEventId(eventId);
+                EventWithSlotCountReponseDto eResponseDtoList = dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
                 return eResponseDtoList;
         }
 
@@ -114,7 +114,12 @@ public class EventServiceImpl implements EventService {
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("No event found with this Id and User",
                                                 HttpStatus.NOT_FOUND));
-                SlotType slotTypeEnum = stringtoSlotType(eRequestDto.slotType());
+                long slotCount = slotRepository.countSlotByEventId(eventId);
+                EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
+                if (slotCount > 0 && !event.getEventType().equals(eventTypeEnum)) {
+                        throw new AppException("Event type cannot be changed once slots exist",
+                                        HttpStatus.BAD_REQUEST);
+                }
 
                 event.setEventName(eRequestDto.eventName());
                 event.setEventDescription(eRequestDto.eventDescription());
@@ -122,7 +127,7 @@ public class EventServiceImpl implements EventService {
                 event.setIncludePosition(eRequestDto.includePosition());
                 event.setLatitude(eRequestDto.latitude());
                 event.setLongitude(eRequestDto.longitude());
-                event.setSlotType(slotTypeEnum);
+                event.setEventType(eventTypeEnum);
 
                 Event updatedEvent = eventRepository.save(event);
 
@@ -135,7 +140,7 @@ public class EventServiceImpl implements EventService {
                                 updatedEvent.getIncludePosition(),
                                 updatedEvent.getLatitude(),
                                 updatedEvent.getLongitude(),
-                                updatedEvent.getSlotType().toString(),
+                                updatedEvent.getEventType().toString(),
                                 updatedEvent.getCreatedAt(),
                                 updatedEvent.getUpdatedAt());
 
@@ -153,13 +158,13 @@ public class EventServiceImpl implements EventService {
                 return eventId;
         }
 
-        private SlotType stringtoSlotType(String slotName) {
-                SlotType slotTypeEnum;
+        private EventType stringtoEventType(String slotName) {
+                EventType eventTypeEnum;
                 try {
-                        slotTypeEnum = SlotType.valueOf(slotName);
+                        eventTypeEnum = EventType.valueOf(slotName);
                 } catch (IllegalArgumentException | NullPointerException ex) {
-                        throw new AppException("Invalid slot type", HttpStatus.BAD_REQUEST);
+                        throw new AppException("Invalid event type", HttpStatus.BAD_REQUEST);
                 }
-                return slotTypeEnum;
+                return eventTypeEnum;
         }
 }

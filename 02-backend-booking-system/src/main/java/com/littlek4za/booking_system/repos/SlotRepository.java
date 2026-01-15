@@ -16,6 +16,8 @@ public interface SlotRepository extends JpaRepository<Slot,Long>{
     List<EventSlotCount> countSlotForEvents(@Param("events") List<Event> events);
 
     @Query("SELECT COUNT (s) FROM Slot s WHERE s.event.id = :eventId")
-    Long countSlotByEventId(@Param("eventId") Long eventId);
+    long countSlotByEventId(@Param("eventId") Long eventId);
+
+    List<Slot> findByEvent(Event event);
 
 }

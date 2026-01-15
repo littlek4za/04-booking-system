@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { EventRequestDto } from '../dtos/event-request-dto';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SlotTypeModel } from '../dtos/slot-type-model';
+import { EventTypeModel } from '../dtos/event-type-model';
 import { CommonModule } from '@angular/common';
 import { LeafletMapSelection } from '../../../shared/components/leaflet-map-selection/leaflet-map-selection';
 import { EventService } from '../event-service';
@@ -19,14 +19,14 @@ export class AddEventWizard {
   newEvent!: EventRequestDto;
   eventForm!: FormGroup;
   step: number = 1;
-  slotTypeList: SlotTypeModel[] = Object.values(SlotTypeModel);
+  eventTypeList: EventTypeModel[] = Object.values(EventTypeModel);
   
   @Output() close = new EventEmitter<void>();
 
   constructor(private eventService:EventService) { }
 
   ngOnInit(): void {
-    this.slotTypeList = Object.values(SlotTypeModel);
+    this.eventTypeList = Object.values(EventTypeModel);
     this.initEventForm();
     this.listenIncludePositionChanges();
   }
@@ -56,7 +56,7 @@ export class AddEventWizard {
         Validators.min(-180),
         Validators.max(180)
       ]),
-      slotType: new FormControl<string | null>(null, [
+      eventType: new FormControl<string | null>(null, [
         Validators.required
       ])
     }, { validators: includePositionValidator });
@@ -102,7 +102,7 @@ export class AddEventWizard {
     eventRequestDto.includePosition = this.eventForm.value.includePosition;
     eventRequestDto.latitude = this.eventForm.value.latitude;
     eventRequestDto.longitude = this.eventForm.value.longitude;
-    eventRequestDto.slotType = this.eventForm.value.slotType;
+    eventRequestDto.eventType = this.eventForm.value.eventType;
 
     this.eventService.saveEventByUser(eventRequestDto).subscribe({
       next: (res) => {

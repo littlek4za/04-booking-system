@@ -3,14 +3,14 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.Arrays;
 
-import com.littlek4za.booking_system.models.SlotType;
+import com.littlek4za.booking_system.models.EventType;
 
-public class SlotTypeValidator implements ConstraintValidator<ValidSlotType, String> {
+public class EventTypeValidator implements ConstraintValidator<ValidEventType, String> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null) return false; // or true if optional
-        return Arrays.stream(SlotType.values())
+        return Arrays.stream(EventType.values())
                      .anyMatch(e -> e.name().equals(value));
     }
 }

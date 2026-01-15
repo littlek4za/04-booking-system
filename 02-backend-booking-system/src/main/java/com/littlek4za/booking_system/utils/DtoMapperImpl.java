@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.mapper;
+package com.littlek4za.booking_system.utils;
 
 import java.util.stream.Collectors;
 
@@ -6,14 +6,16 @@ import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.LoginResponseDto;
+import com.littlek4za.booking_system.dtos.SlotResponseDto;
 import com.littlek4za.booking_system.entities.Event;
+import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 
 @Component
 public class DtoMapperImpl implements DtoMapper {
 
     @Override
-    public LoginResponseDto userToLoginResponseDto(User user) {
+    public LoginResponseDto toLoginResponseDto(User user) {
         return LoginResponseDto.builder()
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
@@ -27,7 +29,7 @@ public class DtoMapperImpl implements DtoMapper {
     }
 
     @Override
-    public EventWithSlotCountReponseDto eventToEListResponseDto(Event event, Long slotCount) {
+    public EventWithSlotCountReponseDto toEventWithSlotCountResponseDto(Event event, Long slotCount) {
         return new EventWithSlotCountReponseDto(
                     event.getId(),
                     event.getEventName(),
@@ -36,11 +38,28 @@ public class DtoMapperImpl implements DtoMapper {
                     event.getIncludePosition(),
                     event.getLatitude(),
                     event.getLongitude(),
-                    event.getSlotType().toString(),
+                    event.getEventType().toString(),
                     event.getCreatedAt(),
                     event.getUpdatedAt(),
                     slotCount
                 );
+    }
+
+    @Override
+    public SlotResponseDto toSlotResponseDto(Slot slot) {
+        return new SlotResponseDto(
+                slot.getEvent().getId(),
+                slot.getId(),
+                slot.getSlotName(),
+                slot.getSlotDescription(),
+                slot.getSlotStartTime(),
+                slot.getSlotEndTime(),
+                slot.getMaxBook(),
+                slot.getSlotIntervalMinutes(),
+                slot.getWorkingDaysHours(),
+                slot.getCreatedAt(),
+                slot.getUpdatedAt()
+        );
     }
 
 }

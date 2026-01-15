@@ -10,7 +10,7 @@ public record EventWithSlotCountReponseDto(
     Boolean includePosition,
     Double latitude,
     Double longitude,
-    String slotType,
+    String eventType,
     Instant createdAt,
     Instant updatedAt,
     Long slotCount

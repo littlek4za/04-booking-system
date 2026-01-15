@@ -44,7 +44,7 @@ public class EventController {
     }
 
     @GetMapping(path = "{version}/events", version ="1")
-    public ResponseEntity<List<EventWithSlotCountReponseDto>> getEventsByAuthUserV1(@AuthenticationPrincipal AuthUserPrincipal userPrincipal) {
+    public ResponseEntity<List<EventWithSlotCountReponseDto>> getEventsV1(@AuthenticationPrincipal AuthUserPrincipal userPrincipal) {
         List<EventWithSlotCountReponseDto> eventList =eventService.getEvents();
         return ResponseEntity.status(HttpStatus.OK).body(eventList);
     }

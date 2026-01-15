@@ -9,8 +9,9 @@ import { GuestGuard } from './core/guards/guest-guard';
 import { AuthDebug } from './debug/auth-debug/auth-debug';
 import { EventDashboardComponent } from './features/events/event-dashboard-component/event-dashboard-component';
 import { InvitationManagerComponent } from './features/invitations/invitation-manager-component/invitation-manager-component';
-import { AddSlotWizard } from './features/events/add-slot-wizard/add-slot-wizard';
+import { AddSlotWizard } from './features/slots/add-slot-wizard/add-slot-wizard';
 import { LeafletMapSelection } from './shared/components/leaflet-map-selection/leaflet-map-selection';
+import { SlotDashboardComponent } from '@features/slots/slot-dashboard-component/slot-dashboard-component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
@@ -21,7 +22,7 @@ export const routes: Routes = [
     { path: 'eventDashboard', component: EventDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'invitation', component: InvitationManagerComponent},
     { path: 'mapSelection', component: LeafletMapSelection},
-    { path: 'addSlot', component: AddSlotWizard, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
+    { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }
 ];

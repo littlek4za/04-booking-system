@@ -9,7 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.littlek4za.booking_system.models.SlotType;
+import com.littlek4za.booking_system.models.EventType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -63,8 +63,8 @@ public class Event {
     private Double longitude;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "slot_type", nullable = false)
-    private SlotType slotType;
+    @Column(name = "event_type", nullable = false)
+    private EventType eventType;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -82,13 +82,13 @@ public class Event {
     }
 
     public Event(User user, String eventName, String eventDescription, String eventLocationAddress,
-            Boolean includePosition, SlotType slotType) {
+            Boolean includePosition, EventType eventType) {
         this.user = user;
         this.eventName = eventName;
         this.eventDescription = eventDescription;
         this.eventLocationAddress = eventLocationAddress;
         this.includePosition = includePosition;
-        this.slotType = slotType;
+        this.eventType = eventType;
     }
 
     public void setPosition(Double lat, Double lon) {

@@ -6,7 +6,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { includePositionValidator } from '@shared/validators/custom-validator';
 import { CommonModule } from '@angular/common';
 import { LeafletMapSelection } from '@shared/components/leaflet-map-selection/leaflet-map-selection';
-import { SlotTypeModel } from '../dtos/slot-type-model';
+import { EventTypeModel } from '../dtos/event-type-model';
 import { EventRequestDto } from '../dtos/event-request-dto';
 
 @Component({
@@ -23,7 +23,7 @@ export class UpdateEventWizard implements OnInit, OnChanges {
 
   eventData!: EventWithSlotCountResponseDto | null;
   updateEventForm!: FormGroup;
-  slotTypeList: SlotTypeModel[] = Object.values(SlotTypeModel);
+  eventTypeList: EventTypeModel[] = Object.values(EventTypeModel);
   @ViewChild(LeafletMapSelection) mapComponent!: LeafletMapSelection;
   userLatLng?: L.LatLngExpression;
 
@@ -64,7 +64,7 @@ export class UpdateEventWizard implements OnInit, OnChanges {
         Validators.min(-180),
         Validators.max(180)
       ]),
-      slotType: new FormControl<string | null>(null, [
+      eventType: new FormControl<string | null>(null, [
         Validators.required
       ])
     }, { validators: includePositionValidator });
@@ -77,7 +77,7 @@ export class UpdateEventWizard implements OnInit, OnChanges {
         console.log('GET Event Success', res);
         this.eventData = res;
         this.prefillForm(this.eventData);
-        this.updateSlotTypeControl();
+        this.updateEventTypeControl();
         if (this.eventData?.includePosition) {
           this.userLatLng = [this.eventData.latitude!, this.eventData.longitude!];
         }
@@ -107,15 +107,15 @@ export class UpdateEventWizard implements OnInit, OnChanges {
       includePosition: event.includePosition,
       latitude: event.latitude,
       longitude: event.longitude,
-      slotType: event.slotType,
+      eventType: event.eventType,
     })
   }
 
-  private updateSlotTypeControl() {
+  private updateEventTypeControl() {
     if (this.eventData?.slotCount === 0) {
-      this.updateEventForm.get('slotType')?.enable();
+      this.updateEventForm.get('eventType')?.enable();
     } else {
-      this.updateEventForm.get('slotType')?.disable();
+      this.updateEventForm.get('eventType')?.disable();
     }
   }
 
@@ -151,8 +151,8 @@ export class UpdateEventWizard implements OnInit, OnChanges {
     eventRequestDto.includePosition = this.updateEventForm.value.includePosition;
     eventRequestDto.latitude = this.updateEventForm.value.latitude;
     eventRequestDto.longitude = this.updateEventForm.value.longitude;
-    this.updateEventForm.get('slotType')?.enable();
-    eventRequestDto.slotType = this.updateEventForm.value.slotType;
+    this.updateEventForm.get('eventType')?.enable();
+    eventRequestDto.eventType = this.updateEventForm.value.eventType;
 
     this.eventService.putEventById(this.eventId, eventRequestDto).subscribe({
       next: (res) => {

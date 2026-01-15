@@ -34,7 +34,7 @@ CREATE TABLE events (
 	include_position BOOLEAN NOT NULL DEFAULT FALSE, -- NEW
 	latitude DOUBLE PRECISION, -- NEW
 	longitude DOUBLE PRECISION, -- NEW
-	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
+	event_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );
@@ -47,9 +47,11 @@ CREATE TABLE slots (
 	slot_start_time TIMESTAMPTZ NOT NULL,
 	slot_end_time TIMESTAMPTZ NOT NULL,
 	max_book INT DEFAULT 1,
-	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' -- Removed
-	slot_interval_minutes INT,
+	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS'
+	slot_interval_minutes INT NOT NULL DEFAULT 0,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	working_days_hours JSONB,
 	CONSTRAINT unique_event_slot_name UNIQUE (event_id, slot_name)
 );
 
