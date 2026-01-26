@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.customValidator;
+package com.littlek4za.booking_system.validators;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.*;

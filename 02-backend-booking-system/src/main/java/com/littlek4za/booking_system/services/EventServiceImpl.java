@@ -62,18 +62,7 @@ public class EventServiceImpl implements EventService {
 
                 Event savedEvent = eventRepository.save(newEvent);
 
-                return new EventResponseDto(
-                                savedEvent.getId(),
-                                savedEvent.getUser().getUsername(),
-                                savedEvent.getEventName(),
-                                savedEvent.getEventDescription(),
-                                savedEvent.getEventLocationAddress(),
-                                savedEvent.getIncludePosition(),
-                                savedEvent.getLatitude(),
-                                savedEvent.getLongitude(),
-                                savedEvent.getEventType().toString(),
-                                savedEvent.getCreatedAt(),
-                                savedEvent.getUpdatedAt());
+                return dtoMapper.toEventResponseDto(savedEvent);
         }
 
         @Override
@@ -101,8 +90,8 @@ public class EventServiceImpl implements EventService {
                                 .orElseThrow(() -> new AppException("No event found with this Id and User",
                                                 HttpStatus.NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
-                EventWithSlotCountReponseDto eResponseDtoList = dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
-                return eResponseDtoList;
+
+                return dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
         }
 
         @Override
@@ -131,18 +120,7 @@ public class EventServiceImpl implements EventService {
 
                 Event updatedEvent = eventRepository.save(event);
 
-                return new EventResponseDto(
-                                updatedEvent.getId(),
-                                updatedEvent.getUser().getUsername(),
-                                updatedEvent.getEventName(),
-                                updatedEvent.getEventDescription(),
-                                updatedEvent.getEventLocationAddress(),
-                                updatedEvent.getIncludePosition(),
-                                updatedEvent.getLatitude(),
-                                updatedEvent.getLongitude(),
-                                updatedEvent.getEventType().toString(),
-                                updatedEvent.getCreatedAt(),
-                                updatedEvent.getUpdatedAt());
+                return dtoMapper.toEventResponseDto(updatedEvent);
 
         }
 
@@ -151,10 +129,14 @@ public class EventServiceImpl implements EventService {
         public Long deleteEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
                                 .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
-                Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND));
-                this.eventRepository.delete(event);
+
+                int deleted = eventRepository.deleteByIdAndUserId(eventId, user.getId());
+
+                if(deleted == 0) {
+                        throw new AppException("No event found with this Id and User",
+                                                HttpStatus.NOT_FOUND);
+                }
+
                 return eventId;
         }
 

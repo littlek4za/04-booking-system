@@ -1,18 +1,21 @@
 package com.littlek4za.booking_system.entities;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.littlek4za.booking_system.models.TimeRange;
-import com.littlek4za.booking_system.utils.WorkingDayHoursConverter;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,11 +27,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @Table(name = "slots",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"event_id", "slot_name"})
+        @UniqueConstraint(columnNames = {"event_id", "id"})
     }
 )
 public class Slot {
@@ -49,17 +53,20 @@ public class Slot {
     @Column(name = "slot_description")
     private String slotDescription;
 
-    @Column(name = "slot_start_time", nullable = false)
+    @Column(name = "slot_start_time")
     private Instant slotStartTime;
 
-    @Column(name = "slot_end_time", nullable = false)
+    @Column(name = "slot_end_time")
     private Instant slotEndTime;
 
     @Column(name = "max_book", nullable = false)
-    private int maxBook = 1;
+    private Integer maxBook;
 
-    @Column(name = "slot_interval_minutes", nullable = false)
-    private int slotIntervalMinutes = 0;
+    @Column(name = "slot_interval_minutes")
+    private Integer slotIntervalMinutes;
+
+    @Column(name = "slot_frequency_interval_minutes")
+    private Integer slotFrequencyIntervalMinutes;
 
         //Working Days Hours as Map<DayOfWeek, TimeRang>
 //    {
@@ -71,9 +78,10 @@ public class Slot {
 //   "6": [], 
 //   "0": []
 //   }
-    @Convert(converter = WorkingDayHoursConverter.class)
+    // @Convert(converter = WorkingDayHoursConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "working_days_hours",columnDefinition = "jsonb")
-    private Map<Integer, TimeRange> workingDaysHours;
+    private Map<Integer, List<TimeRange>> workingDaysHours;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -87,7 +95,7 @@ public class Slot {
     }
 
     public Slot(Event event, String slotName, String slotDescription, Instant slotStartTime, Instant slotEndTime,
-            int maxBook, int slotIntervalMinutes, Map<Integer, TimeRange> workingDaysHours) {
+            Integer maxBook, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes, Map<Integer, List<TimeRange>> workingDaysHours) {
         this.event = event;
         this.slotName = slotName;
         this.slotDescription = slotDescription;
@@ -95,8 +103,7 @@ public class Slot {
         this.slotEndTime = slotEndTime;
         this.maxBook = maxBook;
         this.slotIntervalMinutes = slotIntervalMinutes;
+        this.slotFrequencyIntervalMinutes = slotFrequencyIntervalMinutes;
         this.workingDaysHours = workingDaysHours;
     }
-
-
 }

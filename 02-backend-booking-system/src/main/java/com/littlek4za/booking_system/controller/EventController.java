@@ -38,7 +38,7 @@ public class EventController {
 
 
     @PostMapping(path= "{version}/events", version ="1")
-    public ResponseEntity<EventResponseDto> createEventV1(@AuthenticationPrincipal AuthUserPrincipal userAuthPrincipal, @RequestBody @Valid EventRequestDto eventRequestDto){
+    public ResponseEntity<EventResponseDto> createEventV1(@AuthenticationPrincipal AuthUserPrincipal userAuthPrincipal, @Valid @RequestBody EventRequestDto eventRequestDto){
         EventResponseDto eResponseDto = eventService.createEvent(eventRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(eResponseDto);
     }
@@ -50,13 +50,13 @@ public class EventController {
     }
 
     @GetMapping(path = "{version}/events/{id}", version="1")
-    public ResponseEntity<EventWithSlotCountReponseDto> getEventByIdV1(@PathVariable("id")Long eventId, @AuthenticationPrincipal AuthUserPrincipal userAuthPrincipal){
+    public ResponseEntity<EventWithSlotCountReponseDto> getEventByIdV1(@PathVariable("id")Long eventId){
         EventWithSlotCountReponseDto event = eventService.getEventById(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(event);
     }
 
     @PutMapping(path = "{version}/events/{id}", version="1")
-    public ResponseEntity<EventResponseDto> putEventByIdV1(@PathVariable("id") Long eventId, @AuthenticationPrincipal AuthUserPrincipal userAuthPrincipal, @RequestBody @Valid EventRequestDto eventRequestDto){
+    public ResponseEntity<EventResponseDto> putEventByIdV1(@PathVariable("id") Long eventId, @RequestBody @Valid EventRequestDto eventRequestDto){
         EventResponseDto eResponseDto = eventService.putEventById(eventId,eventRequestDto);
         return ResponseEntity.status(HttpStatus.OK).body(eResponseDto);
     }

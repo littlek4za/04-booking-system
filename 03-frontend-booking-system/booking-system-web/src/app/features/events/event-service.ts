@@ -15,7 +15,7 @@ export class EventService {
 
   private refreshTrigger$ = new BehaviorSubject<void> (undefined) ;
   eventList$ = this.refreshTrigger$.pipe( // become observable
-    switchMap(()=>this.getEventsByUser().pipe(
+    switchMap(()=>this.getEvents().pipe(
       tap(res => console.log('GET Event List succeed', res)),
       catchError(err => {
         console.log('GET Eventlist failed');
@@ -26,11 +26,11 @@ export class EventService {
 
   constructor(private httpClient: HttpClient, private router: Router) { }
 
-  saveEventByUser(eventRequestDto: EventRequestDto): Observable<EventResponseDto> {
+  createEvent(eventRequestDto: EventRequestDto): Observable<EventResponseDto> {
     return this.httpClient.post<EventResponseDto>(this.eventsUrl, eventRequestDto);
   }
 
-  getEventsByUser(): Observable<EventWithSlotCountResponseDto[]> {
+  getEvents(): Observable<EventWithSlotCountResponseDto[]> {
     return this.httpClient.get<EventWithSlotCountResponseDto[]>(this.eventsUrl);
   }
 

@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.utils;
+package com.littlek4za.booking_system.entities.converters;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,10 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.littlek4za.booking_system.models.TimeRange;
 
 import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
+@Converter
 public class WorkingDayHoursConverter implements AttributeConverter<Map<Integer,List<TimeRange>>, String>{
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public WorkingDayHoursConverter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public String convertToDatabaseColumn(Map<Integer, List<TimeRange>> attribute) {

@@ -1,13 +1,13 @@
 <p>slot-dashboard-component works!</p>
 
-<button type="button" (click)="openAddSlotWizard()">+ Create Slot</button>
+<button type="button" (click)="openCreateSlotWizard()">+ Create Slot</button>
 <button type="button" [routerLink]="['/eventDashboard']">Back to DashBoard</button>
 
-
-@if(slotWizard === true) {
+@if(openSlotWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-add-slot-wizard [eventId]="eventId" [eventType]="eventType" (close)="closeAddSlotWizard()"></app-add-slot-wizard>
+    <app-add-slot-wizard [eventId]="eventId" [eventType]="eventType" [mode]="modeSlotWizard" [slotId]="slotId"
+        (close)="closeSlotWizard()"></app-add-slot-wizard>
 </div>
 }
 
@@ -15,14 +15,45 @@
     <thead>
         <tr>
             <th scope="col">#</th>
-            <th scope="col">Event</th>
+            <th scope="col">Slot Name</th>
             <th scope="col">Description</th>
-            <th scope="col">Location Address</th>
-            <th scope="col">Location Link</th>
-            <th scope="col">Event Type</th>
-            <th scope="col">Action</th>
-            <th scope="col">Slot Available</th>
+            <th scope="col">Number of Attendee (TODO include booking count)</th>
+            @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
+            <th scope="col">Attendee Slot Booking Interval</th>
+            }
             <th scope="col">Last Updated</th>
+            <th scope="col">Action</th>
         </tr>
     </thead>
+    <tbody>
+        @for (slot of slotList(); track slot.id; let i = $index) {
+        <tr>
+            <th scope="row">{{i+1}}</th>
+            <td>{{slot.slotName}}</td>
+            <td>{{slot.slotDescription}}</td>
+            <td>{{slot.maxBook}}</td>
+            @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
+            <td>{{slot.slotIntervalMinutes}}</td>
+            }
+            <td>{{slot.updatedAt| date:'yyyy-MM-dd HH:mm:ss z'}}</td>
+            <td>
+                <div>slot id: {{slot.id}}</div>
+                <button type="button" class="btn btn-outline-info">
+                    View TimeTable
+                </button>
+                <button type="button" class="btn btn-outline-warning" (click)="openUpdateSlotWizard(slot.id)">
+                    Update
+                </button>
+                <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSlot(slot.id)">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        }
+        @empty {
+        <tr>
+            <td colspan="9" class="text-center">No slot found.</td>
+        </tr>
+        }
+    </tbody>
 </table>

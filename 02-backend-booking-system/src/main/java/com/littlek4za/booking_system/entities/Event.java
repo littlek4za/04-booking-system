@@ -24,6 +24,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -112,6 +114,14 @@ public class Event {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    @PrePersist
+    @PreUpdate
+    void validateInvariant(){
+        if (Boolean.TRUE.equals(includePosition) && (latitude == null || longitude== null)){
+            throw new IllegalStateException("latitude and longitude is requred when includePosition is true");
+        }
     }
 
 }

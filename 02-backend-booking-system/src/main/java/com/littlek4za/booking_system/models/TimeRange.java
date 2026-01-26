@@ -28,6 +28,4 @@ public class TimeRange {
     public void setClose(String close) {
         this.close = close;
     }
-
-    
 }

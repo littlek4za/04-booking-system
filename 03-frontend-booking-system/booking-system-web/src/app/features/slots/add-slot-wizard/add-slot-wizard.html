@@ -1,7 +1,312 @@
 <p>add-slot-wizard works!</p>
 <button (click)="closeWizard()">close</button>
+<div>
+    Event Type: {{eventType}}
+</div>
 
-<div>Test123</div>
-<div>Test123</div>
-<div>Test123</div>
-<div>Test123</div>
+<form class="row g-3 needs-validation" [formGroup]="addSlotForm" (ngSubmit)="onSubmit()">
+    @if (eventType == EventType.FIXED ||eventType == EventType.FLEXIBLE ||eventType == EventType.BUSINESS ) {
+    <div class="col-md-4">
+        <label class="form-label">Slot Name</label>
+        <input type="text" class="form-control" formControlName="slotName">
+        @if (addSlotForm.controls['slotName'].invalid && (addSlotForm.controls['slotName'].touched ||
+        addSlotForm.controls['slotName'].dirty)){
+        <div class="text-danger">
+            Slot Name must be between 1 and 350 characters
+        </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Slot Description</label>
+        <input type="text" class="form-control" formControlName="slotDescription">
+        @if (addSlotForm.controls['slotDescription'].invalid && (addSlotForm.controls['slotDescription'].touched ||
+        addSlotForm.controls['slotDescription'].dirty)){
+        <div class="text-danger">
+            Slot Description must not exceed 2500 characters
+        </div>
+        }
+    </div>
+    }
+
+    @if (eventType == EventType.FIXED) {
+    <div class="col-md-4">
+        <label class="form-label">Max Attendee</label>
+        <input type="number" class="form-control" formControlName="maxBook">
+        @if (addSlotForm.controls['maxBook'].invalid && (addSlotForm.controls['maxBook'].touched ||
+        addSlotForm.controls['maxBook'].dirty)){
+        <div class="text-danger">
+            Attendee must be at least 1 person.
+        </div>
+        }
+    </div>
+    }
+
+    @if (eventType == EventType.FLEXIBLE ||eventType == EventType.BUSINESS) {
+    <div class="col-md-4">
+        <label class="form-label">Select Slot Interval (minutes)</label>
+
+        <select class="form-select" formControlName="intervalType">
+            <option value="" disabled>
+                Select Slot Interval (minutes)
+            </option>
+            @for (preset of SLOT_INTERVAL_PRESETS; track $index) {
+            <option [value]="preset">{{preset}} minutes</option>
+            }
+            <option value="customInterval">Custom</option>
+        </select>
+        @if(addSlotForm.get('intervalType')?.hasError('required') && (addSlotForm.get('intervalType')?.touched ||
+        addSlotForm.get('intervalType')?.dirty)) {
+        <div class="text-danger">
+            Please select slot interval
+        </div>
+        }
+        @if (showCustomInterval) {
+        <div class="row mt-2">
+            <div class="col-md-4">
+                <input type="number" class="form-control" formControlName="slotIntervalMinutes"
+                    placeholder="Enter minutes (e.g. 45)" [min]="5" [step]="5" />
+            </div>
+            @if (addSlotForm.get('slotIntervalMinutes')?.hasError('notDivisibleBy5')) {
+            <div class="text-danger">
+                Interval must be divisible by 5 minutes
+            </div>
+            }
+            @if (eventType == EventType.FLEXIBLE && addSlotForm.get('slotIntervalMinutes')?.hasError('min')) {
+            <div class="text-danger">
+                Interval must be minimum of
+                {{
+                addSlotForm.get('slotIntervalMinutes')?.errors?.['min']?.min
+                }}
+                minutes
+            </div>
+            }
+            @if (eventType == EventType.BUSINESS && addSlotForm.get('slotIntervalMinutes')?.hasError('min')) {
+            <div class="text-danger">
+                Interval must be minimum of
+                {{
+                addSlotForm.get('slotIntervalMinutes')?.errors?.['min']?.min
+                }}
+                minutes
+            </div>
+            }
+            @if (eventType == EventType.BUSINESS && addSlotForm.get('slotIntervalMinutes')?.hasError('max')) {
+            <div class="text-danger">
+                Interval must not exist of
+                {{
+                addSlotForm.get('slotIntervalMinutes')?.errors?.['max']?.max
+                }}
+                minutes
+            </div>
+            }
+            @if(addSlotForm.get('slotIntervalMinutes')?.hasError('required') &&
+            (addSlotForm.get('slotIntervalMinutes')?.touched ||
+            addSlotForm.get('slotIntervalMinutes')?.dirty)) {
+            <div class="text-danger">
+                Please enter custom value
+            </div>
+            }
+        </div>
+        }
+    </div>
+    }
+
+
+    @if (eventType == EventType.BUSINESS) {
+    <div class="col-md-4">
+        <label class="form-label">Select Slot Frequency for Booking (minutes)</label>
+        <select class="form-select" formControlName="frequencyType">
+            <option value="" disabled>
+                Select Slot Frequency (minutes)
+            </option>
+            @for (frequency of SLOT_FREQUENCY_PRESETS; track $index) {
+            <option [value]="frequency">{{frequency}} minutes</option>
+            }
+            <option value="customFreq">Custom</option>
+        </select>
+        @if(addSlotForm.get('frequencyType')?.hasError('required') && (addSlotForm.get('frequencyType')?.touched ||
+        addSlotForm.get('frequencyType')?.dirty)) {
+        <div class="text-danger">
+            Please select slot frequency for booking
+        </div>
+        }
+        @if (showCustomFreq) {
+        <div class="row mt-2">
+            <div class="col-md-4">
+                <input type="number" class="form-control" formControlName="slotFrequencyIntervalMinutes"
+                    placeholder="Enter minutes (e.g. 45)" [min]="5" [step]="1" />
+            </div>
+            @if (addSlotForm.get('slotFrequencyIntervalMinutes')?.hasError('min') ||
+            addSlotForm.get('slotFrequencyIntervalMinutes')?.hasError('max')) {
+            <div class="text-danger">
+                Frequency interval must between
+                {{
+                addSlotForm.get('slotFrequencyIntervalMinutes')?.errors?.['min']?.min
+                }}
+                minutes to
+                {{
+                addSlotForm.get('slotFrequencyIntervalMinutes')?.errors?.['max']?.max
+                }}
+                minutes.
+            </div>
+            }
+            @if(addSlotForm.get('slotFrequencyIntervalMinutes')?.hasError('required') &&
+            (addSlotForm.get('slotFrequencyIntervalMinutes')?.touched ||
+            addSlotForm.get('slotFrequencyIntervalMinutes')?.dirty)) {
+            <div class="text-danger">
+                Please enter custom value
+            </div>
+            }
+        </div>
+        }
+    </div>
+    }
+
+    @if (eventType == EventType.FIXED ||eventType == EventType.FLEXIBLE) {
+    <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Select Start Date</mat-label>
+
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+
+            <mat-datepicker-toggle matSuffix [for]="startPicker">
+            </mat-datepicker-toggle>
+
+            <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Start Time</mat-label>
+
+        <mat-select formControlName="startTime">
+            <mat-option *ngFor="let t of timeOption" [value]="t">
+                {{ t }}
+            </mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <div class="col-md-4">
+        <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Select End Date</mat-label>
+
+            <input matInput [matDatepicker]="endPicker" [min]="addSlotForm.value.startDate" formControlName="endDate" />
+
+            <mat-datepicker-toggle matSuffix [for]="endPicker">
+            </mat-datepicker-toggle>
+
+            <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-100">
+        <mat-label>End Time</mat-label>
+
+        <mat-select formControlName="endTime">
+            @for (t of endTimeOptionsWithState; track $index) {
+            <mat-option [value]="t.value" [disabled]="t.disabled">
+                {{ t.value }}
+            </mat-option>
+            }
+        </mat-select>
+        @if (eventType == EventType.FLEXIBLE &&
+        (!addSlotForm.get('startDate')?.value ||
+        !addSlotForm.get('startTime')?.value||
+        !addSlotForm.get('endDate')?.value ||
+        !addSlotForm.get('slotIntervalMinutes')?.value) &&
+        addSlotForm.controls['endTime'].touched) {
+        <mat-hint class="text-danger">
+            Please select Start Date, Start Time, End Date and Slot Interval first.
+        </mat-hint>
+        }
+        @if (eventType == EventType.FIXED &&
+        (!addSlotForm.get('startDate')?.value ||
+        !addSlotForm.get('startTime')?.value ||
+        !addSlotForm.get('endDate')?.value) &&
+        addSlotForm.controls['endTime'].touched) {
+        <mat-hint class="text-danger">
+            Please select Start Date, Start Time and End Date first.
+        </mat-hint>
+        }
+
+    </mat-form-field>
+
+    @if(addSlotForm.hasError('dateTimeRangeInvalid') && (addSlotForm.controls['endDate'].touched ||
+    addSlotForm.controls['endTime'].dirty)){
+    <div class="text-danger">
+        End date & time must be after start date & time
+    </div>
+    }
+
+    @if(addSlotForm.hasError('slotIntervalInvalid') && (addSlotForm.controls['endDate'].touched ||
+    addSlotForm.controls['endTime'].dirty)){
+    <div class="text-danger">
+        End time must be at least {{ addSlotForm.value.slotIntervalMinutes }} minutes after start time
+    </div>
+    }
+    }
+
+    @if (eventType == EventType.BUSINESS){
+    <div class="col-md-4">
+        <div [formGroup]="workingDaysHoursForm">
+            <div formArrayName="days">
+                <div class="row mt-2">
+                    @for (day of getDaysArray().controls; track i; let i = $index) {
+                    <div [formGroupName]="i">
+                        <label>
+                            <input type="checkbox" formControlName="enabled" />
+                            <label class="form-label">{{dayNames[i]}}</label>
+                        </label>
+                        <div [hidden]="!day.get('enabled')?.value">
+                            <div formArrayName="intervals">
+                                @for (interval of getIntervalsArray(i).controls; track j; let j = $index) {
+                                <div [formGroupName]="j">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" formControlName="open" />
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" formControlName="close" />
+                                    <button type="button" (click)="removeIntervalGroup(i, j)">Delete</button>
+                                </div>
+                                @if (getIntervalGroup(i,j).hasError('timeRangeInvalid') &&
+                                (getIntervalGroupControl(i,j,'open')?.touched ||
+                                getIntervalGroupControl(i,j,'open')?.dirty) &&
+                                (getIntervalGroupControl(i,j,'close')?.touched ||
+                                getIntervalGroupControl(i,j,'close')?.dirty)) {
+                                <div class="text-danger">
+                                    End time must be later than start time
+                                </div>
+                                }
+                                @if ((getIntervalGroupControl(i,j,'open')?.hasError('required') &&
+                                (getIntervalGroupControl(i,j,'open')?.touched ||
+                                getIntervalGroupControl(i,j,'open')?.dirty)) ||
+                                (getIntervalGroupControl(i,j,'close')?.hasError('required') &&
+                                (getIntervalGroupControl(i,j,'close')?.touched ||
+                                getIntervalGroupControl(i,j,'close')?.dirty))) {
+                                <div class="text-danger">
+                                    Start Time and End Time is required
+                                </div>
+                                }
+                                }
+                                <button type="button" (click)="addIntervalGroup(i)">+ Add Interval</button>
+                            </div>
+                        </div>
+                        @if(getDaysArray().at(i).hasError('timeOverlapError')&&
+                        (getDaysArray().at(i).touched ||
+                        getDaysArray().at(i).dirty)){
+                        <div class="text-danger">
+                            Start Time and End Time of both interval cannot overlap.
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </div>
+
+</form>

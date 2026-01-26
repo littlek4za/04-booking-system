@@ -1,6 +1,5 @@
 import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { AddEventWizard } from '../add-event-wizard/add-event-wizard';
-import { AddSlotWizard } from '../../slots/add-slot-wizard/add-slot-wizard';
 import { EventService } from '../event-service';
 import { UpdateEventWizard } from '../update-event-wizard/update-event-wizard';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -55,7 +54,7 @@ export class EventDashboardComponent {
     // }
   }
 
-  deleteEventById(eventId: number) {
+  private deleteEventById(eventId: number) {
     this.eventService.deleteEventById(eventId).subscribe({
       next: (res) => {
         console.log('Delete Event Succesfully');

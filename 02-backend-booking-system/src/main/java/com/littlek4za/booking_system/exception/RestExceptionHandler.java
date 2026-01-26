@@ -57,5 +57,23 @@ public class RestExceptionHandler {
                                                 request.getRequestURI(),
                                                 fieldErrorList));
         }
+
+        @ExceptionHandler(IllegalStateException.class)
+        public ResponseEntity<ErrorResponseDto> handleIllegalState(IllegalStateException ex, HttpServletRequest request) {
+                log.warn(
+                                "REST EXCEPTION HANDLER error: status={}, error={}, message={}, path={}",
+                                HttpStatus.BAD_REQUEST,
+                                HttpStatus.BAD_REQUEST.value(),
+                                ex.getMessage(),
+                                request.getRequestURI());
+                return ResponseEntity
+                                .status(HttpStatus.BAD_REQUEST)
+                                .body(ErrorResponseDto.create(
+                                        HttpStatus.BAD_REQUEST,
+                                        ex.getMessage(),
+                                        request.getRequestURI(),
+                                        null
+                                        ));
+        }
        
 }

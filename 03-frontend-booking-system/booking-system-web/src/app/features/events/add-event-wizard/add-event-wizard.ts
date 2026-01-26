@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { EventRequestDto } from '../dtos/event-request-dto';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EventTypeModel } from '../dtos/event-type-model';
@@ -20,6 +20,7 @@ export class AddEventWizard {
   eventForm!: FormGroup;
   step: number = 1;
   eventTypeList: EventTypeModel[] = Object.values(EventTypeModel);
+  @Input() mode!: 'CREATE' | 'UPDATE';
   
   @Output() close = new EventEmitter<void>();
 
@@ -104,7 +105,7 @@ export class AddEventWizard {
     eventRequestDto.longitude = this.eventForm.value.longitude;
     eventRequestDto.eventType = this.eventForm.value.eventType;
 
-    this.eventService.saveEventByUser(eventRequestDto).subscribe({
+    this.eventService.createEvent(eventRequestDto).subscribe({
       next: (res) => {
         console.log('Event Created Successfully.', res);
         alert("Event Created Sucessfully.");

@@ -1,9 +1,13 @@
+import { TimeRange } from "@shared/model/time-range";
+
 export class SlotRequestDto {
     eventId!:number;
     slotName!: string;
     slotDescription?:string;
-    slotStartTime!: string;
-    slotEndTime!: string;
-    maxBook!: number;
-    slotIntervalMinutes!: number;
+    slotStartTime!: string; //ISO string
+    slotEndTime!: string; //ISO string
+    maxBook?: number;
+    slotIntervalMinutes?: number;
+    slotFrequencyIntervalMinutes?: number;
+    workingDaysHours?: Record<number,TimeRange[]>;
 }

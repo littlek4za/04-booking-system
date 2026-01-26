@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.repos;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,5 +20,9 @@ public interface SlotRepository extends JpaRepository<Slot,Long>{
     long countSlotByEventId(@Param("eventId") Long eventId);
 
     List<Slot> findByEvent(Event event);
+
+    int deleteByIdAndEventId(Long id, Long eventId);
+
+    Optional<Slot> findByIdAndEventId (Long slotId, Long eventId);
 
 }

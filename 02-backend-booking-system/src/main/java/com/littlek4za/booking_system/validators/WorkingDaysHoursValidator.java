@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.customValidator;
+package com.littlek4za.booking_system.validators;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.models.TimeRange;
 
+@Component
 public class WorkingDaysHoursValidator {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
@@ -76,8 +78,4 @@ public class WorkingDaysHoursValidator {
             );
         }
     }
-
-
-    
-
 }

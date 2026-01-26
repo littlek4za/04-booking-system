@@ -36,7 +36,7 @@ CREATE TABLE events (
 	longitude DOUBLE PRECISION, -- NEW
 	event_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
+	updated_at TIMESTAMPTZ NOT NULL 
 );
 
 CREATE TABLE slots (
@@ -44,15 +44,15 @@ CREATE TABLE slots (
 	event_id BIGINT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
 	slot_name TEXT NOT NULL,
 	slot_description TEXT,
-	slot_start_time TIMESTAMPTZ NOT NULL,
-	slot_end_time TIMESTAMPTZ NOT NULL,
-	max_book INT DEFAULT 1,
-	slot_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS'
-	slot_interval_minutes INT NOT NULL DEFAULT 0,
+	slot_start_time TIMESTAMPTZ,
+	slot_end_time TIMESTAMPTZ,
+	max_book INT NOT NULL DEFAULT 1,
+	slot_interval_minutes INT,
+	slot_frequency_interval_minutes INT,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMPTZ NOT NULL,
 	working_days_hours JSONB,
-	CONSTRAINT unique_event_slot_name UNIQUE (event_id, slot_name)
+	CONSTRAINT unique_event_slot_name UNIQUE (event_id, id)
 );
 
 CREATE TABLE bookings (

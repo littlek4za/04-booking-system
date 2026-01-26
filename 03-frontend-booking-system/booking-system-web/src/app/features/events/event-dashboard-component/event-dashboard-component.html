@@ -5,7 +5,7 @@
 @if (createEventWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-add-event-wizard (close)="closeAddEventWizard()"></app-add-event-wizard>
+  <app-add-event-wizard [mode]="'CREATE'" (close)="closeAddEventWizard()"></app-add-event-wizard>
 </div>
 }
 
@@ -59,11 +59,11 @@
         <div>{{event.slotCount}}</div>
         <button type="button" [routerLink]="['/eventDashboard', event.id, 'slots']">Manage Slot</button>
       </td>
-      <td>{{event.updatedAt | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+      <td>{{event.updatedAt | date:'yyyy-MM-dd HH:mm:ss z'}}</td>
     </tr>
     } @empty {
     <tr>
-      <td colspan="9" class="text-center">No events found.</td>
+      <td colspan="9" class="text-center">No event found.</td>
     </tr>
     }
   </tbody>
