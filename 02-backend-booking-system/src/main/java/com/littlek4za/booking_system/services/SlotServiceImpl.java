@@ -17,7 +17,6 @@ import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
 import com.littlek4za.booking_system.utils.DtoMapper;
 import com.littlek4za.booking_system.validators.SlotValidator;
-import com.littlek4za.booking_system.validators.WorkingDaysHoursValidator;
 
 import jakarta.transaction.Transactional;
 
@@ -32,8 +31,7 @@ public class SlotServiceImpl implements SlotService {
     private final SlotValidator slotValidator;
 
     public SlotServiceImpl(SecurityUtil sercurityUtil, SlotRepository slotRepository, EventRepository eventRepository,
-            UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator,
-            WorkingDaysHoursValidator workingDaysHoursValidator) {
+            UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator) {
         this.securityUtil = sercurityUtil;
         this.slotRepository = slotRepository;
         this.eventRepository = eventRepository;
@@ -136,7 +134,7 @@ public class SlotServiceImpl implements SlotService {
         existingSlot.setMaxBook(slotRequestDto.maxBook());
         existingSlot.setSlotIntervalMinutes(slotRequestDto.slotIntervalMinutes());
         existingSlot.setSlotFrequencyIntervalMinutes(slotRequestDto.slotFrequencyIntervalMinutes());
-        existingSlot.setWorkingDaysHours(slotRequestDto.workingDaysHours());
+        existingSlot.setBusinessDaysHours(slotRequestDto.businessDaysHours());
 
         Slot updatedSlot = slotRepository.save(existingSlot);
 

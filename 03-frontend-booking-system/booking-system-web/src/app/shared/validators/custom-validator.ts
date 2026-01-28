@@ -73,17 +73,29 @@ export function divisibleBy5Validator(abstractControl: AbstractControl) {
     return value % 5 === 0 ? null : { notDivisibleBy5: true };
 }
 
-export function timeRangeValidator(abstractControl: AbstractControl): ValidationErrors | null {
-    const openTime = abstractControl.get('open')?.value;
-    const closeTime = abstractControl.get('close')?.value;
+export function timeRangeValidator(getSlotIntervalMinutes?: () => number | null) {
+    return (abstractControl: AbstractControl): ValidationErrors | null => {
+        const openTime = abstractControl.get('open')?.value;
+        const closeTime = abstractControl.get('close')?.value;
 
-    if (!openTime || !closeTime) {
-        null;
+        if (!openTime || !closeTime) {
+            return null;
+        }
+        const openMinutes = timeToMinutes(openTime);
+        const closeMinutes = timeToMinutes(closeTime);
+
+        if (openMinutes >= closeMinutes) {
+            return { timeRangeInvalid: true };
+        }
+
+        if (getSlotIntervalMinutes) {
+            const minInterval = getSlotIntervalMinutes();
+            if (minInterval && closeMinutes - openMinutes < minInterval) {
+                return { minIntervalNotMet: true };
+            }
+        }
+        return null;
     }
-    const openMinutes = timeToMinutes(openTime);
-    const closeMinutes = timeToMinutes(closeTime);
-
-    return openMinutes >= closeMinutes ? { timeRangeInvalid: true } : null
 }
 
 export function timeOverlapValidator(abstractControl: AbstractControl): ValidationErrors | null {
@@ -93,11 +105,11 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
         return null;
     }
 
-    const hasTimeRangeInvalid = intervalsArray.controls.some(control => 
+    const hasTimeRangeInvalid = intervalsArray.controls.some(control =>
         control.hasError('timeRangeInvalid')
     );
 
-    if(hasTimeRangeInvalid){
+    if (hasTimeRangeInvalid) {
         return null;
     }
 
@@ -125,7 +137,13 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
 
     return null;
 }
-function timeToMinutes(time: string) {
-    const [hours, minutes] = time.split(":").map(Number);
+function timeToMinutes(value: string) {
+
+    if (value.includes('T')) {
+        const date = new Date(value);
+        return Math.floor(date.getTime() / 60000); // gettime return millisecond, 1 sec = 1000 milliseconds 
+    }
+
+    const [hours, minutes] = value.split(":").map(Number);
     return hours * 60 + minutes;
 }

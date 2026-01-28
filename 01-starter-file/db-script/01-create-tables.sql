@@ -51,7 +51,8 @@ CREATE TABLE slots (
 	slot_frequency_interval_minutes INT,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMPTZ NOT NULL,
-	working_days_hours JSONB,
+	business_days_hours JSONB,
+	flexible_days_hours JSONB,
 	CONSTRAINT unique_event_slot_name UNIQUE (event_id, id)
 );
 

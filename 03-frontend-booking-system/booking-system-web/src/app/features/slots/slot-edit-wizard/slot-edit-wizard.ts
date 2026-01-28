@@ -9,20 +9,21 @@ import { SlotRequestDto } from '../dtos/slot-request-dto';
 import { dateTimeRangeValidator, divisibleBy5Validator, timeOverlapValidator, timeRangeValidator } from '@shared/validators/custom-validator';
 import { CommonModule } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, timeInterval } from 'rxjs';
 import { TimeRange } from '@shared/model/time-range';
 import { SlotService } from '../slot-service';
 import { SlotResponseDto } from '../dtos/slot-response-dto';
+import { A11yModule } from "@angular/cdk/a11y";
 
 
 @Component({
-  selector: 'app-add-slot-wizard',
+  selector: 'app-slot-edit-wizard',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, MatDatepickerModule, MatNativeDateModule, MatFormFieldModule, MatInputModule, MatSelectModule],
-  templateUrl: './add-slot-wizard.html',
-  styleUrl: './add-slot-wizard.css',
+  imports: [ReactiveFormsModule, CommonModule, MatDatepickerModule, MatNativeDateModule, MatFormFieldModule, MatInputModule, MatSelectModule, A11yModule],
+  templateUrl: './slot-edit-wizard.html',
+  styleUrl: './slot-edit-wizard.css',
 })
-export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
+export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
   @Output() close = new EventEmitter<void>();
   @Input() eventId!: number;
@@ -30,7 +31,8 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   @Input() mode!: 'CREATE' | 'UPDATE';
   @Input() slotId: number | null = null;
   addSlotForm!: FormGroup;
-  workingDaysHoursForm!: FormGroup;
+  businessDaysHoursForm!: FormGroup;
+  flexibleDaysHoursForm!: FormGroup;
   showCustomInterval = false;
   showCustomFreq = false;
   timeOption: string[] = [];
@@ -41,6 +43,7 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   slotForUpdate?: SlotResponseDto;
   readonly SLOT_INTERVAL_PRESETS = [5, 10, 15, 30, 60, 120];
   readonly SLOT_FREQUENCY_PRESETS = [5, 10, 15, 30, 60, 120];
+  submitted: boolean = false;
 
   // TODO!!
   // ask if without input() can this be used in other component, for like using constructor 
@@ -49,7 +52,7 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.initAddSlotForm();
     this.applyEventType();
-    this.generateTimeOption(5);
+    this.timeOption = this.generateTimeOption(5);
     this.methodForFormValueChanges();
   }
 
@@ -125,22 +128,20 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   private configureFlexible() {
-    this.enable(['slotIntervalMinutes', 'startTime', 'endTime', 'startDate', 'endDate']);
-    this.disable(['maxBook', 'slotFrequencyIntervalMinutes']);
+    this.initFlexibleDaysHoursForm();
+    this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
+    this.disable(['maxBook', 'startTime', 'endTime', 'startDate', 'endDate']);
     this.addSlotForm.setValidators(dateTimeRangeValidator);
     this.addSlotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
     this.addSlotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
-    this.addSlotForm.get('startDate')?.addValidators([Validators.required]);
-    this.addSlotForm.get('startTime')?.addValidators([Validators.required]);
-    this.addSlotForm.get('endDate')?.addValidators([Validators.required]);
-    this.addSlotForm.get('endTime')?.addValidators([Validators.required]);
     this.addSlotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), divisibleBy5Validator]);
-    this.addSlotForm.get('intervalType')?.addValidators([Validators.required])
+    this.addSlotForm.get('intervalType')?.addValidators([Validators.required]);
+    this.addSlotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
 
   }
 
   private configureBusiness() {
-    this.initWorkingDaysHoursForm();
+    this.initBusinessDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
     this.disable(['startTime', 'endTime', 'startDate', 'endDate', 'maxBook']);
     this.addSlotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
@@ -148,6 +149,7 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
     this.addSlotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), Validators.max(1440), divisibleBy5Validator]);
     this.addSlotForm.get('intervalType')?.addValidators([Validators.required]);
     this.addSlotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
+    this.addSlotForm.get('frequencyType')?.addValidators([Validators.required]);
   }
 
   private enable(fields: string[]) {
@@ -163,12 +165,46 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   //ngOnInit step 2.1
-  private initWorkingDaysHoursForm() {
-    this.workingDaysHoursForm = this.formBuilder.group({
+  private initFlexibleDaysHoursForm() {
+    this.flexibleDaysHoursForm = this.formBuilder.group({
+      intervals: this.formBuilder.array([])
+    }, { validators: timeOverlapValidator }
+    );
+
+    if (this.mode === 'CREATE') {
+      this.addTimeInterval();
+    }
+  }
+
+  getTimeIntervals(): FormArray {
+    return this.flexibleDaysHoursForm.get('intervals') as FormArray;
+  }
+
+  addTimeInterval() {
+    this.getTimeIntervals().push(
+      this.formBuilder.group({
+        open: ['', Validators.required], //format YYYY-MM-DDTHH:mm
+        close: ['', Validators.required] //format YYYY-MM-DDTHH:mm
+      }, {
+        validators: timeRangeValidator(() =>
+          this.addSlotForm.get('slotIntervalMinutes')?.value
+        )
+      })
+    );
+    this.flexibleDaysHoursForm.updateValueAndValidity({ emitEvent: false });
+  }
+
+  removeTimeInterval(index: number) {
+    this.getTimeIntervals().removeAt(index);
+  }
+
+  //ngOnInit step 2.2
+  private initBusinessDaysHoursForm() {
+    this.businessDaysHoursForm = this.formBuilder.group({
       days: this.formBuilder.array([])
     });
 
-    const daysArray = this.workingDaysHoursForm.get('days') as FormArray;
+    const daysArray = this.businessDaysHoursForm.get('days') as FormArray;
 
     for (let i = 0; i < 7; i++) {
       daysArray.push(
@@ -204,7 +240,7 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   getDaysArray(): FormArray {
-    return this.workingDaysHoursForm.get('days') as FormArray;
+    return this.businessDaysHoursForm.get('days') as FormArray;
   }
 
   getIntervalsArray(dayIndex: number): FormArray {
@@ -224,9 +260,9 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
       this.formBuilder.group({
         open: ['', Validators.required],
         close: ['', Validators.required]
-      }, { validators: timeRangeValidator })
+      }, { validators: timeRangeValidator() })
     );
-    this.workingDaysHoursForm.updateValueAndValidity();
+    this.businessDaysHoursForm.updateValueAndValidity({ emitEvent: false });
   }
 
   removeIntervalGroup(dayIndex: number, intervalIndex: number) {
@@ -235,15 +271,16 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
 
 
   //ngOnInit step 3
-  private generateTimeOption(stepMinutes: number) {
-    this.timeOption = [];
+  private generateTimeOption(stepMinutes: number): string[] {
+    let timeArray: string[] = [];
     for (let h = 0; h < 24; h++) {
       for (let m = 0; m < 60; m += stepMinutes) {
         const hh = h.toString().padStart(2, '0');
         const mm = m.toString().padStart(2, '0');
-        this.timeOption.push(`${hh}:${mm}`);
+        timeArray.push(`${hh}:${mm}`);
       }
     }
+    return timeArray;
   }
 
   //ngOnInit step 4 methodForFormValueChanges()
@@ -335,7 +372,6 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   //debug form error
   logFormErrors(form: AbstractControl, parentKey: string = '') {
     if (!form) return;
-
     if (form instanceof FormGroup) {
       Object.keys(form.controls).forEach(key => {
         const control = form.get(key);
@@ -357,7 +393,7 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
     if (this.slotId) {
       this.slotService.getSlotById(this.eventId, this.slotId).subscribe({
         next: (res) => {
-          console.log('GET Slot sucessfully', res);
+          console.log('GET Slot successfully', res);
           this.slotForUpdate = res;
           this.prefillForm(this.slotForUpdate);
         },
@@ -399,41 +435,70 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
     });
 
     if (this.eventType == EventTypeModel.BUSINESS) {
-      const daysArray = this.getDaysArray();
+      this.prefillBusinessDaysHoursForm(slot);
+    }
 
-      for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
-        const dayGroup = daysArray.at(dayIndex);
-        const intervalsArray = dayGroup.get('intervals') as FormArray;
+    if (this.eventType == EventTypeModel.FLEXIBLE) {
+      this.prefillFlexibleDaysHoursForm(slot);
+    }
+  }
 
-        while (intervalsArray.length) {
-          intervalsArray.removeAt(0);
-        }
+  private prefillFlexibleDaysHoursForm(slot: SlotResponseDto) {
+    const intervalsArray = this.getTimeIntervals() as FormArray;
+    intervalsArray.clear();
 
-        const slotDayIntervals = slot.workingDaysHours?.[dayIndex] ?? [];
+    const flexibleDaysHoursData = slot.flexibleDaysHours;
 
-        if (slotDayIntervals.length > 0) {
-          dayGroup.get('enabled')?.setValue(true, { emitEvent: false });
+    flexibleDaysHoursData?.forEach(item => {
+      intervalsArray.push(
+        this.formBuilder.group(
+          {
+            open: [this.fromInstantToDateTimeLocal(item.open), Validators.required],
+            close: [this.fromInstantToDateTimeLocal(item.close), Validators.required]
+          }, {
+          validators: timeRangeValidator(() => this.addSlotForm.get('slotIntervalMinutes')?.value
+          )
+        })
+      );
+    });
 
-          slotDayIntervals.forEach(item => {
-            intervalsArray.push(
-              this.formBuilder.group(
-                {
-                  open: [item.open, Validators.required],
-                  close: [item.close, Validators.required]
-                },
-                { validators: timeRangeValidator }
-              )
-            );
-          });
+    this.flexibleDaysHoursForm.updateValueAndValidity({ emitEvent: false });
+  }
 
-          intervalsArray.enable({ emitEvent: false });
+  private prefillBusinessDaysHoursForm(slot: SlotResponseDto) {
+    const daysArray = this.getDaysArray();
 
-        } else {
-          dayGroup.get('enabled')?.setValue(false, { emitEvent: false });
-          intervalsArray.disable({ emitEvent: false });
-        }
+    for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
+      const dayGroup = daysArray.at(dayIndex);
+      const intervalsArray = dayGroup.get('intervals') as FormArray;
+      intervalsArray.clear();
+
+      const slotDayIntervals = slot.businessDaysHours?.[dayIndex] ?? [];
+
+      if (slotDayIntervals.length > 0) {
+        dayGroup.get('enabled')?.setValue(true, { emitEvent: false });
+
+        slotDayIntervals.forEach(item => {
+          intervalsArray.push(
+            this.formBuilder.group(
+              {
+                open: [item.open, Validators.required],
+                close: [item.close, Validators.required]
+              },
+              { validators: timeRangeValidator() }
+            )
+          );
+        });
+
+        intervalsArray.enable({ emitEvent: false });
+
+      } else {
+        dayGroup.get('enabled')?.setValue(false, { emitEvent: false });
+        intervalsArray.disable({ emitEvent: false });
       }
     }
+
+    this.businessDaysHoursForm.updateValueAndValidity({emitEvent:false});
   }
 
   private resolveIntervalType(slotIntervalMinutes: number | null): string {
@@ -454,22 +519,37 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   onSubmit() {
+    let isAllValid = true;
+
     this.addSlotForm.markAllAsTouched();
     if (this.addSlotForm.invalid) {
       this.logFormErrors(this.addSlotForm);
-      return;
+      isAllValid = false;
     }
 
     if (this.eventType == EventTypeModel.BUSINESS) {
-      this.workingDaysHoursForm.markAllAsTouched();
-      if (this.workingDaysHoursForm.invalid) {
-        this.logFormErrors(this.workingDaysHoursForm);
-        return;
+      this.businessDaysHoursForm.markAllAsTouched();
+      if (this.businessDaysHoursForm.invalid) {
+        this.logFormErrors(this.businessDaysHoursForm);
+        isAllValid = false;
       }
     }
 
+    if (this.eventType == EventTypeModel.FLEXIBLE) {
+      this.flexibleDaysHoursForm.markAllAsTouched();
+      if (this.flexibleDaysHoursForm.invalid) {
+        this.logFormErrors(this.flexibleDaysHoursForm);
+        isAllValid = false;
+      }
+    }
+
+    if (!isAllValid) {
+      console.warn('Form Submission Field Invalid');
+      return;
+    }
+
     const slotRequestDto = new SlotRequestDto;
-    if (this.eventType == EventTypeModel.FIXED || this.eventType == EventTypeModel.FLEXIBLE) {
+    if (this.eventType == EventTypeModel.FIXED) {
       const startTime = this.addSlotForm.value.startTime;
       const endTime = this.addSlotForm.value.endTime;
       const startDate = this.addSlotForm.value.startDate;
@@ -488,11 +568,25 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
     slotRequestDto.slotFrequencyIntervalMinutes = this.addSlotForm.value.slotFrequencyIntervalMinutes;
     slotRequestDto.maxBook = this.addSlotForm.value.maxBook;
 
+    // Flexible Type section
+
+    if (this.eventType == EventTypeModel.FLEXIBLE) {
+
+      const ranges = this.flexibleDaysHoursForm.get('intervals')?.value || [];
+      let flexibleDaysHoursData: TimeRange[] = [];
+      for (const range of ranges) {
+        flexibleDaysHoursData.push({
+          open: this.toInstantString(range.open),
+          close: this.toInstantString(range.close)
+        });
+      }
+      slotRequestDto.flexibleDaysHours = flexibleDaysHoursData;
+    }
     // Business Type section
 
     if (this.eventType == EventTypeModel.BUSINESS) {
-      let workingDaysHoursData: Record<number, TimeRange[]> = {}
-      const days = this.workingDaysHoursForm.value.days as any[];
+      let businessDaysHoursData: Record<number, TimeRange[]> = {};
+      const days = this.businessDaysHoursForm.value.days as any[];
 
       for (const day of days) {
         const dayIndex = day.day;
@@ -503,11 +597,11 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
           }))
           : [];
 
-        workingDaysHoursData[dayIndex] = intervals;
+        businessDaysHoursData[dayIndex] = intervals;
       }
       console.log("done 2nd part");
 
-      slotRequestDto.workingDaysHours = workingDaysHoursData;
+      slotRequestDto.businessDaysHours = businessDaysHoursData;
     }
     console.log(slotRequestDto);
 
@@ -546,7 +640,6 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
       alert('Internal Error Occur.');
       this.closeWizard();
     }
-
   }
 
   private combineDateAndTime(startDate: Date, startTime: string) {
@@ -562,5 +655,23 @@ export class AddSlotWizard implements OnInit, OnChanges, OnDestroy {
     this.close.emit();
   }
 
+  private toInstantString(value: string): string {
+    return new Date(value).toISOString();
+  }
 
+  private fromInstantToDateTimeLocal(isoString: string): string {
+    const date = new Date(isoString);
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
 }
+
+

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AddSlotWizard } from './add-slot-wizard';
+import { SlotEditWizard } from './slot-edit-wizard';
 
 describe('AddSlotWizard', () => {
-  let component: AddSlotWizard;
-  let fixture: ComponentFixture<AddSlotWizard>;
+  let component: SlotEditWizard;
+  let fixture: ComponentFixture<SlotEditWizard>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AddSlotWizard]
+      imports: [SlotEditWizard]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AddSlotWizard);
+    fixture = TestBed.createComponent(SlotEditWizard);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

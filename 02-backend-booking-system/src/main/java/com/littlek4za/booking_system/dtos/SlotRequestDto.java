@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.littlek4za.booking_system.models.InstantRange;
 import com.littlek4za.booking_system.models.TimeRange;
 
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +33,8 @@ public record SlotRequestDto(
 
     Integer slotFrequencyIntervalMinutes,
 
-    Map<Integer, List<TimeRange>> workingDaysHours
+    Map<Integer, List<TimeRange>> businessDaysHours,
+
+    List<InstantRange> flexibleDaysHours
 
 ) {} 

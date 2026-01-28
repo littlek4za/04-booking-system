@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.littlek4za.booking_system.models.InstantRange;
 import com.littlek4za.booking_system.models.TimeRange;
 
 public record SlotResponseDto(
@@ -16,7 +17,8 @@ public record SlotResponseDto(
     Integer maxBook,
     Integer slotIntervalMinutes,
     Integer slotFrequencyIntervalMinutes,
-    Map<Integer, List<TimeRange>> workingDaysHours,
+    Map<Integer, List<TimeRange>> businessDaysHours,
+    List<InstantRange> flexibleDaysHours,
     Instant createdAt,
     Instant updatedAt
 ) {} 

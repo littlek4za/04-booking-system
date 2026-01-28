@@ -9,7 +9,7 @@ import { GuestGuard } from './core/guards/guest-guard';
 import { AuthDebug } from './debug/auth-debug/auth-debug';
 import { EventDashboardComponent } from './features/events/event-dashboard-component/event-dashboard-component';
 import { InvitationManagerComponent } from './features/invitations/invitation-manager-component/invitation-manager-component';
-import { AddSlotWizard } from './features/slots/add-slot-wizard/add-slot-wizard';
+import { SlotEditWizard } from './features/slots/slot-edit-wizard/slot-edit-wizard';
 import { LeafletMapSelection } from './shared/components/leaflet-map-selection/leaflet-map-selection';
 import { SlotDashboardComponent } from '@features/slots/slot-dashboard-component/slot-dashboard-component';
 

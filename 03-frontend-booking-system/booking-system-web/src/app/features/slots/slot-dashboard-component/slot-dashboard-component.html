@@ -6,8 +6,8 @@
 @if(openSlotWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-add-slot-wizard [eventId]="eventId" [eventType]="eventType" [mode]="modeSlotWizard" [slotId]="slotId"
-        (close)="closeSlotWizard()"></app-add-slot-wizard>
+    <app-slot-edit-wizard [eventId]="eventId" [eventType]="eventType" [mode]="modeSlotWizard" [slotId]="slotId"
+        (close)="closeSlotWizard()"></app-slot-edit-wizard>
 </div>
 }
 
@@ -33,7 +33,7 @@
             <td>{{slot.slotDescription}}</td>
             <td>{{slot.maxBook}}</td>
             @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
-            <td>{{slot.slotIntervalMinutes}}</td>
+            <td>{{formatDuration(slot.slotIntervalMinutes)}}</td>
             }
             <td>{{slot.updatedAt| date:'yyyy-MM-dd HH:mm:ss z'}}</td>
             <td>

@@ -9,5 +9,6 @@ export class SlotRequestDto {
     maxBook?: number;
     slotIntervalMinutes?: number;
     slotFrequencyIntervalMinutes?: number;
-    workingDaysHours?: Record<number,TimeRange[]>;
+    businessDaysHours?: Record<number,TimeRange[]>;
+    flexibleDaysHours?: TimeRange[];
 }

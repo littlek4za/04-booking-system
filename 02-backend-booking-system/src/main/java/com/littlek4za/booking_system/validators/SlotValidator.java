@@ -10,10 +10,13 @@ import com.littlek4za.booking_system.models.EventType;
 @Component
 public class SlotValidator {
 
-    private final WorkingDaysHoursValidator workingDaysHoursValidator;
+    private final BusinessDaysHoursValidator businessDaysHoursValidator;
+    private final FlexiblaDaysHoursValidator flexiblaDaysHoursValidator;
 
-    public SlotValidator(WorkingDaysHoursValidator workingDaysHoursValidator) {
-        this.workingDaysHoursValidator = workingDaysHoursValidator;
+    public SlotValidator(BusinessDaysHoursValidator businessDaysHoursValidator,
+            FlexiblaDaysHoursValidator flexiblaDaysHoursValidator) {
+        this.businessDaysHoursValidator = businessDaysHoursValidator;
+        this.flexiblaDaysHoursValidator = flexiblaDaysHoursValidator;
     }
 
     public void validate(EventType eventType, SlotRequestDto dto) {
@@ -21,12 +24,15 @@ public class SlotValidator {
             validateFixedSlot(dto);
         } else if (EventType.FLEXIBLE.equals(eventType)) {
             validateFlexibleSlot(dto);
+            this.flexiblaDaysHoursValidator.validate(eventType, dto.flexibleDaysHours());
         } else if (EventType.BUSINESS.equals(eventType)) {
             validateBusinessSlot(dto);
-            this.workingDaysHoursValidator.validate(eventType, dto.workingDaysHours());
+            this.businessDaysHoursValidator.validate(eventType, dto.businessDaysHours());
 
         } else {
-            throw new AppException("Event Type not valid for validation", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(
+                    "Unsupported event type: " + eventType,
+                    HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -50,23 +56,24 @@ public class SlotValidator {
             throw new AppException("Fixed Type requires slotIntervalMinutes input to be NULL", HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.workingDaysHours() != null) {
-            throw new AppException("Fixed Type requires workingDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
+        if (dto.businessDaysHours() != null) {
+            throw new AppException("Fixed Type requires businessDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.flexibleDaysHours() != null) {
+            throw new AppException("Fixed Type requires flexibleDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotFrequencyIntervalMinutes() != null) {
-            throw new AppException("Fixed Type requires slotFrequencyIntervalMinutes input to be NULL", HttpStatus.BAD_REQUEST);
+            throw new AppException("Fixed Type requires slotFrequencyIntervalMinutes input to be NULL",
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
     private void validateFlexibleSlot(SlotRequestDto dto) {
-        if (dto.slotStartTime() == null || dto.slotEndTime() == null) {
-            throw new AppException("Flexible Type requires input of slot start time and slot end time",
+        if (dto.slotStartTime() != null || dto.slotEndTime() != null) {
+            throw new AppException("Flexible Type requires input of slot start time and slot end time to be NULL",
                     HttpStatus.BAD_REQUEST);
-        }
-
-        if (!dto.slotEndTime().isAfter(dto.slotStartTime())) {
-            throw new AppException("Slot end time must be after slot start time", HttpStatus.BAD_REQUEST);
         }
 
         if (dto.maxBook() != null) {
@@ -83,12 +90,18 @@ public class SlotValidator {
                     HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.workingDaysHours() != null) {
-            throw new AppException("Flexible Type requires workingDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
+        if (dto.businessDaysHours() != null) {
+            throw new AppException("Flexible Type requires businessDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.slotFrequencyIntervalMinutes() != null) {
-            throw new AppException("Flexible Type requires slotFrequencyIntervalMinutes input to be NULL", HttpStatus.BAD_REQUEST);
+        if (dto.flexibleDaysHours() == null) {
+            throw new AppException("Flexible Type requires input for flexibleDaysHours", HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.slotFrequencyIntervalMinutes() == null || dto.slotFrequencyIntervalMinutes() <= 0
+                || dto.slotFrequencyIntervalMinutes() > 1440) {
+            throw new AppException("Business Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440",
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -112,13 +125,18 @@ public class SlotValidator {
                     HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.workingDaysHours() == null) {
-            throw new AppException("Business Type requires input of workingDaysHours", HttpStatus.BAD_REQUEST);
+        if (dto.businessDaysHours() == null) {
+            throw new AppException("Business Type requires input for businessDaysHours", HttpStatus.BAD_REQUEST);
         }
 
-        
-        if (dto.slotFrequencyIntervalMinutes() == null || dto.slotFrequencyIntervalMinutes() <= 0 || dto.slotFrequencyIntervalMinutes() > 1440) {
-            throw new AppException("Business Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440", HttpStatus.BAD_REQUEST);
+        if (dto.flexibleDaysHours() != null) {
+            throw new AppException("Business Type requires flexibleDaysHours input to be NULL", HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.slotFrequencyIntervalMinutes() == null || dto.slotFrequencyIntervalMinutes() <= 0
+                || dto.slotFrequencyIntervalMinutes() > 1440) {
+            throw new AppException("Business Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440",
+                    HttpStatus.BAD_REQUEST);
         }
     }
 

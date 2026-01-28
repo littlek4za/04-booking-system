@@ -12,11 +12,11 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 @Converter
-public class WorkingDayHoursConverter implements AttributeConverter<Map<Integer,List<TimeRange>>, String>{
+public class BusinessDayHoursConverter implements AttributeConverter<Map<Integer,List<TimeRange>>, String>{
 
     private final ObjectMapper objectMapper;
 
-    public WorkingDayHoursConverter(ObjectMapper objectMapper) {
+    public BusinessDayHoursConverter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -28,7 +28,7 @@ public class WorkingDayHoursConverter implements AttributeConverter<Map<Integer,
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error converting WorkingDayHours to JSON", e);
+            throw new IllegalArgumentException("Error converting BusinessDayHours to JSON", e);
         }
     }
 
@@ -41,7 +41,7 @@ public class WorkingDayHoursConverter implements AttributeConverter<Map<Integer,
             TypeReference<Map<Integer,List<TimeRange>>> typeRef = new TypeReference<Map<Integer,List<TimeRange>>>() {};
             return objectMapper.readValue(dbData,typeRef);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error converting JSON to WorkingDayHours", e);
+            throw new IllegalArgumentException("Error converting JSON to BusinessDayHours", e);
         }
     }
 

@@ -12,5 +12,6 @@ export class SlotResponseDto {
     slotFrequencyIntervalMinutes?: number;
     createdAt!: string;
     updatedAt!: string;
-    workingDaysHours?: Record<number,TimeRange[]>;
+    businessDaysHours?: Record<number,TimeRange[]>;
+    flexibleDaysHours?: TimeRange[];
 }

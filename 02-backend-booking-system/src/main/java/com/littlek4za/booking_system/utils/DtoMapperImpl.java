@@ -59,7 +59,8 @@ public class DtoMapperImpl implements DtoMapper {
                 slot.getMaxBook(),
                 slot.getSlotIntervalMinutes(),
                 slot.getSlotFrequencyIntervalMinutes(),
-                slot.getWorkingDaysHours(),
+                slot.getBusinessDaysHours(),
+                slot.getFlexibleDaysHours(),
                 slot.getCreatedAt(),
                 slot.getUpdatedAt()
         );
@@ -76,7 +77,8 @@ public class DtoMapperImpl implements DtoMapper {
             slotRequestDto.maxBook(),
             slotRequestDto.slotIntervalMinutes(),
             slotRequestDto.slotFrequencyIntervalMinutes(),
-            slotRequestDto.workingDaysHours()
+            slotRequestDto.businessDaysHours(),
+            slotRequestDto.flexibleDaysHours()
         );
     }
 
