@@ -30,7 +30,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   @Input() eventType!: string;
   @Input() mode!: 'CREATE' | 'UPDATE';
   @Input() slotId: number | null = null;
-  addSlotForm!: FormGroup;
+  slotForm!: FormGroup;
   businessDaysHoursForm!: FormGroup;
   flexibleDaysHoursForm!: FormGroup;
   showCustomInterval = false;
@@ -50,14 +50,14 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   constructor(private formBuilder: FormBuilder, private slotService: SlotService) { }
 
   ngOnInit(): void {
-    this.initAddSlotForm();
+    this.initSlotForm();
     this.applyEventType();
     this.timeOption = this.generateTimeOption(5);
     this.methodForFormValueChanges();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['slotId'] && this.mode === 'UPDATE') {
+    if (changes['slotId'] && this.mode === 'UPDATE' && this.slotId) {
       this.loadSlot();
     }
   }
@@ -68,8 +68,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.destroy$.complete();
   }
   //ngOnInit step 1.1
-  private initAddSlotForm() {
-    this.addSlotForm = new FormGroup({
+  private initSlotForm() {
+    this.slotForm = new FormGroup({
       slotName: new FormControl<string>(""),
       slotDescription: new FormControl<string | null>(null),
       startDate: new FormControl<Date | null>(null),
@@ -103,12 +103,12 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         this.disableSlotForm(); // or show message
         return;
     }
-    this.addSlotForm.updateValueAndValidity({ emitEvent: false });
+    this.slotForm.updateValueAndValidity({ emitEvent: false });
   }
 
   private resetSlotFormState() {
-    this.addSlotForm.reset();
-    Object.values(this.addSlotForm.controls).forEach(control => {
+    this.slotForm.reset();
+    Object.values(this.slotForm.controls).forEach(control => {
       control.enable({ emitEvent: false });
       control.clearValidators();
     });
@@ -117,26 +117,26 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private configureFixed() {
     this.enable(['maxBook', 'startTime', 'endTime', 'startDate', 'endDate']);
     this.disable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
-    this.addSlotForm.setValidators(dateTimeRangeValidator);
-    this.addSlotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
-    this.addSlotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
-    this.addSlotForm.get('maxBook')?.addValidators([Validators.required, Validators.min(1)]);
-    this.addSlotForm.get('startDate')?.addValidators([Validators.required]);
-    this.addSlotForm.get('startTime')?.addValidators([Validators.required]);
-    this.addSlotForm.get('endDate')?.addValidators([Validators.required]);
-    this.addSlotForm.get('endTime')?.addValidators([Validators.required]);
+    this.slotForm.setValidators(dateTimeRangeValidator);
+    this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
+    this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
+    this.slotForm.get('maxBook')?.addValidators([Validators.required, Validators.min(1)]);
+    this.slotForm.get('startDate')?.addValidators([Validators.required]);
+    this.slotForm.get('startTime')?.addValidators([Validators.required]);
+    this.slotForm.get('endDate')?.addValidators([Validators.required]);
+    this.slotForm.get('endTime')?.addValidators([Validators.required]);
   }
 
   private configureFlexible() {
     this.initFlexibleDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
     this.disable(['maxBook', 'startTime', 'endTime', 'startDate', 'endDate']);
-    this.addSlotForm.setValidators(dateTimeRangeValidator);
-    this.addSlotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
-    this.addSlotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
-    this.addSlotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), divisibleBy5Validator]);
-    this.addSlotForm.get('intervalType')?.addValidators([Validators.required]);
-    this.addSlotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
+    this.slotForm.setValidators(dateTimeRangeValidator);
+    this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
+    this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
+    this.slotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), divisibleBy5Validator]);
+    this.slotForm.get('intervalType')?.addValidators([Validators.required]);
+    this.slotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
 
   }
 
@@ -144,24 +144,24 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.initBusinessDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
     this.disable(['startTime', 'endTime', 'startDate', 'endDate', 'maxBook']);
-    this.addSlotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
-    this.addSlotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
-    this.addSlotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), Validators.max(1440), divisibleBy5Validator]);
-    this.addSlotForm.get('intervalType')?.addValidators([Validators.required]);
-    this.addSlotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
-    this.addSlotForm.get('frequencyType')?.addValidators([Validators.required]);
+    this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
+    this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
+    this.slotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), Validators.max(1440), divisibleBy5Validator]);
+    this.slotForm.get('intervalType')?.addValidators([Validators.required]);
+    this.slotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
+    this.slotForm.get('frequencyType')?.addValidators([Validators.required]);
   }
 
   private enable(fields: string[]) {
-    fields.forEach(f => this.addSlotForm.get(f)?.enable());
+    fields.forEach(f => this.slotForm.get(f)?.enable());
   }
 
   private disable(fields: string[]) {
-    fields.forEach(f => this.addSlotForm.get(f)?.disable());
+    fields.forEach(f => this.slotForm.get(f)?.disable());
   }
 
   private disableSlotForm() {
-    this.addSlotForm.disable({ emitEvent: false });
+    this.slotForm.disable({ emitEvent: false });
   }
 
   //ngOnInit step 2.1
@@ -187,7 +187,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         close: ['', Validators.required] //format YYYY-MM-DDTHH:mm
       }, {
         validators: timeRangeValidator(() =>
-          this.addSlotForm.get('slotIntervalMinutes')?.value
+          this.slotForm.get('slotIntervalMinutes')?.value
         )
       })
     );
@@ -285,20 +285,20 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
   //ngOnInit step 4 methodForFormValueChanges()
   methodForFormValueChanges() {
-    this.addSlotForm.get('intervalType')!.valueChanges
+    this.slotForm.get('intervalType')!.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => this.onIntervalChange(value));
-    this.addSlotForm.get('frequencyType')!.valueChanges
+    this.slotForm.get('frequencyType')!.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => this.onFequencyChange(value));
-    this.addSlotForm.get('startDate')?.valueChanges
+    this.slotForm.get('startDate')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(date => {
-        if (!this.addSlotForm.get('endDate')?.value) {
-          this.addSlotForm.patchValue({ endDate: date });
+        if (!this.slotForm.get('endDate')?.value) {
+          this.slotForm.patchValue({ endDate: date });
         }
       });
-    this.addSlotForm.valueChanges
+    this.slotForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.updateEndTimeOptions();
@@ -306,30 +306,30 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   private onIntervalChange(value: string) {
-    this.addSlotForm.get('slotIntervalMinutes')?.markAsTouched();
+    this.slotForm.get('slotIntervalMinutes')?.markAsTouched();
     if (value === 'customInterval') {
       this.showCustomInterval = true;
-      this.addSlotForm.get('slotIntervalMinutes')?.setValue(null);
+      this.slotForm.get('slotIntervalMinutes')?.setValue(null);
     } else {
       this.showCustomInterval = false;
-      this.addSlotForm.get('slotIntervalMinutes')?.setValue(Number(value));
+      this.slotForm.get('slotIntervalMinutes')?.setValue(Number(value));
     }
   }
 
   private onFequencyChange(value: string) {
-    this.addSlotForm.get('slotFrequencyIntervalMinutes')?.markAsTouched();
+    this.slotForm.get('slotFrequencyIntervalMinutes')?.markAsTouched();
     if (value === 'customFreq') {
       this.showCustomFreq = true;
-      this.addSlotForm.get('slotFrequencyIntervalMinutes')?.setValue(null);
+      this.slotForm.get('slotFrequencyIntervalMinutes')?.setValue(null);
     } else {
       this.showCustomFreq = false;
-      this.addSlotForm.get('slotFrequencyIntervalMinutes')?.setValue(Number(value));
+      this.slotForm.get('slotFrequencyIntervalMinutes')?.setValue(Number(value));
     }
   }
 
   // update selectable End Time for flexible and fixed type event
   private updateEndTimeOptions() {
-    const f = this.addSlotForm.value;
+    const f = this.slotForm.value;
     const isFlexible = this.eventType === EventTypeModel.FLEXIBLE;
     const isFixed = this.eventType === EventTypeModel.FIXED;
 
@@ -410,7 +410,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     const intervalType = this.resolveIntervalType(slot.slotIntervalMinutes);
     const frequencyType = this.resolveFrequencyType(slot.slotFrequencyIntervalMinutes);
 
-    this.addSlotForm.patchValue({
+    this.slotForm.patchValue({
       slotName: slot.slotName,
       slotDescription: slot.slotDescription,
 
@@ -456,7 +456,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
             open: [this.fromInstantToDateTimeLocal(item.open), Validators.required],
             close: [this.fromInstantToDateTimeLocal(item.close), Validators.required]
           }, {
-          validators: timeRangeValidator(() => this.addSlotForm.get('slotIntervalMinutes')?.value
+          validators: timeRangeValidator(() => this.slotForm.get('slotIntervalMinutes')?.value
           )
         })
       );
@@ -521,9 +521,9 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   onSubmit() {
     let isAllValid = true;
 
-    this.addSlotForm.markAllAsTouched();
-    if (this.addSlotForm.invalid) {
-      this.logFormErrors(this.addSlotForm);
+    this.slotForm.markAllAsTouched();
+    if (this.slotForm.invalid) {
+      this.logFormErrors(this.slotForm);
       isAllValid = false;
     }
 
@@ -550,10 +550,10 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
     const slotRequestDto = new SlotRequestDto;
     if (this.eventType == EventTypeModel.FIXED) {
-      const startTime = this.addSlotForm.value.startTime;
-      const endTime = this.addSlotForm.value.endTime;
-      const startDate = this.addSlotForm.value.startDate;
-      const endDate = this.addSlotForm.value.endDate;
+      const startTime = this.slotForm.value.startTime;
+      const endTime = this.slotForm.value.endTime;
+      const startDate = this.slotForm.value.startDate;
+      const endDate = this.slotForm.value.endDate;
       const startTimeCombine = this.combineDateAndTime(startDate, startTime);
       const endTimeCombine = this.combineDateAndTime(endDate, endTime);
 
@@ -562,11 +562,11 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     }
 
     slotRequestDto.eventId = this.eventId;
-    slotRequestDto.slotName = this.addSlotForm.value.slotName;
-    slotRequestDto.slotDescription = this.addSlotForm.value.slotDescription;
-    slotRequestDto.slotIntervalMinutes = this.addSlotForm.value.slotIntervalMinutes;
-    slotRequestDto.slotFrequencyIntervalMinutes = this.addSlotForm.value.slotFrequencyIntervalMinutes;
-    slotRequestDto.maxBook = this.addSlotForm.value.maxBook;
+    slotRequestDto.slotName = this.slotForm.value.slotName;
+    slotRequestDto.slotDescription = this.slotForm.value.slotDescription;
+    slotRequestDto.slotIntervalMinutes = this.slotForm.value.slotIntervalMinutes;
+    slotRequestDto.slotFrequencyIntervalMinutes = this.slotForm.value.slotFrequencyIntervalMinutes;
+    slotRequestDto.maxBook = this.slotForm.value.maxBook;
 
     // Flexible Type section
 

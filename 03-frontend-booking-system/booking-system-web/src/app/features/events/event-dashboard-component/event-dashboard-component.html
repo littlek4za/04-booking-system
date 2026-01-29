@@ -1,18 +1,11 @@
 <p>event-dashboard-component works!</p>
 
-<button (click)="openAddEventWizard()">+ Create Event</button>
+<button (click)="openCreateEventWizard()">+ Create Event</button>
 
-@if (createEventWizard === true) {
+@if (openEventWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-add-event-wizard [mode]="'CREATE'" (close)="closeAddEventWizard()"></app-add-event-wizard>
-</div>
-}
-
-@if (updateEventWizard === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-  <app-update-event-wizard [eventId]="updateEventId" (close)="closeUpdateEventWizard()"></app-update-event-wizard>
+  <app-event-edit-wizard [mode]="modeEventWizard" [eventId]="updateEventId" (close)="closeEventWizard()"></app-event-edit-wizard>
 </div>
 }
 
