@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.Arrays;
 
 import com.littlek4za.booking_system.models.EventType;
+import com.littlek4za.booking_system.validators.annotations.ValidEventType;
 
 public class EventTypeValidator implements ConstraintValidator<ValidEventType, String> {
 

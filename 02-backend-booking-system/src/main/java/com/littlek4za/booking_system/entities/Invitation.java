@@ -1,17 +1,28 @@
 package com.littlek4za.booking_system.entities;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.littlek4za.booking_system.models.SlotIncludeMode;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,39 +39,64 @@ public class Invitation {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "slot_id", nullable = false)
-    private Slot slot;
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User user;
 
-    @Column(name = "code", unique = true, nullable = false)
-    private String code;
-
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
-    @Column(name = "max_usage", nullable = false)
-    private int maxUsage = 1;
+    @Column(name = "max_usage")
+    private Integer maxUsage;
 
     @Column(name = "used_count", nullable = false)
     private int usedCount = 0;
+
+    @Column(name = "access_token", nullable = false, unique = true)
+    private UUID accessToken;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "include_mode", nullable = false)
+    private SlotIncludeMode slotIncludeMode;
+
+    @Column(name = "required_login", nullable = false)
+    private boolean requiredLogin = true;
+
+    @Column(name = "max_usage_per_user")
+    private Integer maxUsagePerUser; // null means unlimited usage for user
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    @ManyToMany
+    @JoinTable(
+        name = "invitation_slots",
+        joinColumns = @JoinColumn(name ="invitation_id"),
+        inverseJoinColumns = @JoinColumn(name = "slot_id")
+    )
+    private Set<Slot> slotSet = new HashSet<>();
+
+    @OneToMany(mappedBy = "invitation")
+    private Set<InvitationUsage> invitationUsages = new HashSet<>(); 
+
     protected Invitation() {
     }
 
-    public Invitation(Slot slot, User user, String code, Instant expiresAt, int maxUsage, int usedCount) {
-        this.slot = slot;
+    public Invitation(Event event, User user, Instant expiresAt, Integer maxUsage, UUID accessToken,
+            SlotIncludeMode slotIncludeMode, boolean requiredLogin, Integer maxUsagePerUser) {
+        this.event = event;
         this.user = user;
-        this.code = code;
         this.expiresAt = expiresAt;
         this.maxUsage = maxUsage;
-        this.usedCount = usedCount;
+        this.accessToken = accessToken;
+        this.slotIncludeMode = slotIncludeMode;
+        this.requiredLogin = requiredLogin;
+        this.maxUsagePerUser = maxUsagePerUser;
+
     }
 
     public void incrementUsedCount() {
@@ -68,6 +104,13 @@ public class Invitation {
             usedCount++;
         } else {
             throw new IllegalStateException("Max usage reached");
+        }
+    }
+
+    @PrePersist
+    private void initToken() {
+        if(accessToken == null) {
+            accessToken = UUID.randomUUID();
         }
     }
 

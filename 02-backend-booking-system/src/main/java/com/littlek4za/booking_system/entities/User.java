@@ -69,6 +69,9 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<Invitation> invitationSet = new HashSet<>();
 
+    @OneToMany(mappedBy ="user", fetch = FetchType.LAZY)
+    private Set<InvitationUsage> invitationUsages = new HashSet<>();
+
     protected User() {
     }
 

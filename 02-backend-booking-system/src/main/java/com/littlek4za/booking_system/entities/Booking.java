@@ -54,9 +54,6 @@ public class Booking {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
-    @Column(name = "access_token", nullable = false, unique = true)
-    private UUID accessToken;
-
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -73,13 +70,6 @@ public class Booking {
         this.slot = slot;
         this.bookedStartTime = bookedStartTime;
         this.bookedEndTime = bookedEndTime;
-    }
-
-    @PrePersist
-    private void initToken() {
-        if(accessToken == null) {
-            accessToken = UUID.randomUUID();
-        }
     }
 
 }

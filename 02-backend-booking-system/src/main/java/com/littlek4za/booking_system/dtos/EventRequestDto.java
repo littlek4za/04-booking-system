@@ -1,6 +1,6 @@
 package com.littlek4za.booking_system.dtos;
 
-import com.littlek4za.booking_system.validators.ValidEventType;
+import com.littlek4za.booking_system.validators.annotations.ValidEventType;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMax;

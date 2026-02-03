@@ -1,0 +1,5 @@
+export enum SlotIncludeMode {
+  ALL_AND_FUTURE = 'ALL_AND_FUTURE',
+  ALL_CURRENT = 'ALL_CURRENT',
+  SELECTED = 'SELECTED'
+}

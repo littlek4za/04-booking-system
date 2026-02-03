@@ -32,23 +32,33 @@ public class RestExceptionHandler {
                 return ResponseEntity
                                 .status(ex.getHttpStatus())
                                 .body(ErrorResponseDto.create(
-                                        ex.getHttpStatus(),
-                                        ex.getMessage(),
-                                        request.getRequestURI(),
-                                        null
-                                        ));
+                                                ex.getHttpStatus(),
+                                                ex.getMessage(),
+                                                request.getRequestURI(),
+                                                null));
         }
-
 
         @ExceptionHandler(value = { MethodArgumentNotValidException.class })
         @ResponseBody
         public ResponseEntity<ErrorResponseDto> handleValidationErrors(MethodArgumentNotValidException ex,
                         HttpServletRequest request) {
+
+                // Field Error
                 List<FieldErrorDto> fieldErrorList = ex.getBindingResult()
                                 .getFieldErrors()
                                 .stream()
                                 .map(error -> new FieldErrorDto(error.getField(), error.getDefaultMessage()))
                                 .collect(Collectors.toList());
+
+                // Class Level Error
+                List<FieldErrorDto> globalErrorList = ex.getBindingResult()
+                                .getGlobalErrors()
+                                .stream()
+                                .map(error -> new FieldErrorDto(error.getObjectName(), error.getDefaultMessage()))
+                                .collect(Collectors.toList());
+                
+                // Combine both
+                fieldErrorList.addAll(globalErrorList);
 
                 return ResponseEntity.badRequest()
                                 .body(ErrorResponseDto.create(
@@ -59,7 +69,8 @@ public class RestExceptionHandler {
         }
 
         @ExceptionHandler(IllegalStateException.class)
-        public ResponseEntity<ErrorResponseDto> handleIllegalState(IllegalStateException ex, HttpServletRequest request) {
+        public ResponseEntity<ErrorResponseDto> handleIllegalState(IllegalStateException ex,
+                        HttpServletRequest request) {
                 log.warn(
                                 "REST EXCEPTION HANDLER error: status={}, error={}, message={}, path={}",
                                 HttpStatus.BAD_REQUEST,
@@ -69,11 +80,10 @@ public class RestExceptionHandler {
                 return ResponseEntity
                                 .status(HttpStatus.BAD_REQUEST)
                                 .body(ErrorResponseDto.create(
-                                        HttpStatus.BAD_REQUEST,
-                                        ex.getMessage(),
-                                        request.getRequestURI(),
-                                        null
-                                        ));
+                                                HttpStatus.BAD_REQUEST,
+                                                ex.getMessage(),
+                                                request.getRequestURI(),
+                                                null));
         }
-       
+
 }

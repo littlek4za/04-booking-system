@@ -1,7 +1,9 @@
-package com.littlek4za.booking_system.validators;
+package com.littlek4za.booking_system.validators.annotations;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.*;
+
+import com.littlek4za.booking_system.validators.EventTypeValidator;
 
 @Documented
 @Constraint(validatedBy = EventTypeValidator.class)
