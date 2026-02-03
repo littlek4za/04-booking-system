@@ -30,11 +30,11 @@ CREATE TABLE events (
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	event_name TEXT NOT NULL,
 	event_description TEXT,
-	event_location_address TEXT NOT NULL, -- NEW
-	include_position BOOLEAN NOT NULL DEFAULT FALSE, -- NEW
-	latitude DOUBLE PRECISION, -- NEW
-	longitude DOUBLE PRECISION, -- NEW
-	event_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS' NEW
+	event_location_address TEXT NOT NULL,
+	include_position BOOLEAN NOT NULL DEFAULT FALSE, 
+	latitude DOUBLE PRECISION,
+	longitude DOUBLE PRECISION,
+	event_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS'
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMPTZ NOT NULL 
 );
@@ -60,25 +60,42 @@ CREATE TABLE bookings (
 	id BIGSERIAL PRIMARY KEY,
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	slot_id BIGINT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
+	invitation_id BIGINT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE,
 	booked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	booked_start_time TIMESTAMPTZ NOT NULL,
 	booked_end_time TIMESTAMPTZ NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-	access_token UUID NOT NULL UNIQUE, -- NEW
 	deleted_at TIMESTAMPTZ,
 	deleted_by VARCHAR(20)
 );
 
 CREATE TABLE invitations (
 	id BIGSERIAL PRIMARY KEY,
-	slot_id BIGINT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
+	event_id BIGINT NOT NULL REFERENCES events(id) ON DELETE CASCADE, -- MODIFY
 	created_by BIGINT NOT NULL REFERENCES users(id),
-	code VARCHAR(20) NOT NULL UNIQUE,
+	code VARCHAR(20) NOT NULL UNIQUE, -- MIGHT NOT NEED
 	expires_at TIMESTAMPTZ NOT NULL,
 	max_usage INT DEFAULT 1,
 	used_count INT DEFAULT 0,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	access_token UUID NOT NULL UNIQUE, -- NEW
+	scope VARCHAR(10) NOT NULL -- 'EVENT' or 'SLOT' -- NEW
+	required_login BOOLEAN NOT NULL DEFAULT TRUE,
+	max_usage_per_user INT, -- NULL means UNLIMITED USER -- NEW
+	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() -- NEW
 );
+
+CREATE TABLE invitation_slots (
+	invitation_id BIGINT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE, -- NEW
+	slot_id BIGINT NOT NULL REFERENCES slots(id) ON DELETE CASCADE, -- NEW
+	PRIMARY KEY(invitation_id, slot_id) -- NEW
+)
+
+CREATE TABLE invitation_usages (
+	invitation_id BIGINT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE, -- NEW
+	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- NEW
+	usage_count INT NOT NULL DEFAULT 0, -- NEW
+	PRIMARY KEY(invitation_id, user_id) -- NEW
+)
 
 INSERT INTO roles (id, role_name)
 VALUES 

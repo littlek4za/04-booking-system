@@ -1,3 +1,5 @@
+import { EventTypeModel } from "./event-type-model";
+
 export class EventWithSlotCountResponseDto {
     id!: number;
     eventName!: string;
@@ -6,7 +8,7 @@ export class EventWithSlotCountResponseDto {
     includePosition!: boolean;
     latitude?: number;
     longitude?: number;
-    eventType!: 'FIXED' | 'FLEXIBLE' | 'BUSINESS';
+    eventType!: EventTypeModel;
     createdAt!: string;
     updatedAt!: string;
     slotCount!: number;

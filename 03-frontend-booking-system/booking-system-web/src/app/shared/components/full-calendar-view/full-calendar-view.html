@@ -1,4 +1,26 @@
-<p>full-calendar-view works!</p>
-<button (click)="toggleWeekends()">Toggle Weekends</button>
+<div class="calendar-wrapper">
+    <div class="calendar-header">
+        <button (click)="closeCalendar()">Close</button>
+        <button (click)="toggleWeekends()">Toggle Weekends</button>
 
-<full-calendar #calendar [options]="calendarOptions"></full-calendar>
+        <label>View Time Zone as:</label>
+        <select #tzSelect (change)="onTimeZoneChange(tzSelect.value)">
+            @for (timeZone of timeZoneOption; track $index) {
+            <option [value]="timeZone.value">{{timeZone.label}}</option>
+            }
+        </select>
+    </div>
+    <div class="calendar-body">
+        <full-calendar #calendar [options]="calendarOptions"></full-calendar>
+    </div>
+    <div class="slot-filter">
+        @for (slot of normalizedSlots(); track $index) {
+        <label>
+            <input type="checkbox" [checked]="selectedSlots.has(slot.id)"
+                (change)="toggleSlotFilter(slot.id, $event.target.checked)">
+            {{slot.slotName}}
+        </label>
+        }
+    </div>
+
+</div>

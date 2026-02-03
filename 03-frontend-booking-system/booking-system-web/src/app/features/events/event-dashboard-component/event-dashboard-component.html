@@ -41,6 +41,9 @@
       }
       <td>{{event.eventType}}</td>
       <td>
+        <button type="button" class="btn btn-outline-info" (click)="openCalendar(event.id, event.eventType)">
+          View Calendar
+        </button>
         <button type="button" class="btn btn-outline-warning" (click)="openUpdateEventWizard(event.id)">
           Update
         </button>
@@ -61,3 +64,11 @@
     }
   </tbody>
 </table>
+
+@if (openCalendarView === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" mode="VIEW" (close)="closeCalendar()"></app-full-calendar-view>
+</div>
+}
+

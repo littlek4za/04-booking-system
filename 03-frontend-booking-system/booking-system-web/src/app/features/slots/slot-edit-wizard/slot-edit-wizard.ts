@@ -391,7 +391,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   // Update 
   private loadSlot() {
     if (this.slotId) {
-      this.slotService.getSlotById(this.eventId, this.slotId).subscribe({
+      this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId).subscribe({
         next: (res) => {
           console.log('GET Slot successfully', res);
           this.slotForUpdate = res;

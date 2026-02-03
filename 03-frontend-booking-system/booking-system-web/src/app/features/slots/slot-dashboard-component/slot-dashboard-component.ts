@@ -6,11 +6,12 @@ import { SlotEditWizard } from '../slot-edit-wizard/slot-edit-wizard';
 import { CommonModule, DatePipe } from '@angular/common';
 import { EventService } from '@features/events/event-service';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
+import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
 
 @Component({
   standalone: true,
   selector: 'app-slot-dashboard-component',
-  imports: [CommonModule, RouterLink, SlotEditWizard, DatePipe],
+  imports: [CommonModule, RouterLink, SlotEditWizard, DatePipe, FullCalendarView],
   templateUrl: './slot-dashboard-component.html',
   styleUrl: './slot-dashboard-component.css',
 })
@@ -21,9 +22,10 @@ export class SlotDashboardComponent implements OnInit {
   updateSlotWizard: boolean = false;
   slotList = toSignal(this.slotService.slot$, { initialValue: [] });
   eventId!: number;
-  eventType!: string;
+  eventType!: EventTypeModel;
   slotId: number | null = null;
   modeSlotWizard!: 'CREATE' | 'UPDATE';
+  openCalendarView: boolean = false;
   protected readonly EventType = EventTypeModel;
 
 
@@ -59,7 +61,6 @@ export class SlotDashboardComponent implements OnInit {
 
   confirmDeleteSlot(slotId: number) {
     if (confirm("Are you sure you want to delete this Slot?")) {
-      console.log(slotId);
       this.deleteSlotById(slotId);
     }
   }
@@ -101,6 +102,15 @@ export class SlotDashboardComponent implements OnInit {
 
   closeSlotWizard() {
     this.openSlotWizard = false;
+  }
+
+  openCalendar(slotId:number){
+    this.slotId = slotId;
+    this.openCalendarView = true;
+  }
+
+  closeCalendar(){
+    this.openCalendarView = false;
   }
 
 }

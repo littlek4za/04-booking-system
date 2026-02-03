@@ -7,7 +7,7 @@ import { FullCalendarView } from '@shared/components/full-calendar-view/full-cal
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, AsyncPipe,FullCalendarView],
+  imports: [RouterOutlet, RouterLink, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

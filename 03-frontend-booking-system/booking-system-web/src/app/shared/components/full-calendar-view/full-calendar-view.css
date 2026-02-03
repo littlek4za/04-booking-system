@@ -1,0 +1,25 @@
+.calendar-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.calendar-header {
+  flex: 0 0 auto;   /* fixed height */
+  padding: 8px;
+
+}
+
+.calendar-body {
+  flex: 1 1 auto;   /* take remaining space */
+  min-height: 0;    /* VERY IMPORTANT for scrolling */
+  overflow: hidden; /* FullCalendar handles inner scroll */
+}
+
+.slot-filter {
+  flex: 0 0 auto;
+  max-height: 120px;
+  overflow-y: auto;
+  border-top: 1px solid #ddd;
+  padding: 8px;
+}

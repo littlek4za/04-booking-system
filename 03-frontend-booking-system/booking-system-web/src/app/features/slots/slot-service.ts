@@ -40,7 +40,7 @@ export class SlotService {
     return this.httpClient.delete<void>(`${this.eventsUrl}/${eventId}/slots/${slotId}`);
   }
 
-  getSlotById(eventId: number, slotId: number): Observable<SlotResponseDto> {
+  getSlotByIdAndEventId(eventId: number, slotId: number): Observable<SlotResponseDto> {
     return this.httpClient.get<SlotResponseDto>(`${this.eventsUrl}/${eventId}/slots/${slotId}`)
   }
 

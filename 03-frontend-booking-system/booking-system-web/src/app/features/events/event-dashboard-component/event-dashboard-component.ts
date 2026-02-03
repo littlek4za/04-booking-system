@@ -1,14 +1,16 @@
-import { Component, inject} from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { EventEditWizard } from '../event-edit-wizard/event-edit-wizard';
 import { EventService } from '../event-service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from "@angular/router";
+import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
+import { EventTypeModel } from '../dtos/event-type-model';
 
 @Component({
   standalone: true,
   selector: 'app-event-dashboard-component',
-  imports: [EventEditWizard, DatePipe, RouterLink],
+  imports: [EventEditWizard, DatePipe, RouterLink, FullCalendarView],
   templateUrl: './event-dashboard-component.html',
   styleUrl: './event-dashboard-component.css',
 })
@@ -16,13 +18,17 @@ export class EventDashboardComponent {
 
   private eventService = inject(EventService);
   openEventWizard: boolean = false;
+  openCalendarView: boolean = false;
   modeEventWizard!: 'CREATE' | 'UPDATE';
-  updateEventId: number|null = null;
+  updateEventId: number | null = null;
+
+  eventId: number | null = null;
+  eventType: EventTypeModel | null = null;
 
   // OPTIONAL TO USE async to update form
   // eventList$?: Observable<EventResponseDto[]>;
   eventList = toSignal(this.eventService.eventList$, { initialValue: [] });
-  
+
 
   // this.eventList$ = this.eventService.getEventsForUser().pipe(
   //   tap(res => console.log('GET Event List succeed', this.eventList$)),
@@ -72,13 +78,25 @@ export class EventDashboardComponent {
     this.openEventWizard = true;
   }
 
-  openCreateEventWizard(){
+  openCreateEventWizard() {
     this.modeEventWizard = 'CREATE';
     this.updateEventId = null;
     this.openEventWizard = true;
   }
+
   closeEventWizard() {
     this.openEventWizard = false;
+  }
+
+  openCalendar(eventId: number, eventType: EventTypeModel) {
+    this.eventId = eventId;
+    this.eventType = eventType;
+    console.log(this.eventId, this.eventType);
+    this.openCalendarView = true;
+  }
+
+  closeCalendar() {
+    this.openCalendarView = false;
   }
 
 }
