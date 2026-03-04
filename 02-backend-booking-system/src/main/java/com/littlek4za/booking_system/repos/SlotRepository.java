@@ -2,6 +2,7 @@ package com.littlek4za.booking_system.repos;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,10 +14,20 @@ import com.littlek4za.booking_system.repos.projections.EventSlotCount;
 
 public interface SlotRepository extends JpaRepository<Slot,Long>{
 
-    @Query("SELECT s.event.id AS eventId, COUNT (s) AS slotCount FROM Slot s WHERE s.event IN :events GROUP BY s.event.id")
+    @Query("""
+            SELECT s.event.id AS eventId, 
+                COUNT (s) AS slotCount 
+            FROM Slot s 
+            WHERE s.event IN :events 
+            GROUP BY s.event.id
+            """)
     List<EventSlotCount> countSlotForEvents(@Param("events") List<Event> events);
 
-    @Query("SELECT COUNT (s) FROM Slot s WHERE s.event.id = :eventId")
+    @Query("""
+            SELECT COUNT (s) 
+            FROM Slot s 
+            WHERE s.event.id = :eventId
+            """)
     long countSlotByEventId(@Param("eventId") Long eventId);
 
     List<Slot> findByEvent(Event event);
@@ -25,4 +36,14 @@ public interface SlotRepository extends JpaRepository<Slot,Long>{
 
     Optional<Slot> findByIdAndEventId (Long slotId, Long eventId);
 
+    @Query("""
+            SELECT COUNT(s)
+            FROM Slot s
+            WHERE s.event.id = :event_id 
+            AND s.id IN :slotIds
+            """)
+    long countByEventIdAndSlotIds(@Param("eventId") Long eventId, List<Integer> slotIds);
+
+    Set<Slot> findByIdInAndEvent (List<Integer>slotIdList, Long eventId);
+        
 }

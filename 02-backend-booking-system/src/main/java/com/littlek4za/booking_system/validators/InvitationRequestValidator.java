@@ -36,7 +36,7 @@ public class InvitationRequestValidator implements ConstraintValidator<ValidInvi
             valid = false;
             context.buildConstraintViolationWithTemplate("slotIncludeMode must not be null")
                     .addPropertyNode("slotIncludeMode").addConstraintViolation();
-        } else if (dto.slotIncludeMode() == SlotIncludeMode.SELECTED){
+        } else if (dto.slotIncludeMode() == SlotIncludeMode.SELECTED.toString()){
             if(dto.slotIdList() == null || dto.slotIdList().isEmpty()){
                 valid = false;
                 context.buildConstraintViolationWithTemplate("slotIdList is required when slotIncludeMode is SELECTED")

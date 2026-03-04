@@ -1,1 +1,125 @@
 <p>invitation-edit-wizard works!</p>
+
+<button (click)="closeInvitationWizard()">close</button>
+
+<form class="row g-3 needs-validation" [formGroup]="invitationForm" (ngSubmit)="onSubmit()">
+    <div class="col-md-4">
+        <label class="form-label">Select Slot</label>
+        <select class="form-select" formControlName="slotIncludeMode">
+            <option [value]="includeMode.ALL_AND_FUTURE">
+                All current and future slots
+            </option>
+            <option [value]="includeMode.ALL_CURRENT">
+                All current slots
+            </option>
+            <option [value]="includeMode.SELECTED">
+                Custom Slots
+            </option>
+        </select>
+        @if (showCustomSlotSelection) {
+        @for (slot of slotList(); track slot.id; let i = $index) {
+        <input type="checkbox" class="form-check-input" (change)="onSlotToggle(slot.id, $event)">
+        <label class="form-label">{{slot.slotName}}</label>
+        }
+        @if (invitationForm.get('selectedSlotIds')?.hasError('required') &&
+        (invitationForm.get('selectedSlotIds')?.touched ||
+        invitationForm.get('selectedSlotIds')?.dirty)){
+        <div class="text-danger">
+            At least one slot is needed.
+        </div>
+        }
+        }
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Invitation Validity</label>
+        <select class="form-select" formControlName="noExpiry">
+            <option [ngValue]="false">
+                Expires after a specific date
+            </option>
+            <option [ngValue]="true">
+                Never expired.
+            </option>
+        </select>
+        @if (showExpiryDateSelection) {
+        <input type="date" formControlName="expiresAt" [attr.min]="today" />
+        @if (invitationForm.get('expiresAt')?.hasError('required') &&
+        (invitationForm.get('expiresAt')?.touched ||
+        invitationForm.get('expiresAt')?.dirty)){
+        <div class="text-danger">
+            Please enter date.
+        </div>
+        }
+        }
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Total Uses</label>
+        <select class="form-select" formControlName="noMaxUsage">
+            <option [ngValue]="false">
+                Limit total uses
+            </option>
+            <option [ngValue]="true">
+                No limit
+            </option>
+        </select>
+        @if (showMaxUsageSelection) {
+        <input type="number" class="form-control mt-2"
+            placeholder="Enter the maximum number of times this invitation can be used" formControlName="maxUsage" />
+        }
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Uses per User</label>
+        <select class="form-select" formControlName="noMaxUsagePerUser">
+            <option [ngValue]="false">
+                Limit per user
+            </option>
+            <option [ngValue]="true">
+                No limit
+            </option>
+        </select>
+        @if (showMaxUsagePerUserSelection) {
+        <input type="number" class="form-control mt-2" min="1" placeholder="Enter maximum uses allowed per user"
+            formControlName="maxUsagePerUser" />
+        @if (invitationForm.get('maxUsagePerUser')?.hasError('required') &&
+        (invitationForm.get('maxUsagePerUser')?.touched ||
+        invitationForm.get('maxUsagePerUser')?.dirty)){
+        <div class="text-danger">
+            Please enter the amount of maximum usage allowed.
+        </div>
+        }
+        @if (invitationForm.get('maxUsagePerUser')?.hasError('min') && (invitationForm.get('maxUsagePerUser')?.touched
+        ||
+        invitationForm.get('maxUsagePerUser')?.dirty)){
+        <div class="text-danger">
+            Minimum of 1 usage is required.
+        </div>
+        }
+        @if (invitationForm.hasError('maxUsagePerUserMaxError') && (invitationForm.get('maxUsagePerUser')?.touched
+        ||
+        invitationForm.get('maxUsagePerUser')?.dirty)){
+        <div class="text-danger">
+            Uses per User must not higher than Total Uses.
+        </div>
+        }
+        }
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Access requirement</label>
+        <label>
+            <input type="radio" name="requiredLogin" formControlName="requiredLogin" [value]="false" />
+            Allow anonymous access.
+        </label>
+        <label>
+            <input type="radio" name="requiredLogin" formControlName="requiredLogin" [value]="true" />
+            Login required.
+        </label>
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </div>
+
+</form>

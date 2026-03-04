@@ -6,22 +6,30 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from "@angular/router";
 import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
 import { EventTypeModel } from '../dtos/event-type-model';
+import { InvitationEditWizard } from "@features/invitations/invitation-edit-wizard/invitation-edit-wizard";
+import { InvitationDashboard } from "@features/invitations/invitation-dashboard/invitation-dashboard";
 
 @Component({
   standalone: true,
   selector: 'app-event-dashboard-component',
-  imports: [EventEditWizard, DatePipe, RouterLink, FullCalendarView],
+  imports: [EventEditWizard, DatePipe, RouterLink, FullCalendarView, InvitationEditWizard, InvitationDashboard],
   templateUrl: './event-dashboard-component.html',
   styleUrl: './event-dashboard-component.css',
 })
 export class EventDashboardComponent {
 
   private eventService = inject(EventService);
-  openEventWizard: boolean = false;
-  openCalendarView: boolean = false;
-  modeEventWizard!: 'CREATE' | 'UPDATE';
-  updateEventId: number | null = null;
 
+  // show component
+  showEventWizard: boolean = false;
+  showCalendarView: boolean = false;
+  showInvitationWizard: boolean = false;
+  showInvitationDashboard: boolean = false;
+
+  modeEventWizard!: 'CREATE' | 'UPDATE';
+  
+  // field value
+  updateEventId: number | null = null;
   eventId: number | null = null;
   eventType: EventTypeModel | null = null;
 
@@ -75,28 +83,42 @@ export class EventDashboardComponent {
   openUpdateEventWizard(eventId: number) {
     this.modeEventWizard = 'UPDATE';
     this.updateEventId = eventId;
-    this.openEventWizard = true;
+    this.showEventWizard = true;
   }
 
   openCreateEventWizard() {
     this.modeEventWizard = 'CREATE';
     this.updateEventId = null;
-    this.openEventWizard = true;
+    this.showEventWizard = true;
   }
 
   closeEventWizard() {
-    this.openEventWizard = false;
+    this.showEventWizard = false;
+  }
+
+  closeInvitationDashboard() {
+    this.showInvitationDashboard = false;
   }
 
   openCalendar(eventId: number, eventType: EventTypeModel) {
     this.eventId = eventId;
     this.eventType = eventType;
     console.log(this.eventId, this.eventType);
-    this.openCalendarView = true;
+    this.showCalendarView = true;
   }
 
   closeCalendar() {
-    this.openCalendarView = false;
+    this.showCalendarView = false;
+  }
+
+  openInvitationWizard(eventId: number, eventType: EventTypeModel){
+    this.eventId = eventId;
+    this.eventType = eventType;
+    this.showInvitationWizard = true;
+  }
+
+  closeInvitationWizard() {
+    this.showInvitationWizard = false;
   }
 
 }

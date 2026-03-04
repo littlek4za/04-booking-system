@@ -121,7 +121,7 @@ export class FullCalendarView {
       if (!this.eventType) return;
       if (this.mode !== 'VIEW') return;
       if (slots.length === 0) return;
-      console.log('View befor initClendarData', this.normalizedSlots());
+      console.log('View before initClendarData', this.normalizedSlots());
       slots.forEach(slot=> this.selectedSlots.add(slot.id));
       this.initCalendarData();
     })

@@ -1,3 +1,5 @@
+import { EventTypeModel } from "./event-type-model";
+
 export class EventRequestDto {
     eventName!:String;
     eventDescription!:String;
@@ -5,6 +7,6 @@ export class EventRequestDto {
     includePosition!:boolean;
     latitude?:number;
     longitude?:number;
-    eventType!: 'FIXED'|'FLEXIBLE'|'BUSINESS'|'TESTFAIL';
+    eventType!: EventTypeModel;
 
 }

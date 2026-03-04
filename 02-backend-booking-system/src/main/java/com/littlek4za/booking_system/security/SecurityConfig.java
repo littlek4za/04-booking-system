@@ -42,8 +42,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        request -> request.requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
-                                .anyRequest().authenticated())
+                        request -> request
+                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
                             log.warn("authenticationEntryPoint failed: {}", e.getMessage());

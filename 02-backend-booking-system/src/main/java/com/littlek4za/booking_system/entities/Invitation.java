@@ -86,13 +86,12 @@ public class Invitation {
     protected Invitation() {
     }
 
-    public Invitation(Event event, User user, Instant expiresAt, Integer maxUsage, UUID accessToken,
+    public Invitation(Event event, User user, Instant expiresAt, Integer maxUsage,
             SlotIncludeMode slotIncludeMode, boolean requiredLogin, Integer maxUsagePerUser) {
         this.event = event;
         this.user = user;
         this.expiresAt = expiresAt;
         this.maxUsage = maxUsage;
-        this.accessToken = accessToken;
         this.slotIncludeMode = slotIncludeMode;
         this.requiredLogin = requiredLogin;
         this.maxUsagePerUser = maxUsagePerUser;
@@ -113,5 +112,7 @@ public class Invitation {
             accessToken = UUID.randomUUID();
         }
     }
+
+    
 
 }

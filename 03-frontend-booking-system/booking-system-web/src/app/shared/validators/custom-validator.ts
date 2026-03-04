@@ -147,3 +147,18 @@ function timeToMinutes(value: string) {
     const [hours, minutes] = value.split(":").map(Number);
     return hours * 60 + minutes;
 }
+
+export function maxUsagePerUserExceedMaxUsage(abstractControl: AbstractControl): ValidationErrors | null {
+    const noMaxUsage = abstractControl.get('noMaxUsage')?.value;
+    const noMaxUsagePerUser = abstractControl.get('noMaxUsagePerUser')?.value;
+    const maxUsagePerUser = abstractControl.get('maxUsagePerUser')?.value;
+    const maxUsage = abstractControl.get('maxUsage')?.value;
+    if (!noMaxUsage && !noMaxUsagePerUser) {
+       if(maxUsage != null &&
+        maxUsagePerUser != null &&
+        maxUsagePerUser>maxUsage){
+        return { maxUsagePerUserMaxError: true }
+       }
+    }
+    return null;
+}

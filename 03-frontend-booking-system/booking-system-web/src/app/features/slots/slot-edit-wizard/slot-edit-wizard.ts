@@ -14,6 +14,7 @@ import { TimeRange } from '@shared/model/time-range';
 import { SlotService } from '../slot-service';
 import { SlotResponseDto } from '../dtos/slot-response-dto';
 import { A11yModule } from "@angular/cdk/a11y";
+import { logFormErrors } from '@shared/utils/logging-utils';
 
 
 @Component({
@@ -53,7 +54,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.initSlotForm();
     this.applyEventType();
     this.timeOption = this.generateTimeOption(5);
-    this.methodForFormValueChanges();
+    this.actionWhenFormValueChanges();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -284,7 +285,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   //ngOnInit step 4 methodForFormValueChanges()
-  methodForFormValueChanges() {
+  actionWhenFormValueChanges() {
     this.slotForm.get('intervalType')!.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => this.onIntervalChange(value));
@@ -367,25 +368,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private timeToMinutes(time: string): number {
     const [h, m] = time.split(':').map(Number);
     return h * 60 + m;
-  }
-
-  //debug form error
-  logFormErrors(form: AbstractControl, parentKey: string = '') {
-    if (!form) return;
-    if (form instanceof FormGroup) {
-      Object.keys(form.controls).forEach(key => {
-        const control = form.get(key);
-        this.logFormErrors(control!, parentKey ? `${parentKey}.${key}` : key);
-      });
-    } else if (form instanceof FormArray) {
-      form.controls.forEach((control, index) => {
-        this.logFormErrors(control, `${parentKey}[${index}]`);
-      });
-    } else if (form instanceof FormControl) {
-      if (form.errors) {
-        console.log(`${parentKey} errors:`, form.errors);
-      }
-    }
   }
 
   // Update 
@@ -523,14 +505,14 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
     this.slotForm.markAllAsTouched();
     if (this.slotForm.invalid) {
-      this.logFormErrors(this.slotForm);
+      logFormErrors(this.slotForm);
       isAllValid = false;
     }
 
     if (this.eventType == EventTypeModel.BUSINESS) {
       this.businessDaysHoursForm.markAllAsTouched();
       if (this.businessDaysHoursForm.invalid) {
-        this.logFormErrors(this.businessDaysHoursForm);
+        logFormErrors(this.businessDaysHoursForm);
         isAllValid = false;
       }
     }
@@ -538,7 +520,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     if (this.eventType == EventTypeModel.FLEXIBLE) {
       this.flexibleDaysHoursForm.markAllAsTouched();
       if (this.flexibleDaysHoursForm.invalid) {
-        this.logFormErrors(this.flexibleDaysHoursForm);
+        logFormErrors(this.flexibleDaysHoursForm);
         isAllValid = false;
       }
     }

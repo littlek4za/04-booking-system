@@ -2,10 +2,19 @@
 
 <button (click)="openCreateEventWizard()">+ Create Event</button>
 
-@if (openEventWizard === true) {
+@if (showEventWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-event-edit-wizard [mode]="modeEventWizard" [eventId]="updateEventId" (close)="closeEventWizard()"></app-event-edit-wizard>
+  <app-event-edit-wizard [mode]="modeEventWizard" [eventId]="updateEventId"
+    (close)="closeEventWizard()"></app-event-edit-wizard>
+</div>
+}
+
+@if (showInvitationDashboard === true && updateEventId !== null) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-invitation-dashboard [eventId]="updateEventId!"
+    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }
 
@@ -44,6 +53,9 @@
         <button type="button" class="btn btn-outline-info" (click)="openCalendar(event.id, event.eventType)">
           View Calendar
         </button>
+        <button type="button" class="btn btn-outline-info" (click)="openInvitationWizard(event.id, event.eventType)">
+          Invitation
+        </button>
         <button type="button" class="btn btn-outline-warning" (click)="openUpdateEventWizard(event.id)">
           Update
         </button>
@@ -65,10 +77,18 @@
   </tbody>
 </table>
 
-@if (openCalendarView === true) {
+@if (showCalendarView === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" mode="VIEW" (close)="closeCalendar()"></app-full-calendar-view>
+  <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" mode="VIEW"
+    (close)="closeCalendar()"></app-full-calendar-view>
 </div>
 }
 
+@if (showInvitationWizard === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-invitation-edit-wizard [eventId]="eventId!" [eventType]="eventType!" mode="CREATE"
+    (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
+</div>
+}
