@@ -1,1 +1,57 @@
 <p>invitation-dashboard works!</p>
+<button (click)="closeDashboard()">close</button>
+
+<table class="table table-striped table-dark">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Invitation Code</th>
+            <th scope="col">Slots for booking</th>
+            <th scope="col">Validity</th>
+            <th scope="col">Usage</th>
+            <th scope="col">Usage limit per user</th>
+            <th scope="col">Access requirement</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (invitation of invitationList(); track invitation.id; let i = $index) {
+        <tr>
+            <th scope="row">{{i+1}}</th>
+            <td>{{invitation.accessToken}}</td>
+            <td>{{invitation.slotNames}}</td>
+            @if (invitation.expiresAt >= "9999-12-31T23:59:59Z") {
+            <td>No Expiry</td>
+            } @else {
+            <td>{{invitation.expiresAt}}</td>
+            }
+            @if (invitation.maxUsage == null) {
+            <td>{{invitation.usedCount}}</td>
+            } @else {
+            <td>{{invitation.usedCount}} / {{invitation.maxUsage}}</td>
+            }
+            @if (invitation.maxUsagePerUser == null) {
+            <td>No Limit</td>
+            } @else {
+            <td>{{invitation.maxUsagePerUser}}</td>
+            }
+            @if (invitation.requiredLogin == true) {
+            <td>Guest required register to book</td>
+            } @else {
+            <td>Anonymous Guest allowed to book</td>
+            }
+            <td>
+                <button type="button" class="btn btn-outline-info" (click)="shareInvitation(invitation.accessToken)">
+                    Share
+                </button>
+                <button type="button" class="btn btn-outline-danger" (click)="deleteInvitation(invitation.id)">
+                    Delete
+                </button>
+            </td>
+
+        </tr>
+
+
+        }
+    </tbody>
+</table>

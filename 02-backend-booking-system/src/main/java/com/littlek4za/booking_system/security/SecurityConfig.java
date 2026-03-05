@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         request -> request
                         .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

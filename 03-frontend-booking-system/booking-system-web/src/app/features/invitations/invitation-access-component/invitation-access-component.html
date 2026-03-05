@@ -1,0 +1,25 @@
+<p>invitation-access-component works!</p>
+<form class="row g-3 needs-validation" [formGroup]="tokenValidationForm" (ngSubmit)="onSubmit()">
+    <div class="col-md-4">
+        <label class="form-label">Invitation code</label>
+        <input type="text" class="form-control" formControlName="token">
+        @if (tokenValidationForm.get('token')?.hasError('pattern') &&
+        (tokenValidationForm.get('token')?.touched ||
+        tokenValidationForm.get('token')?.dirty)){
+        <div class="text-danger">
+            Invalid invitation code.
+        </div>
+        }
+        @if (tokenValidationForm.get('token')?.hasError('required') &&
+        (tokenValidationForm.get('token')?.touched ||
+        tokenValidationForm.get('token')?.dirty)){
+        <div class="text-danger">
+            Invitation code is required.
+        </div>
+        }
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </div>
+</form>

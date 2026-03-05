@@ -1,9 +1,28 @@
 package com.littlek4za.booking_system.repos;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
+import java.util.List;
+import java.util.Optional;
 
-public interface InvitationRepository extends JpaRepository<Invitation,Long>{
+public interface InvitationRepository extends JpaRepository<Invitation, Long> {
+
+    List<Invitation> findByEvent(Event event);
+
+    boolean existsByAccessToken(String token);
+
+    Optional<Invitation> findByEventAndId(Event event, Long id);
+
+    @Query("""
+            SELECT i
+            FROM Invitation i
+            JOIN FETCH i.event
+            WHERE i.accessToken = :accessToken
+            """)
+    Optional<Invitation> findByAccessTokenWithEvent(@Param("accessToken") String token);
 
 }

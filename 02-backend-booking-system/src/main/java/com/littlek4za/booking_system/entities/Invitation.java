@@ -3,7 +3,6 @@ package com.littlek4za.booking_system.entities;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -22,7 +21,6 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,7 +54,7 @@ public class Invitation {
     private int usedCount = 0;
 
     @Column(name = "access_token", nullable = false, unique = true)
-    private UUID accessToken;
+    private String accessToken;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "include_mode", nullable = false)
@@ -73,15 +71,11 @@ public class Invitation {
     private Instant createdAt;
 
     @ManyToMany
-    @JoinTable(
-        name = "invitation_slots",
-        joinColumns = @JoinColumn(name ="invitation_id"),
-        inverseJoinColumns = @JoinColumn(name = "slot_id")
-    )
+    @JoinTable(name = "invitation_slots", joinColumns = @JoinColumn(name = "invitation_id"), inverseJoinColumns = @JoinColumn(name = "slot_id"))
     private Set<Slot> slotSet = new HashSet<>();
 
-    @OneToMany(mappedBy = "invitation")
-    private Set<InvitationUsage> invitationUsages = new HashSet<>(); 
+    @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
+    private Set<InvitationUsage> invitationUsages = new HashSet<>();
 
     protected Invitation() {
     }
@@ -105,14 +99,5 @@ public class Invitation {
             throw new IllegalStateException("Max usage reached");
         }
     }
-
-    @PrePersist
-    private void initToken() {
-        if(accessToken == null) {
-            accessToken = UUID.randomUUID();
-        }
-    }
-
-    
 
 }

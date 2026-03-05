@@ -13,8 +13,7 @@
 @if (showInvitationDashboard === true && updateEventId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-invitation-dashboard [eventId]="updateEventId!"
-    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+  <app-invitation-dashboard [eventId]="updateEventId!" (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }
 
@@ -53,8 +52,11 @@
         <button type="button" class="btn btn-outline-info" (click)="openCalendar(event.id, event.eventType)">
           View Calendar
         </button>
-        <button type="button" class="btn btn-outline-info" (click)="openInvitationWizard(event.id, event.eventType)">
-          Invitation
+        <button type="button" class="btn btn-outline-info" (click)="openInvitationDashboard(event.id)">
+          View Invitation
+        </button>
+        <button type="button" class="btn btn btn-success" (click)="openInvitationWizard(event.id, event.eventType)">
+          Create Invitation
         </button>
         <button type="button" class="btn btn-outline-warning" (click)="openUpdateEventWizard(event.id)">
           Update

@@ -96,6 +96,11 @@ export class EventDashboardComponent {
     this.showEventWizard = false;
   }
 
+  openInvitationDashboard(eventId: number){
+    this.updateEventId = eventId;
+    this.showInvitationDashboard = true;
+  }
+
   closeInvitationDashboard() {
     this.showInvitationDashboard = false;
   }

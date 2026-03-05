@@ -10,13 +10,16 @@ import { AuthDebug } from './debug/auth-debug/auth-debug';
 import { EventDashboardComponent } from './features/events/event-dashboard-component/event-dashboard-component';
 import { LeafletMapSelection } from './shared/components/leaflet-map-selection/leaflet-map-selection';
 import { SlotDashboardComponent } from '@features/slots/slot-dashboard-component/slot-dashboard-component';
+import { InvitationAccessComponent } from '@features/invitations/invitation-access-component/invitation-access-component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
     { path: 'register', component: RegisterComponent, canActivate: [GuestGuard] },
-    { path: 'roleSelect', component: RoleSelectComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
+    { path: 'roleSelect', component: RoleSelectComponent },
     { path: 'welcome', component: WelcomeComponent },
     { path: 'authDebug', component: AuthDebug },
+    { path: 'invitation', component: InvitationAccessComponent},
+    { path: 'invitation/:token', component: InvitationAccessComponent},
     { path: 'eventDashboard', component: EventDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'mapSelection', component: LeafletMapSelection},
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },

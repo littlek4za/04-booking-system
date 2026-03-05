@@ -1,5 +1,6 @@
 package com.littlek4za.booking_system.utils;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -112,7 +113,7 @@ public class DtoMapperImpl implements DtoMapper {
     }
 
     @Override
-    public InvitationResponseDto toInvitationResponseDto(Invitation invitation) {
+    public InvitationResponseDto toInvitationResponseDto(Invitation invitation, List<String> slotNames) {
 
         return new InvitationResponseDto(
                 invitation.getId(),
@@ -125,7 +126,8 @@ public class DtoMapperImpl implements DtoMapper {
                 invitation.getSlotIncludeMode(),
                 invitation.isRequiredLogin(),
                 invitation.getMaxUsagePerUser(),
-                invitation.getCreatedAt()
+                invitation.getCreatedAt(),
+                slotNames
             );
     }
 

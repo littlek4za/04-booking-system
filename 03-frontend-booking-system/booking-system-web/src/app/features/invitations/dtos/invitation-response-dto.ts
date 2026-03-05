@@ -13,5 +13,6 @@ export class InvitationResponseDto {
     requiredLogin!: boolean;
     maxUsagePerUser?: number | null;
     createdAt!: string;
+    slotNames! : string[];
 
 }

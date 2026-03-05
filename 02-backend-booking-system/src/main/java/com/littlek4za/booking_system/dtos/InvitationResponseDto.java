@@ -1,7 +1,7 @@
 package com.littlek4za.booking_system.dtos;
 
 import java.time.Instant;
-import java.util.UUID;
+import java.util.List;
 
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 
@@ -12,11 +12,12 @@ public record InvitationResponseDto(
     Instant expiresAt,
     Integer maxUsage,
     int usedCount,
-    UUID accessToken,
+    String accessToken,
     SlotIncludeMode slotIncludeMode,
     boolean requiredLogin,
     Integer maxUsagePerUser,
-    Instant createdAt
+    Instant createdAt,
+    List<String> slotNames
 
 ) {
 

@@ -63,7 +63,7 @@ CREATE TABLE invitations (
 	expires_at TIMESTAMPTZ NOT NULL,
 	max_usage INT,
 	used_count INT DEFAULT 0,
-	access_token UUID NOT NULL UNIQUE, -- NEW
+	access_token VARCHAR(6) NOT NULL UNIQUE, -- NEW
 	include_mode VARCHAR(20) NOT NULL, -- 'ALL_AND_FUTURE' or 'ALL_CURRENT' or 'SELECTED' -- NEW
 	required_login BOOLEAN NOT NULL DEFAULT TRUE,
 	max_usage_per_user INT, -- NULL means UNLIMITED USER -- NEW

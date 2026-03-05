@@ -1,10 +1,8 @@
 package com.littlek4za.booking_system.security;
 
 import java.io.IOException;
-import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -30,31 +28,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        Set<String> ignorePaths = Set.of(
-                "/api/v1/login",
-                "/api/v1/register");
-
-        if (ignorePaths.contains(path)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        log.debug("JwtAuthFilter triggered for path: {}", path);
 
         String authHeader = request.getHeader((HttpHeaders.AUTHORIZATION));
 
-        // to allow without header, will need to declare the path at security config, and jwtauthfilter ignorePaths
+        // if header exists, start with Bearer -> try authenticate
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // writeJson(response, HttpStatus.UNAUTHORIZED,
-            //         "Missing or invalid Authorization header",
-            //         request.getRequestURI());
-            // return; 
-            throw new InsufficientAuthenticationException("Missing or invalid Authorization header");
+            log.debug("No Bearer token found. Continuing without authentication.");
+            filterChain.doFilter(request, response);
+            return;
         }
-
-        
+        try {
             String token = authHeader.substring(7);
+            log.debug("Bearer token found, validating...");
+
             SecurityContextHolder.getContext()
                     .setAuthentication(userAuthProvider.validateTokenStrongly(token));
-        
+        } catch (Exception e) {
+            log.debug("Token validation failed: {}", e.getMessage());
+
+            // Clear context if something goes wrong
+            SecurityContextHolder.clearContext();
+        }
 
         filterChain.doFilter(request, response);
     }
