@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LoginRequestDto } from '../dtos/login-request-dto';
 import { AuthService } from '../auth-service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-login-component',
@@ -14,9 +14,14 @@ export class LoginComponent implements OnInit {
 
   loginForm!: FormGroup;
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
+
+  successLoginReturnUrl: string = '/roleSelect';
 
   ngOnInit(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    this.successLoginReturnUrl = returnUrl || '/roleSelect';
+    
     this.initLoginForm();
   }
 
@@ -26,6 +31,18 @@ export class LoginComponent implements OnInit {
       password: new FormControl<string>("", [Validators.required]),
       isAgree: new FormControl<boolean>(false, [Validators.requiredTrue])
     });
+  }
+
+  goRegister() {
+    
+    if (this.successLoginReturnUrl && this.successLoginReturnUrl !== '/roleSelect') {
+      this.router.navigate(['/register'], {
+        queryParams: { returnUrl: this.successLoginReturnUrl }
+      });
+    } else {
+      this.router.navigate(['/register']);
+    }
+
   }
 
   onSubmit() {
@@ -42,7 +59,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(loginRequestDto).subscribe({
       next: (response) => {
         console.log('Login success', response);
-        this.router.navigate(['/roleSelect']);
+        this.router.navigateByUrl(this.successLoginReturnUrl);
       },
       error: (err) => {
         console.log('Login failed');

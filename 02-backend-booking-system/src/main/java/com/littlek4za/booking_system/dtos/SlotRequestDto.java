@@ -27,7 +27,7 @@ public record SlotRequestDto(
 
     Instant slotEndTime,
     
-    Integer maxBook,
+    Integer maxBookPerInterval,
 
     Integer slotIntervalMinutes,
 

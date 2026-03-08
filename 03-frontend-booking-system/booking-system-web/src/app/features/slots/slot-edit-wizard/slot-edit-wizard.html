@@ -31,9 +31,9 @@
     @if (eventType == EventType.FIXED) {
     <div class="col-md-4">
         <label class="form-label">Max Attendee</label>
-        <input type="number" class="form-control" formControlName="maxBook">
-        @if (slotForm.controls['maxBook'].invalid && (slotForm.controls['maxBook'].touched ||
-        slotForm.controls['maxBook'].dirty)){
+        <input type="number" class="form-control" formControlName="maxBookPerInterval">
+        @if (slotForm.controls['maxBookPerInterval'].invalid && (slotForm.controls['maxBookPerInterval'].touched ||
+        slotForm.controls['maxBookPerInterval'].dirty)){
         <div class="text-danger">
             Attendee must be at least 1 person.
         </div>

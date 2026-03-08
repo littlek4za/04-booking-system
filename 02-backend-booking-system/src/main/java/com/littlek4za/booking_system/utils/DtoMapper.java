@@ -1,6 +1,6 @@
 package com.littlek4za.booking_system.utils;
 
-import java.util.List;
+import java.util.Set;
 
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
@@ -28,6 +28,6 @@ public interface DtoMapper {
 
     Invitation toInvitation(InvitationRequestDto invitationRequestDto, Event event, User user);
 
-    InvitationResponseDto toInvitationResponseDto(Invitation invitation, List<String> slotNames);
+    InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotSet );
 
 }

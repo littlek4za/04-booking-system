@@ -49,18 +49,22 @@ export class InvitationAccessComponent implements OnInit {
           alert(res.reason);
         }
         if (res.requiredLogin == false) {
-          alert("redirect to booking page");
+          alert("redirecting to booking page");
         }
         if (res.requiredLogin && !this.authService.hasValidToken()) {
-          alert("redirect to login page");
-          this.router.navigate(['/login']);
-
+          alert("redirecting to login page");
+          const currentUrl = this.router.url;
+          this.router.navigate(['/login'],{
+            queryParams: {returnUrl: currentUrl}
+          });
+          return;
         }
         if (res.requiredLogin && this.authService.hasValidToken()) {
           alert("redirect to booking page");
         }
       },
       error: (err) => {
+        alert("Token validation error. Please contact administrator");
       }
     })
   };

@@ -2,10 +2,10 @@ package com.littlek4za.booking_system.services;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -61,10 +61,9 @@ public class InvitationServiceImpl implements InvitationService {
 
         Invitation newInvitation;
         Set<Slot> slotSet;
-
         if (SlotIncludeMode.SELECTED.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            slotSet = slotRepository.findByIdInAndEvent(invitationRequestDto.slotIdList(), eventId);
+            slotSet = slotRepository.findByIdInAndEventId(invitationRequestDto.slotIdList(), eventId);
             if (slotSet.size() != invitationRequestDto.slotIdList().size()) {
                 throw new AppException("Some slots do not belong to this event", HttpStatus.NOT_FOUND);
             }
@@ -78,8 +77,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         } else if (SlotIncludeMode.ALL_CURRENT.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            List<Slot> slotList = slotRepository.findByEvent(event);
-            slotSet = new HashSet<>(slotList);
+            slotSet = slotRepository.findByEvent(event);
 
             if (slotSet.isEmpty()) {
                 throw new AppException("No Slot found, Please create slot before create invitation",
@@ -91,8 +89,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         } else if (SlotIncludeMode.ALL_AND_FUTURE.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            List<Slot> slotList = slotRepository.findByEvent(event);
-            slotSet = new HashSet<>(slotList);
+            slotSet = slotRepository.findByEvent(event);
 
             if (slotSet.isEmpty()) {
                 throw new AppException("No Slot found, Please create slot before create invitation",
@@ -113,13 +110,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         Invitation savedInvitation = invitationRepository.save(newInvitation);
 
-        List<Slot> slotList = null;
-
-        if (savedInvitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
-            slotList = slotRepository.findByEvent(event);
-        }
-
-        return buildInvitationResponse(savedInvitation, slotList);
+        return dtoMapper.toInvitationResponseDto(savedInvitation, slotSet);
     }
 
     private String generateUniqueAccessToken() {
@@ -148,32 +139,20 @@ public class InvitationServiceImpl implements InvitationService {
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
 
-        List<Slot> slotList = slotRepository.findByEvent(event);
+        List<Invitation> invitationList = invitationRepository.findByEventWithSlotSet(event);
 
-        List<InvitationResponseDto> iReponseDtoList = invitationRepository.findByEvent(event).stream()
-                .map(invitation -> {
-                    return buildInvitationResponse(invitation, slotList);
-                })
-                .toList();
-        return iReponseDtoList;
-    }
+        List<InvitationResponseDto> invitationResponseDtoList = 
+        invitationList.stream().map(invitation -> {
+            Set<Slot> slotSet;
+            if(invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
+                slotSet = slotRepository.findByEvent(event); 
+            } else {
+                slotSet = invitation.getSlotSet();
+            }
+            return dtoMapper.toInvitationResponseDto(invitation, slotSet);
+        }).collect(Collectors.toList());
 
-    private InvitationResponseDto buildInvitationResponse(Invitation invitation, List<Slot> slotList) {
-        List<String> slotNames;
-
-        if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
-            slotNames = slotList
-                    .stream()
-                    .map(slot -> slot.getSlotName())
-                    .toList();
-        } else {
-            slotNames = invitation.getSlotSet()
-                    .stream()
-                    .map(slot -> slot.getSlotName())
-                    .toList();
-        }
-
-        return dtoMapper.toInvitationResponseDto(invitation, slotNames);
+        return invitationResponseDtoList;
     }
 
     @Override
@@ -252,5 +231,19 @@ public class InvitationServiceImpl implements InvitationService {
                 inv.getEvent().getEventName(),
                 inv.getExpiresAt(),
                 reason);
+    }
+
+    @Override
+    public InvitationResponseDto getInvitationByToken(String token) {
+        Invitation invitation = invitationRepository.findByAccessTokenWithEventAndSlotSet(token)
+                        .orElseThrow(()-> new AppException("no Invitation Found", HttpStatus.NOT_FOUND));
+
+        Set<Slot> slotSet;
+        if(invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE){
+            slotSet = slotRepository.findByEvent(invitation.getEvent());
+        } else {
+            slotSet = invitation.getSlotSet();
+        }
+        return dtoMapper.toInvitationResponseDto(invitation,slotSet);
     }
 }

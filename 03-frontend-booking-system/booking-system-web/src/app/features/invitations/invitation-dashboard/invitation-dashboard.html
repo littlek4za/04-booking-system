@@ -11,6 +11,7 @@
             <th scope="col">Usage</th>
             <th scope="col">Usage limit per user</th>
             <th scope="col">Access requirement</th>
+            <th scope="col">Slot Mode</th>
             <th scope="col">Action</th>
         </tr>
     </thead>
@@ -19,7 +20,7 @@
         <tr>
             <th scope="row">{{i+1}}</th>
             <td>{{invitation.accessToken}}</td>
-            <td>{{invitation.slotNames}}</td>
+            <td>{{getSlotNames(invitation)}}</td>
             @if (invitation.expiresAt >= "9999-12-31T23:59:59Z") {
             <td>No Expiry</td>
             } @else {
@@ -39,6 +40,11 @@
             <td>Guest required register to book</td>
             } @else {
             <td>Anonymous Guest allowed to book</td>
+            }
+            @if (invitation.slotIncludeMode == SlotIncludeMode.ALL_AND_FUTURE) {
+            <td>All slot of the event</td>
+            } @else {
+            <td>Selected slot</td>
             }
             <td>
                 <button type="button" class="btn btn-outline-info" (click)="shareInvitation(invitation.accessToken)">

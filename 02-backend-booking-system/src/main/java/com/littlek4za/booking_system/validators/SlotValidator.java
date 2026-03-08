@@ -48,8 +48,8 @@ public class SlotValidator {
             throw new AppException("Slot end time must be after slot start time", HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.maxBook() == null || dto.maxBook() <= 0) {
-            throw new AppException("Fixed Type requires maxBook input to be larger than 0", HttpStatus.BAD_REQUEST);
+        if (dto.maxBookPerInterval() == null || dto.maxBookPerInterval() <= 0) {
+            throw new AppException("Fixed Type requires maxBookPerInterval input to be larger than 0", HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() != null) {
@@ -76,8 +76,8 @@ public class SlotValidator {
                     HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.maxBook() != null) {
-            throw new AppException("Flexible Type requires maxBook input to be NULL", HttpStatus.BAD_REQUEST);
+        if (dto.maxBookPerInterval() != null) {
+            throw new AppException("Flexible Type requires maxBookPerInterval input to be NULL", HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() == null || dto.slotIntervalMinutes() <= 0) {
@@ -111,8 +111,8 @@ public class SlotValidator {
                     HttpStatus.BAD_REQUEST);
         }
 
-        if (dto.maxBook() != null) {
-            throw new AppException("Business Type requires maxBook input to be NULL", HttpStatus.BAD_REQUEST);
+        if (dto.maxBookPerInterval() != null) {
+            throw new AppException("Business Type requires maxBookPerInterval input to be NULL", HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() == null || dto.slotIntervalMinutes() <= 0) {

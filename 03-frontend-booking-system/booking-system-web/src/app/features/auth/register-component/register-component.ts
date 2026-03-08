@@ -3,7 +3,7 @@ import { AuthService } from '../auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { passwordMatchedValidator } from '../../../shared/validators/custom-validator';
 import { SignupRequestDto } from '../dtos/signup-request-dto';
-import { Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import { extractFieldErrorMessage } from '../../../shared/utils/error-utils';
 
 @Component({
@@ -18,9 +18,13 @@ export class RegisterComponent {
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router) { }
+  successRegisterReturnUrl: string ='/login';
+
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    this.successRegisterReturnUrl = returnUrl || '/login';
     this.initRegisterForm();
   }
 
@@ -58,7 +62,7 @@ export class RegisterComponent {
   }
 
   onSubmit() {
-    this.registerForm.markAllAsTouched;
+    this.registerForm.markAllAsTouched();
     if (this.registerForm.invalid) {
       return;
     }
@@ -73,7 +77,15 @@ export class RegisterComponent {
       next: (response) => {
         console.log('Register success', response);
         alert("Registration Success! Please proceed to log in");
-        this.router.navigate(['/login'])
+
+        if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login' ) {
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: this.successRegisterReturnUrl }
+          });
+        } else {
+          this.router.navigateByUrl(this.successRegisterReturnUrl);
+        }
+
       },
       error: (err) => {
         console.log('Registration failed');

@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.services;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -48,8 +49,8 @@ public class SlotServiceImpl implements SlotService {
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
 
-        List<Slot> slotList = slotRepository.findByEvent(event);
-        List<SlotResponseDto> slotResponseDtoList = slotList.stream()
+        Set<Slot> slotSet = slotRepository.findByEvent(event);
+        List<SlotResponseDto> slotResponseDtoList = slotSet.stream()
                 .map(slot -> dtoMapper.toSlotResponseDto(slot))
                 .toList();
 
@@ -69,9 +70,9 @@ public class SlotServiceImpl implements SlotService {
 
         Slot newSlot = dtoMapper.toSlot(slotRequestDto, event);
 
-        if (!event.getEventType().supportMaxBook()) {
-            if (newSlot.getMaxBook() == null) {
-                newSlot.setMaxBook(1);
+        if (!event.getEventType().supportMaxBookPerInterval()) {
+            if (newSlot.getMaxBookPerInterval() == null) {
+                newSlot.setMaxBookPerInterval(1);
             }
         }
 
@@ -131,7 +132,7 @@ public class SlotServiceImpl implements SlotService {
         existingSlot.setSlotDescription(slotRequestDto.slotDescription());
         existingSlot.setSlotStartTime(slotRequestDto.slotStartTime());
         existingSlot.setSlotEndTime(slotRequestDto.slotEndTime());
-        existingSlot.setMaxBook(slotRequestDto.maxBook());
+        existingSlot.setMaxBookPerInterval(slotRequestDto.maxBookPerInterval());
         existingSlot.setSlotIntervalMinutes(slotRequestDto.slotIntervalMinutes());
         existingSlot.setSlotFrequencyIntervalMinutes(slotRequestDto.slotFrequencyIntervalMinutes());
         existingSlot.setBusinessDaysHours(slotRequestDto.businessDaysHours());

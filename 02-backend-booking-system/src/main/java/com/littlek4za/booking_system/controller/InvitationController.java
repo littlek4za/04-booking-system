@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api")
@@ -59,6 +60,14 @@ public class InvitationController {
         InvitationValidationResponseDto validationResponseDto = invitationService.validateAccessToken(token);
         return ResponseEntity.ok(validationResponseDto);
     }
+
+    @GetMapping(path = "{version}/invitations/{token}", version="1")
+    public ResponseEntity<InvitationResponseDto> getInvitationByTokenV1(@PathVariable("token") String token) {
+        InvitationResponseDto invitationResponseDto = invitationService.getInvitationByToken(token);
+
+        return ResponseEntity.ok(invitationResponseDto);
+    }
+    
     
 
 }

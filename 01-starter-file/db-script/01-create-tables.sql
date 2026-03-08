@@ -46,7 +46,7 @@ CREATE TABLE slots (
 	slot_description TEXT,
 	slot_start_time TIMESTAMPTZ,
 	slot_end_time TIMESTAMPTZ,
-	max_book INT NOT NULL DEFAULT 1,
+	max_book_per_interval INT NOT NULL DEFAULT 1,
 	slot_interval_minutes INT,
 	slot_frequency_interval_minutes INT,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

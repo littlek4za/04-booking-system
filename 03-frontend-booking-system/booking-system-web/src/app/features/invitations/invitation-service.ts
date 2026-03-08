@@ -11,45 +11,65 @@ import { InvitationValidationResponseDto } from './dtos/invitation-validation-re
 export class InvitationService {
 
   private eventId$ = new BehaviorSubject<number | null>(null);
-  invitation$ = this.eventId$.pipe(
+  invitationList$ = this.eventId$.pipe(
     filter((id): id is number => id !==null),
     switchMap(id => this.getInvitationsByEventId(id).pipe(
       tap((res) => console.log('GET Invitation list succeed', res)),
       catchError( err => {
-        console.log('GET Inivitation list by event failed');
+        console.log('GET inivitation list by event failed');
         return of([]);
       })
     ))
-  )
+  );
+  private token$ = new BehaviorSubject<string | null> (null);
+  invitation$ = this.token$.pipe(
+    filter((token): token is string => token !== null),
+    switchMap(token => this.getInvitationByToken(token).pipe(
+      tap((res)=> console.log('GET Invitation succeed', res)),
+      catchError( err => {
+        console.log('GET inivitation by token failed');
+        return of(null);
+      })
+    ))
+  );
 
   private eventsUrl = "http://localhost:8080/api/v1/events";
-  private validateInvitationUrl = "http://localhost:8080/api/v1/invitations";
+  private invitationUrl = "http://localhost:8080/api/v1/invitations";
 
   constructor(private httpClient: HttpClient) {
   }
 
   createInvitation(invitationRequestDto: InvitationRequestDto, eventId: number): Observable<InvitationResponseDto> {
-    const invitationUrl = `${this.eventsUrl}/${eventId}/invitations`;
-    return this.httpClient.post<InvitationResponseDto>(invitationUrl, invitationRequestDto);
+    const url = `${this.eventsUrl}/${eventId}/invitations`;
+    return this.httpClient.post<InvitationResponseDto>(url, invitationRequestDto);
   }
 
   getInvitationsByEventId(eventId: number): Observable<InvitationResponseDto[]> {
-    const invitationUrl = `${this.eventsUrl}/${eventId}/invitations`;
-    return this.httpClient.get<InvitationResponseDto[]>(invitationUrl);
+    const url = `${this.eventsUrl}/${eventId}/invitations`;
+    return this.httpClient.get<InvitationResponseDto[]>(url);
+  }
+
+  getInvitationByToken(token: string): Observable< InvitationResponseDto> {
+    const url = `${this.invitationUrl}/${token}`;
+    return this.httpClient.get<InvitationResponseDto>(url);
   }
 
   deleteInvitation(eventId: number, invitationId: number): Observable<void> {
-    const invitationUrl = `${this.eventsUrl}/${eventId}/invitations/${invitationId}`;
-    return this.httpClient.delete<void>(invitationUrl);
+    const url = `${this.eventsUrl}/${eventId}/invitations/${invitationId}`;
+    return this.httpClient.delete<void>(url);
   }
 
   validateInvitation(token: string): Observable<InvitationValidationResponseDto> {
-    const url = `${this.validateInvitationUrl}/${token}/validate`;
+    const url = `${this.invitationUrl}/${token}/validate`;
     return this.httpClient.get<InvitationValidationResponseDto>(url);
   }
 
-  triggerRefresh(eventId: number){
+  triggerRefreshForInvitationList(eventId: number){
     this.eventId$.next(eventId);
+  }
+
+  triggerRefreshForInvitation(token: string){
+    this.token$.next(token);
   }
 
 }

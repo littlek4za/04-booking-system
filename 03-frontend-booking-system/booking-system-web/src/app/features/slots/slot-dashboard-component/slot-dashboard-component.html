@@ -17,7 +17,7 @@
             <th scope="col">#</th>
             <th scope="col">Slot Name</th>
             <th scope="col">Description</th>
-            <th scope="col">Number of Attendee (TODO include booking count)</th>
+            <th scope="col">Number of Attendee/maxBookPerInterval (TODO include booking count)</th>
             @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
             <th scope="col">Attendee Slot Booking Interval</th>
             }
@@ -31,7 +31,7 @@
             <th scope="row">{{i+1}}</th>
             <td>{{slot.slotName}}</td>
             <td>{{slot.slotDescription}}</td>
-            <td>{{slot.maxBook}}</td>
+            <td>XX/{{slot.maxBookPerInterval}}</td>
             @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
             <td>{{formatDuration(slot.slotIntervalMinutes)}}</td>
             }

@@ -77,7 +77,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       endDate: new FormControl<Date | null>(null),
       startTime: new FormControl<string | null>(null),
       endTime: new FormControl<string | null>(null),
-      maxBook: new FormControl<number | null>(null),
+      maxBookPerInterval: new FormControl<number | null>(null),
       intervalType: new FormControl<string | null>(""),
       slotIntervalMinutes: new FormControl<number | null>(null),
       frequencyType: new FormControl<string | null>(""),
@@ -116,12 +116,12 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   private configureFixed() {
-    this.enable(['maxBook', 'startTime', 'endTime', 'startDate', 'endDate']);
+    this.enable(['maxBookPerInterval', 'startTime', 'endTime', 'startDate', 'endDate']);
     this.disable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
     this.slotForm.setValidators(dateTimeRangeValidator);
     this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
     this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
-    this.slotForm.get('maxBook')?.addValidators([Validators.required, Validators.min(1)]);
+    this.slotForm.get('maxBookPerInterval')?.addValidators([Validators.required, Validators.min(1)]);
     this.slotForm.get('startDate')?.addValidators([Validators.required]);
     this.slotForm.get('startTime')?.addValidators([Validators.required]);
     this.slotForm.get('endDate')?.addValidators([Validators.required]);
@@ -131,7 +131,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private configureFlexible() {
     this.initFlexibleDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
-    this.disable(['maxBook', 'startTime', 'endTime', 'startDate', 'endDate']);
+    this.disable(['maxBookPerInterval', 'startTime', 'endTime', 'startDate', 'endDate']);
     this.slotForm.setValidators(dateTimeRangeValidator);
     this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
     this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
@@ -144,7 +144,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private configureBusiness() {
     this.initBusinessDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
-    this.disable(['startTime', 'endTime', 'startDate', 'endDate', 'maxBook']);
+    this.disable(['startTime', 'endTime', 'startDate', 'endDate', 'maxBookPerInterval']);
     this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
     this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
     this.slotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), Validators.max(1440), divisibleBy5Validator]);
@@ -409,7 +409,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         minute: '2-digit',
         hour12: false
       }),
-      maxBook: slot.maxBook,
+      maxBookPerInterval: slot.maxBookPerInterval,
       intervalType: intervalType,
       slotIntervalMinutes: slot.slotIntervalMinutes,
       frequencyType: frequencyType,
@@ -548,7 +548,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     slotRequestDto.slotDescription = this.slotForm.value.slotDescription;
     slotRequestDto.slotIntervalMinutes = this.slotForm.value.slotIntervalMinutes;
     slotRequestDto.slotFrequencyIntervalMinutes = this.slotForm.value.slotFrequencyIntervalMinutes;
-    slotRequestDto.maxBook = this.slotForm.value.maxBook;
+    slotRequestDto.maxBookPerInterval = this.slotForm.value.maxBookPerInterval;
 
     // Flexible Type section
 

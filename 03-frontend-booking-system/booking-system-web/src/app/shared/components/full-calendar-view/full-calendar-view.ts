@@ -221,7 +221,7 @@ export class FullCalendarView {
           eventId: eventId,
           slotId: slot.id,
           slotDescription: slot.slotDescription,
-          maxBook: slot.maxBook,
+          maxBookPerInterval: slot.maxBookPerInterval,
           slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
         }
       }

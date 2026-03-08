@@ -17,7 +17,7 @@ public record InvitationResponseDto(
     boolean requiredLogin,
     Integer maxUsagePerUser,
     Instant createdAt,
-    List<String> slotNames
+    List<SlotResponseDto> slotList
 
 ) {
 

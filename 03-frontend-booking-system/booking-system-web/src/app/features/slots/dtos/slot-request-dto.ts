@@ -6,7 +6,7 @@ export class SlotRequestDto {
     slotDescription?:string;
     slotStartTime!: string; //ISO string
     slotEndTime!: string; //ISO string
-    maxBook?: number;
+    maxBookPerInterval?: number;
     slotIntervalMinutes?: number;
     slotFrequencyIntervalMinutes?: number;
     businessDaysHours?: Record<number,TimeRange[]>;

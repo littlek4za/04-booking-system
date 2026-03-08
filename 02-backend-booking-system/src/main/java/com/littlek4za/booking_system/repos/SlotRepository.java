@@ -30,7 +30,7 @@ public interface SlotRepository extends JpaRepository<Slot,Long>{
             """)
     long countSlotByEventId(@Param("eventId") Long eventId);
 
-    List<Slot> findByEvent(Event event);
+    Set<Slot> findByEvent(Event event);
 
     int deleteByIdAndEventId(Long id, Long eventId);
 
@@ -44,6 +44,12 @@ public interface SlotRepository extends JpaRepository<Slot,Long>{
             """)
     long countByEventIdAndSlotIds(@Param("eventId") Long eventId, List<Integer> slotIds);
 
-    Set<Slot> findByIdInAndEvent (List<Integer>slotIdList, Long eventId);
+    @Query("""
+                SELECT s
+                FROM Slot s
+                WHERE s.id IN :slotIdList
+                AND s.event.id = :eventId
+                    """)
+    Set<Slot> findByIdInAndEventId (List<Integer>slotIdList, Long eventId);
         
 }

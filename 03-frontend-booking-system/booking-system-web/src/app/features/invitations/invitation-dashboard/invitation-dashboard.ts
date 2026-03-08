@@ -2,6 +2,8 @@ import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChange
 import { toSignal } from '@angular/core/rxjs-interop';
 import { InvitationService } from '../invitation-service';
 import {Clipboard} from '@angular/cdk/clipboard'
+import { SlotIncludeMode } from '../dtos/slot-include-mode';
+import { InvitationResponseDto } from '../dtos/invitation-response-dto';
 
 @Component({
   selector: 'app-invitation-dashboard',
@@ -12,17 +14,21 @@ import {Clipboard} from '@angular/cdk/clipboard'
 export class InvitationDashboard implements OnChanges {
 
   private invitationService = inject(InvitationService);
+
   // IO
   @Input() eventId!: number;
   @Output() close = new EventEmitter<void>();
-  invitationUrl = `http://localhost:4300/invite`
+  invitationUrl = `http://localhost:4300/invitation`
 
   // signal from service
-  invitationList = toSignal(this.invitationService.invitation$, { initialValue: [] });
+  invitationList = toSignal(this.invitationService.invitationList$, { initialValue: [] });
+
+  // html field
+  protected readonly SlotIncludeMode = SlotIncludeMode;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['eventId']) {
-      this.invitationService.triggerRefresh(this.eventId);
+      this.invitationService.triggerRefreshForInvitationList(this.eventId);
     }
   }
 
@@ -38,12 +44,18 @@ export class InvitationDashboard implements OnChanges {
       next: (res) => {
         console.log('Invitation delete succeed');
         alert('Invitation delete succeed');
-        this.invitationService.triggerRefresh(this.eventId);
+        this.invitationService.triggerRefreshForInvitationList(this.eventId);
       },
       error: (err) => {
         console.log('Invitation delete failed');
       }
     });
+  }
+
+  getSlotNames(invitation: InvitationResponseDto): string {
+    // Check if slotList exists
+    if (!invitation.slotList) return '';
+    return invitation.slotList.map(slot => slot.slotName).join(', ');
   }
 
   closeDashboard() {

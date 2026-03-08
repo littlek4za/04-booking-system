@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.utils;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -60,7 +61,7 @@ public class DtoMapperImpl implements DtoMapper {
                 slot.getSlotDescription(),
                 slot.getSlotStartTime(),
                 slot.getSlotEndTime(),
-                slot.getMaxBook(),
+                slot.getMaxBookPerInterval(),
                 slot.getSlotIntervalMinutes(),
                 slot.getSlotFrequencyIntervalMinutes(),
                 slot.getBusinessDaysHours(),
@@ -77,7 +78,7 @@ public class DtoMapperImpl implements DtoMapper {
                 slotRequestDto.slotDescription(),
                 slotRequestDto.slotStartTime(),
                 slotRequestDto.slotEndTime(),
-                slotRequestDto.maxBook(),
+                slotRequestDto.maxBookPerInterval(),
                 slotRequestDto.slotIntervalMinutes(),
                 slotRequestDto.slotFrequencyIntervalMinutes(),
                 slotRequestDto.businessDaysHours(),
@@ -113,7 +114,11 @@ public class DtoMapperImpl implements DtoMapper {
     }
 
     @Override
-    public InvitationResponseDto toInvitationResponseDto(Invitation invitation, List<String> slotNames) {
+    public InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotSet) {
+
+        List<SlotResponseDto> slotResponseDtos = slotSet.stream()
+                .map(slot -> toSlotResponseDto(slot))
+                .collect(Collectors.toList());
 
         return new InvitationResponseDto(
                 invitation.getId(),
@@ -127,8 +132,7 @@ public class DtoMapperImpl implements DtoMapper {
                 invitation.isRequiredLogin(),
                 invitation.getMaxUsagePerUser(),
                 invitation.getCreatedAt(),
-                slotNames
-            );
+                slotResponseDtos);
     }
 
 }

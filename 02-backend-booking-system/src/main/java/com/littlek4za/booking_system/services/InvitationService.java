@@ -15,5 +15,7 @@ public interface InvitationService {
     Long deleteInvitationByEventAndId(Long eventId, Long invitationId);
 
     InvitationValidationResponseDto validateAccessToken(String token);
+
+    InvitationResponseDto getInvitationByToken(String token);
     
 }

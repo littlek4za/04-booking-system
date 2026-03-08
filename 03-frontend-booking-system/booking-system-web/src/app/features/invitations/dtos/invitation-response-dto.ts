@@ -1,3 +1,4 @@
+import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
 import { SlotIncludeMode } from "./slot-include-mode";
 
 export class InvitationResponseDto {
@@ -13,6 +14,6 @@ export class InvitationResponseDto {
     requiredLogin!: boolean;
     maxUsagePerUser?: number | null;
     createdAt!: string;
-    slotNames! : string[];
+    slotList! : SlotResponseDto[];
 
 }

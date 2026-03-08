@@ -14,7 +14,7 @@ public record SlotResponseDto(
     String slotDescription,
     Instant slotStartTime,
     Instant slotEndTime,
-    Integer maxBook,
+    Integer maxBookPerInterval,
     Integer slotIntervalMinutes,
     Integer slotFrequencyIntervalMinutes,
     Map<Integer, List<TimeRange>> businessDaysHours,

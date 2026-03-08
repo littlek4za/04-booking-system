@@ -5,7 +5,7 @@ public enum EventType {
     FLEXIBLE,
     BUSINESS;
 
-    public boolean supportMaxBook(){
+    public boolean supportMaxBookPerInterval(){
         return this == FIXED;
     }
 }

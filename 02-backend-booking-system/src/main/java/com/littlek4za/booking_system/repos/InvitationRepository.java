@@ -13,6 +13,14 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
     List<Invitation> findByEvent(Event event);
 
+    @Query("""
+            SELECT i
+            FROM Invitation i
+            JOIN FETCH i.slotSet
+            WHERE i.event = :event
+            """)
+    List<Invitation> findByEventWithSlotSet(Event event);
+
     boolean existsByAccessToken(String token);
 
     Optional<Invitation> findByEventAndId(Event event, Long id);
@@ -25,4 +33,14 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
             """)
     Optional<Invitation> findByAccessTokenWithEvent(@Param("accessToken") String token);
 
+    @Query("""
+            SELECT i
+            FROM Invitation i
+            LEFT JOIN FETCH i.event
+            LEFT JOIN FETCH i.slotSet
+            WHERE i.accessToken = :accessToken
+            """)
+    Optional<Invitation> findByAccessTokenWithEventAndSlotSet(@Param("accessToken") String token);
+
 }
+ 

@@ -7,7 +7,7 @@ export class SlotResponseDto {
     slotDescription?:string;
     slotStartTime!: string;
     slotEndTime!: string;
-    maxBook!: number;
+    maxBookPerInterval!: number;
     slotIntervalMinutes!: number;
     slotFrequencyIntervalMinutes?: number;
     createdAt!: string;

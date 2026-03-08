@@ -61,8 +61,8 @@ public class Slot {
     @Column(name = "slot_end_time")
     private Instant slotEndTime;
 
-    @Column(name = "max_book", nullable = false)
-    private Integer maxBook;
+    @Column(name = "max_book_per_interval", nullable = false)
+    private Integer maxBookPerInterval;
 
     @Column(name = "slot_interval_minutes")
     private Integer slotIntervalMinutes;
@@ -105,14 +105,14 @@ public class Slot {
     }
 
     public Slot(Event event, String slotName, String slotDescription, Instant slotStartTime, Instant slotEndTime,
-            Integer maxBook, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes,
+            Integer maxBookPerInterval, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes,
             Map<Integer, List<TimeRange>> businessDaysHours, List<InstantRange> flexibleDaysHours) {
         this.event = event;
         this.slotName = slotName;
         this.slotDescription = slotDescription;
         this.slotStartTime = slotStartTime;
         this.slotEndTime = slotEndTime;
-        this.maxBook = maxBook;
+        this.maxBookPerInterval = maxBookPerInterval;
         this.slotIntervalMinutes = slotIntervalMinutes;
         this.slotFrequencyIntervalMinutes = slotFrequencyIntervalMinutes;
         this.businessDaysHours = businessDaysHours;
