@@ -1,1 +1,48 @@
 <p>booking-dashboard works!</p>
+<p>Event Type: {{invitation()?.event?.eventType}}</p>
+<p>Event Name: {{invitation()?.event?.eventName}}</p>
+@if (invitation()?.event?.eventDescription) {
+<p>Event Description: {{invitation()?.event?.eventDescription}}</p>
+}
+
+@if (showBookingConfirmationWizard && slotField && invitationField) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+    <app-booking-confirmation-wizard [slot]='slotField' [invitation]='invitationField' (close)="closeBookingConfirmationWizard()"></app-booking-confirmation-wizard>
+</div>
+}
+
+<table class="table table-striped table-dark">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Slot Name</th>
+            <th scope="col">Slots Description</th>
+            @if (invitation()?.event?.eventType == EventTypeModel.FIXED) {
+            <th scope="col">Start Time</th>
+            <th scope="col">End Time</th>
+            }
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (slot of invitation()?.slotList; track slot.id; let i = $index) {
+        <tr>
+            <td scope="row">{{i+1}}</td>
+            <td>{{slot.slotName}}</td>
+            @if (slot.slotDescription) {
+            <td>{{slot.slotDescription}}</td>
+            } @else {
+            <td></td>
+            }
+            @if (invitation()?.event?.eventType == EventTypeModel.FIXED) {
+            <th scope="col">{{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</th>
+            <th scope="col">{{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</th>
+            }
+            <th>
+                <button type="button" class="btn btn-outline-info" (click)="openBookingConfirmationWizard(slot)">Select Slot</button>
+            </th>
+        </tr>
+        }
+    </tbody>
+</table>

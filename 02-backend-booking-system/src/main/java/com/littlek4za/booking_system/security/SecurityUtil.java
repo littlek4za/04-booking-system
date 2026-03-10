@@ -63,4 +63,18 @@ public class SecurityUtil {
         return principal.getId();
     }
 
+    public boolean isAuthenticated(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if(authentication == null){
+            return false;
+        }
+
+        if(authentication instanceof AnonymousAuthenticationToken){
+            return false;
+        }
+
+        return authentication.getPrincipal() instanceof AuthUserPrincipal;
+    }
+
 }

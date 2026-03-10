@@ -7,7 +7,7 @@ import com.littlek4za.booking_system.models.SlotIncludeMode;
 
 public record InvitationResponseDto(
     Long id,
-    Long eventId,
+    EventResponseDto event,
     Long userId,
     Instant expiresAt,
     Integer maxUsage,

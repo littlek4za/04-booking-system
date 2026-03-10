@@ -1,17 +1,37 @@
-import { Component } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@features/auth/auth-service';
+import { EventTypeModel } from '@features/events/dtos/event-type-model';
+import { SlotIncludeMode } from '@features/invitations/dtos/slot-include-mode';
 import { InvitationService } from '@features/invitations/invitation-service';
+import { BookingConfirmationWizard } from '../booking-confirmation-wizard/booking-confirmation-wizard';
+import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
+import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 
 @Component({
   selector: 'app-booking-dashboard',
-  imports: [],
+  imports: [DatePipe,BookingConfirmationWizard],
   templateUrl: './booking-dashboard.html',
   styleUrl: './booking-dashboard.css',
 })
 export class BookingDashboard {
 
-  constructor(private route: ActivatedRoute, private router: Router, private invitationService: InvitationService, private authService: AuthService) { }
+  private invitationService = inject(InvitationService);
+
+  // show component
+  showBookingConfirmationWizard = false;
+
+  protected readonly SlotIncludeMode = SlotIncludeMode;
+  protected readonly EventTypeModel = EventTypeModel;
+
+  slotField: SlotResponseDto | null = null;
+  invitationField: InvitationResponseDto | null = null;
+
+  invitation = toSignal(this.invitationService.invitation$, { initialValue: null });
+
+  constructor(private route: ActivatedRoute, private router: Router, private authService: AuthService) { }
 
   ngOnInit() {
     const token = this.route.snapshot.paramMap.get('token');
@@ -38,7 +58,6 @@ export class BookingDashboard {
             this.router.navigate(['/login'], {
               queryParams: { returnUrl: currentUrl }
             });
-            return;
           }
           if (res.requiredLogin && this.authService.hasValidToken()) {
             this.loadInvitation(token);
@@ -53,7 +72,17 @@ export class BookingDashboard {
   }
 
   loadInvitation(token: string) {
-    throw new Error('Method not implemented.');
+    this.invitationService.triggerRefreshForInvitation(token);
+  }
+
+  openBookingConfirmationWizard(slot: SlotResponseDto) {
+    this.slotField = slot;
+    this.invitationField = this.invitation();
+    this.showBookingConfirmationWizard = true;
+  }
+
+  closeBookingConfirmationWizard() {
+    this.showBookingConfirmationWizard = false;
   }
 
 }

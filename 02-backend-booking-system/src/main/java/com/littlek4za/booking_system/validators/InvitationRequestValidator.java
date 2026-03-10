@@ -13,11 +13,13 @@ public class InvitationRequestValidator implements ConstraintValidator<ValidInvi
 
     @Override
     public boolean isValid(InvitationRequestDto dto, ConstraintValidatorContext context) {
+        context.disableDefaultConstraintViolation();
         boolean valid = true;
 
         // expiresAt
         if (dto.expiresAt() != null && dto.expiresAt().isBefore(Instant.now())) {
             valid = false;
+            context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate("expiresAt cannot be in the past")
                     .addPropertyNode("expiresAt").addConstraintViolation();
         }
@@ -26,6 +28,7 @@ public class InvitationRequestValidator implements ConstraintValidator<ValidInvi
         if (dto.maxUsage() != null && dto.maxUsagePerUser() != null){
             if(dto.maxUsagePerUser() > dto.maxUsage()) {
                 valid = false;
+                context.disableDefaultConstraintViolation();
                 context.buildConstraintViolationWithTemplate("maxUsagePerUser cannot exceed maxUsage")
                         .addPropertyNode("maxUsagePerUser").addConstraintViolation();
             }
@@ -34,18 +37,16 @@ public class InvitationRequestValidator implements ConstraintValidator<ValidInvi
         // slotIncludeMode & slotIdList
         if(dto.slotIncludeMode() == null) {
             valid = false;
+            context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate("slotIncludeMode must not be null")
                     .addPropertyNode("slotIncludeMode").addConstraintViolation();
-        } else if (dto.slotIncludeMode() == SlotIncludeMode.SELECTED.toString()){
+        } else if (dto.slotIncludeMode().equals(SlotIncludeMode.SELECTED.toString())){
             if(dto.slotIdList() == null || dto.slotIdList().isEmpty()){
                 valid = false;
+                context.disableDefaultConstraintViolation();
                 context.buildConstraintViolationWithTemplate("slotIdList is required when slotIncludeMode is SELECTED")
                     .addPropertyNode("slotIdList").addConstraintViolation();
             }
-        }
-
-        if(!valid){
-            context.disableDefaultConstraintViolation();
         }
 
         return valid;

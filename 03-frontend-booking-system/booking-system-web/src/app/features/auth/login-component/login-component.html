@@ -37,7 +37,7 @@
         </div>
     </div>
     <div>
-        <button routerLink="/register" (click)="goRegister()">Register Here</button>
+        <a (click)="goRegister()" class="btn btn-sm btn-outline-secondary">Register Here</a>
     </div>
     <div class="col-12">
         <button class="btn btn-primary" type="submit" [disabled]="loginForm.invalid">Submit form</button>

@@ -3,7 +3,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { InvitationService } from '../invitation-service';
 import { AuthService } from '@features/auth/auth-service';
-import { InvitationResponseDto } from '../dtos/invitation-response-dto';
 import { InvitationValidationResponseDto } from '../dtos/invitation-validation-response-dto';
 
 @Component({
@@ -23,13 +22,13 @@ export class InvitationAccessComponent implements OnInit {
     private router: Router) { }
 
   ngOnInit() {
+    this.initTokenValidationForm();
+
     const token = this.route.snapshot.paramMap.get('token');
 
     if (token) {
       this.processToken(token);
-    } else {
-      this.initTokenValidationForm();
-    }
+    } 
   }
 
   private initTokenValidationForm() {
@@ -50,6 +49,7 @@ export class InvitationAccessComponent implements OnInit {
         }
         if (res.requiredLogin == false) {
           alert("redirecting to booking page");
+          this.router.navigate([`/booking/${token}`]);
         }
         if (res.requiredLogin && !this.authService.hasValidToken()) {
           alert("redirecting to login page");
@@ -57,10 +57,10 @@ export class InvitationAccessComponent implements OnInit {
           this.router.navigate(['/login'],{
             queryParams: {returnUrl: currentUrl}
           });
-          return;
         }
         if (res.requiredLogin && this.authService.hasValidToken()) {
-          alert("redirect to booking page");
+          alert("redirectingn to booking page");
+          this.router.navigate([`/booking/${token}`]);
         }
       },
       error: (err) => {

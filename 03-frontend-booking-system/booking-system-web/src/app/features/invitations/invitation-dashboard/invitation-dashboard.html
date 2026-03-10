@@ -9,6 +9,7 @@
             <th scope="col">Slots for booking</th>
             <th scope="col">Validity</th>
             <th scope="col">Usage</th>
+            <th scope="col">Usage limit</th>
             <th scope="col">Usage limit per user</th>
             <th scope="col">Access requirement</th>
             <th scope="col">Slot Mode</th>
@@ -26,10 +27,11 @@
             } @else {
             <td>{{invitation.expiresAt}}</td>
             }
-            @if (invitation.maxUsage == null) {
             <td>{{invitation.usedCount}}</td>
+            @if (invitation.maxUsage == null) {
+            <td>No Limit</td>
             } @else {
-            <td>{{invitation.usedCount}} / {{invitation.maxUsage}}</td>
+            <td>{{invitation.maxUsage}}</td>
             }
             @if (invitation.maxUsagePerUser == null) {
             <td>No Limit</td>

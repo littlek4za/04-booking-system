@@ -78,6 +78,7 @@ CREATE TABLE bookings (
 	booked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	booked_start_time TIMESTAMPTZ NOT NULL,
 	booked_end_time TIMESTAMPTZ NOT NULL,
+	booking_token VARCHAR(6) NOT NULL UNIQUE, 
 	is_deleted BOOLEAN NOT NULL DEFAULT false,
 	deleted_at TIMESTAMPTZ,
 	deleted_by VARCHAR(20)

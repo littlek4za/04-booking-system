@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.littlek4za.booking_system.dtos.BookingResponseDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
@@ -13,6 +14,7 @@ import com.littlek4za.booking_system.dtos.InvitationResponseDto;
 import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
+import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
@@ -122,7 +124,7 @@ public class DtoMapperImpl implements DtoMapper {
 
         return new InvitationResponseDto(
                 invitation.getId(),
-                invitation.getEvent().getId(),
+                toEventResponseDto(invitation.getEvent()),
                 invitation.getUser().getId(),
                 invitation.getExpiresAt(),
                 invitation.getMaxUsage(),
@@ -133,6 +135,21 @@ public class DtoMapperImpl implements DtoMapper {
                 invitation.getMaxUsagePerUser(),
                 invitation.getCreatedAt(),
                 slotResponseDtos);
+    }
+
+    @Override
+    public BookingResponseDto toBookingResponseDto(Booking savedBooking) {
+        
+        return new BookingResponseDto(
+                savedBooking.getUser().getUsername(),
+                savedBooking.getUser().getLastName(),
+                savedBooking.getUser().getFirstName(),
+                savedBooking.getUser().getEmail(),
+                savedBooking.getSlot(),
+                savedBooking.getBookedStartTime(),
+                savedBooking.getBookedEndTime(),
+                savedBooking.getBookingToken()
+        );
     }
 
 }

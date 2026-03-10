@@ -42,5 +42,14 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
             """)
     Optional<Invitation> findByAccessTokenWithEventAndSlotSet(@Param("accessToken") String token);
 
+    @Query("""
+            SELECT i
+            FROM Invitation i
+            LEFT JOIN FETCH i.event
+            LEFT JOIN FETCH i.slotSet     
+            WHERE i.id = :id
+            """)
+    Optional<Invitation> findByIdWithEventAndSlotSets(Long id);
+
 }
  

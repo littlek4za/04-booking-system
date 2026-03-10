@@ -6,4 +6,6 @@ import com.littlek4za.booking_system.entities.Booking;
 
 public interface BookingRepository extends JpaRepository<Booking,Long> {
 
+    boolean existsByBookingToken(String token);
+
 }

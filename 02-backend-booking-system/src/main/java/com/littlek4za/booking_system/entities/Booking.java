@@ -59,6 +59,9 @@ public class Booking {
     @Column(name = "deleted_by")
     private DeletedBy deletedBy;
 
+    @Column(name = "booking_token", nullable = false, unique = true)
+    private String bookingToken;
+
     protected Booking() {
     }
 

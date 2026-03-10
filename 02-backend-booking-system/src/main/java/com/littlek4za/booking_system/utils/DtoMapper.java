@@ -2,6 +2,7 @@ package com.littlek4za.booking_system.utils;
 
 import java.util.Set;
 
+import com.littlek4za.booking_system.dtos.BookingResponseDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
@@ -9,6 +10,7 @@ import com.littlek4za.booking_system.dtos.InvitationResponseDto;
 import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
+import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
@@ -29,5 +31,7 @@ public interface DtoMapper {
     Invitation toInvitation(InvitationRequestDto invitationRequestDto, Event event, User user);
 
     InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotSet );
+
+    BookingResponseDto toBookingResponseDto(Booking savedBooking);
 
 }

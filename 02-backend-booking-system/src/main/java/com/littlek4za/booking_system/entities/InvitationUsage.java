@@ -41,7 +41,7 @@ public class InvitationUsage {
     private int usageCount;
 
 
-    public InvitationUsage(Invitation invitation, User user, int usageCount) {
+    public InvitationUsage(Invitation invitation, User user) {
         this.invitation = invitation;
         this.user = user;
         this.usageCount = 0;
@@ -64,10 +64,5 @@ public class InvitationUsage {
         }
         this.usageCount++;
     }
-
-
-
-    
-
     
 }
