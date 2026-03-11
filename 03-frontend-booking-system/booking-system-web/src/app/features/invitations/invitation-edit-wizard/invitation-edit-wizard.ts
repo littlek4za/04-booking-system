@@ -210,6 +210,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
       next: (res) =>{
         console.log('Create invitation success', invitationRequestDto);
         alert("Create invitation success");
+        this.invitationService.triggerRefreshForInvitationList(this.eventId);
         this.closeInvitationWizard();
       },
       error: (err) =>{

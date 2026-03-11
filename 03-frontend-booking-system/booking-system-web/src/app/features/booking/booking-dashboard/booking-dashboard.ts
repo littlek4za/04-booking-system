@@ -12,7 +12,7 @@ import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 
 @Component({
   selector: 'app-booking-dashboard',
-  imports: [DatePipe,BookingConfirmationWizard],
+  imports: [DatePipe, BookingConfirmationWizard],
   templateUrl: './booking-dashboard.html',
   styleUrl: './booking-dashboard.css',
 })
@@ -48,19 +48,24 @@ export class BookingDashboard {
         next: (res) => {
           if (res.valid == false) {
             alert(res.reason);
+            this.router.navigate(['/invitation']);
           }
-          if (res.requiredLogin == false) {
+          else if (res.requiredLogin == false) {
             this.loadInvitation(token);
           }
-          if (res.requiredLogin && !this.authService.hasValidToken()) {
+          else if (res.requiredLogin && !this.authService.hasValidToken()) {
             alert("redirecting to login page");
             const currentUrl = this.router.url;
             this.router.navigate(['/login'], {
               queryParams: { returnUrl: currentUrl }
             });
           }
-          if (res.requiredLogin && this.authService.hasValidToken()) {
+          else if (res.requiredLogin && this.authService.hasValidToken()) {
             this.loadInvitation(token);
+          }
+          else {
+            console.warn("Unexpected invitation validation response:", res);
+            alert("Unexpected invitation status. Please contact administrator.");
           }
         },
         error: () => {

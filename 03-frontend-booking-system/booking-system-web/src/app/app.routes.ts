@@ -24,7 +24,7 @@ export const routes: Routes = [
     { path: 'eventDashboard', component: EventDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'mapSelection', component: LeafletMapSelection },
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
-    { path: 'booking/:token', component: BookingDashboard, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
+    { path: 'booking/:token', component: BookingDashboard },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }
 ];

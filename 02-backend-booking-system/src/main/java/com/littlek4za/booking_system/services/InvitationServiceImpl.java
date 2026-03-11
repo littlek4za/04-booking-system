@@ -139,17 +139,18 @@ public class InvitationServiceImpl implements InvitationService {
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
 
-        List<Invitation> invitationList = invitationRepository.findByEventWithSlotSet(event);
+        Set<Invitation> invitationSet = invitationRepository.findByEventWithSlotSet(event);
+        Set<Slot> allEventSlots = slotRepository.findByEvent(event);
 
         List<InvitationResponseDto> invitationResponseDtoList = 
-        invitationList.stream().map(invitation -> {
-            Set<Slot> slotSet;
+        invitationSet.stream().map(invitation -> {
+            Set<Slot> slotSetToUse;
             if(invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
-                slotSet = slotRepository.findByEvent(event); 
+                slotSetToUse = allEventSlots; 
             } else {
-                slotSet = invitation.getSlotSet();
+                slotSetToUse = invitation.getSlotSet();
             }
-            return dtoMapper.toInvitationResponseDto(invitation, slotSet);
+            return dtoMapper.toInvitationResponseDto(invitation, slotSetToUse);
         }).collect(Collectors.toList());
 
         return invitationResponseDtoList;

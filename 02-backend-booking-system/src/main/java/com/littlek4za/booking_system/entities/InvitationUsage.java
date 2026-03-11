@@ -36,33 +36,34 @@ public class InvitationUsage {
     @JoinColumn(name = "user_id")
     private User user;
 
-
     @Column(name = "usage_count")
     private int usageCount;
 
+    protected InvitationUsage() {
+    }
 
     public InvitationUsage(Invitation invitation, User user) {
         this.invitation = invitation;
         this.user = user;
         this.usageCount = 0;
 
-        if(user.getInvitationUsages() != null){
+        if (user.getInvitationUsages() != null) {
             user.getInvitationUsages().add(this);
         }
 
-        if(invitation.getInvitationUsages() !=null){
+        if (invitation.getInvitationUsages() != null) {
             invitation.getInvitationUsages().add(this);
         }
     }
 
-    public void incrementUsage(Integer maxUsagePerUser){
-        if(maxUsagePerUser == null){
+    public void incrementUsage(Integer maxUsagePerUser) {
+        if (maxUsagePerUser == null) {
             throw new IllegalStateException("Unlimited usage for this invitation");
         }
-        if(maxUsagePerUser != null && this.usageCount>=maxUsagePerUser){
+        if (maxUsagePerUser != null && this.usageCount >= maxUsagePerUser) {
             throw new IllegalStateException("User has reached the max usage for this invitation");
         }
         this.usageCount++;
     }
-    
+
 }

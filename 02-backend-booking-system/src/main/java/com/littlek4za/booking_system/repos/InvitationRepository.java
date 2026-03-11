@@ -8,18 +8,19 @@ import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
     List<Invitation> findByEvent(Event event);
 
     @Query("""
-            SELECT i
+            SELECT DISTINCT i
             FROM Invitation i
-            JOIN FETCH i.slotSet
+            LEFT JOIN FETCH i.slotSet
             WHERE i.event = :event
             """)
-    List<Invitation> findByEventWithSlotSet(Event event);
+    Set<Invitation> findByEventWithSlotSet(Event event);
 
     boolean existsByAccessToken(String token);
 
@@ -28,7 +29,7 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     @Query("""
             SELECT i
             FROM Invitation i
-            JOIN FETCH i.event
+            LEFT JOIN FETCH i.event
             WHERE i.accessToken = :accessToken
             """)
     Optional<Invitation> findByAccessTokenWithEvent(@Param("accessToken") String token);
@@ -49,7 +50,7 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
             LEFT JOIN FETCH i.slotSet     
             WHERE i.id = :id
             """)
-    Optional<Invitation> findByIdWithEventAndSlotSets(Long id);
+    Optional<Invitation> findByIdWithEventAndSlotSets(@Param("id") Long id);
 
 }
  

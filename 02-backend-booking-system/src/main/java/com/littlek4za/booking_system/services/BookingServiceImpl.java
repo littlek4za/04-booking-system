@@ -15,6 +15,7 @@ import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
+import com.littlek4za.booking_system.models.SlotIncludeMode;
 import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.InvitationUsageRepository;
@@ -57,7 +58,8 @@ public class BookingServiceImpl implements BookingService {
         Invitation invitation = invitationRepository.findByIdWithEventAndSlotSets(dto.invitationId())
                 .orElseThrow(() -> new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND));
 
-        if (!invitation.getSlotSet().contains(slot)) {
+        if (!SlotIncludeMode.ALL_AND_FUTURE.equals(invitation.getSlotIncludeMode())
+                && !invitation.getSlotSet().contains(slot)) {
             throw new AppException("Slot id does not belong to this invitation", HttpStatus.BAD_REQUEST);
         }
 
@@ -68,8 +70,17 @@ public class BookingServiceImpl implements BookingService {
             user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
                     .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
         } else {
-            user = User.createGuest(dto.email(), dto.firstName(),
-                    dto.lastName());
+            Optional<User> existingUser = userRepository.findByEmail(dto.email());
+            
+            if(existingUser.isPresent()) {
+                user = existingUser.get();
+
+                if(!user.getGuest()){
+                    throw new AppException("Email already registered. Please log in to continue.", HttpStatus.BAD_REQUEST);
+                }
+            } else {
+                user = userRepository.save(User.createGuest(dto.email()));
+            }
         }
 
         validateBookingInfo(dto, invitation, slot);
@@ -137,17 +148,24 @@ public class BookingServiceImpl implements BookingService {
         if (EventType.FIXED.equals(invitation.getEvent().getEventType())) {
 
             if (securityUtil.isAuthenticated()) {
-                if (invitationUsage.getUsageCount() >= invitation.getMaxUsagePerUser()) {
+                Integer maxUsagePerUser = invitation.getMaxUsagePerUser();
+                if (maxUsagePerUser != null && invitationUsage.getUsageCount() >= maxUsagePerUser) {
                     throw new AppException("User maximum usage reached", HttpStatus.BAD_REQUEST);
                 } else {
                     invitationUsage.setUsageCount(invitationUsage.getUsageCount() + 1);
                 }
             }
             Booking newBooking = new Booking(user, slot, slot.getSlotStartTime(), slot.getSlotEndTime());
+            if(user.getGuest()){
+                newBooking.setGuestFirstName(dto.firstName());
+                newBooking.setGuestLastName(dto.lastName());
+            }
             newBooking.setBookingToken(generateUniqueBookingToken());
+            invitation.addBooking(newBooking);
 
             Booking savedBooking = bookingRepository.save(newBooking);
             invitationUsageRepository.save(invitationUsage);
+
             return dtoMapper.toBookingResponseDto(savedBooking);
 
             // } else if (EventType.FLEXIBLE.equals(invitation.getEvent().getEventType())){

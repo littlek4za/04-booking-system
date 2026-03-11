@@ -77,6 +77,9 @@ public class Invitation {
     @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
     private Set<InvitationUsage> invitationUsages = new HashSet<>();
 
+    @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
+    private Set<Booking> bookingSet = new HashSet<>();
+
     protected Invitation() {
     }
 
@@ -98,6 +101,41 @@ public class Invitation {
         } else {
             throw new IllegalStateException("Max usage reached");
         }
+    }
+
+    public void addBooking(Booking booking) {
+        booking.setInvitation(this);
+        this.bookingSet.add(booking);
+    }
+
+    public void removeBookin(Booking booking) {
+        this.bookingSet.remove(booking);
+        booking.setInvitation(null);
+    }
+
+    public void addInvitationUsage(InvitationUsage usage) {
+        usage.setInvitation(this);
+        this.invitationUsages.add(usage);
+    }
+
+    public void removeInvitationUsage(InvitationUsage usage) {
+        this.invitationUsages.remove(usage);
+        usage.setInvitation(null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof Invitation))
+            return false;
+        Invitation that = (Invitation) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
 }

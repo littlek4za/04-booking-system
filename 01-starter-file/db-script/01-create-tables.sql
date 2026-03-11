@@ -8,8 +8,8 @@ CREATE TABLE users (
 	username VARCHAR(50) UNIQUE, 
 	password VARCHAR(80),
 	email VARCHAR(255) NOT NULL UNIQUE,
-	first_name VARCHAR(255) NOT NULL,
-	last_name VARCHAR(255) NOT NULL,
+	first_name VARCHAR(255),
+	last_name VARCHAR(255),
 	guest BOOLEAN NOT NULL, -- NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -73,6 +73,8 @@ CREATE TABLE invitations (
 CREATE TABLE bookings (
 	id BIGSERIAL PRIMARY KEY,
 	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	guest_first_name VARCHAR(255),
+	guest_last_name VARCHAR(255),
 	slot_id BIGINT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
 	invitation_id BIGINT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE,
 	booked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

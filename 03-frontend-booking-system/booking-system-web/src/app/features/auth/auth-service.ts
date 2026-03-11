@@ -5,6 +5,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { SignupRequestDto } from './dtos/signup-request-dto';
 import { Router } from '@angular/router';
 import { LoginResponseDto } from './dtos/login-response-dto';
+import { AuthTokenPayload } from './dtos/auth-token-payload';
 @Injectable({
   providedIn: 'root',
 })
@@ -50,6 +51,35 @@ export class AuthService {
     } catch (e) {
       return false;
     }
+  }
+
+  getAuthTokenInfo(): AuthTokenPayload | null{
+    const token = localStorage.getItem('authToken');
+
+    if (token) {
+      try {
+        const parts = token.split('.');
+        if (parts.length != 3) {
+          console.log("invalid token");
+        }
+        return JSON.parse(atob(this.base64UrlDecode(parts[1]))) as AuthTokenPayload;
+      } catch (err: any) {
+        console.error(err);
+        alert(err.message);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  base64UrlDecode(str: string): string {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    // Add padding if missing
+    while (str.length % 4) {
+      str += '=';
+    }
+    return str;
   }
 
   logout(): void {

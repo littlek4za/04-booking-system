@@ -145,7 +145,7 @@ public class DtoMapperImpl implements DtoMapper {
                 savedBooking.getUser().getLastName(),
                 savedBooking.getUser().getFirstName(),
                 savedBooking.getUser().getEmail(),
-                savedBooking.getSlot(),
+                toSlotResponseDto(savedBooking.getSlot()) ,
                 savedBooking.getBookedStartTime(),
                 savedBooking.getBookedEndTime(),
                 savedBooking.getBookingToken()

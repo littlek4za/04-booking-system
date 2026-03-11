@@ -28,7 +28,7 @@ export class InvitationAccessComponent implements OnInit {
 
     if (token) {
       this.processToken(token);
-    } 
+    }
   }
 
   private initTokenValidationForm() {
@@ -47,20 +47,23 @@ export class InvitationAccessComponent implements OnInit {
         if (res.valid == false) {
           alert(res.reason);
         }
-        if (res.requiredLogin == false) {
+        else if (res.requiredLogin == false) {
           alert("redirecting to booking page");
           this.router.navigate([`/booking/${token}`]);
         }
-        if (res.requiredLogin && !this.authService.hasValidToken()) {
+        else if (res.requiredLogin && !this.authService.hasValidToken()) {
           alert("redirecting to login page");
           const currentUrl = this.router.url;
-          this.router.navigate(['/login'],{
-            queryParams: {returnUrl: currentUrl}
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: currentUrl }
           });
         }
-        if (res.requiredLogin && this.authService.hasValidToken()) {
+        else if (res.requiredLogin && this.authService.hasValidToken()) {
           alert("redirectingn to booking page");
           this.router.navigate([`/booking/${token}`]);
+        } else {
+          console.warn("Unexpected invitation validation response:", res);
+          alert("Unexpected invitation status. Please contact administrator.");
         }
       },
       error: (err) => {

@@ -63,7 +63,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

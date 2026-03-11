@@ -1,9 +1,10 @@
-import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { InvitationService } from '../invitation-service';
 import {Clipboard} from '@angular/cdk/clipboard'
 import { SlotIncludeMode } from '../dtos/slot-include-mode';
 import { InvitationResponseDto } from '../dtos/invitation-response-dto';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-invitation-dashboard',
@@ -33,7 +34,7 @@ export class InvitationDashboard implements OnChanges {
   }
 
   constructor(private clipboard:Clipboard){}
-
+  
   shareInvitation(accessToken: string) {
     this.clipboard.copy(`${this.invitationUrl}/${accessToken}`);
     alert('Invitation link copied to clipboard!');
@@ -44,7 +45,6 @@ export class InvitationDashboard implements OnChanges {
       next: (res) => {
         console.log('Invitation delete succeed');
         alert('Invitation delete succeed');
-        this.invitationService.triggerRefreshForInvitationList(this.eventId);
       },
       error: (err) => {
         console.log('Invitation delete failed');

@@ -43,10 +43,10 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "first_name", nullable = false)
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name", nullable = false)
+    @Column(name = "last_name")
     private String lastName;
 
     @Column(name = "guest", nullable = false)
@@ -87,19 +87,17 @@ public class User {
         return user;
     }
 
-    public static User createGuest(String email, String firstName, String lastName) {
+    public static User createGuest(String email) {
         User user = new User();
-        user.guest = true;
-        user.email = email;
-        user.firstName = firstName;
-        user.lastName = lastName;
+        user.setEmail(email);
+        user.setGuest(true);
         return user;
     }
 
     @AssertTrue(message = "username and password must be provided when guest is false")
     private boolean isCredentialValid() {
-        if (!Boolean.TRUE.equals(guest)) {
-            return true; // username password not required
+        if (Boolean.TRUE.equals(guest)) {
+            return true; // guest allowed without username password 
         }
         return username != null && password != null;
     }

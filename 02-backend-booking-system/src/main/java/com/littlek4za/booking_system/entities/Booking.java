@@ -35,9 +35,19 @@ public class Booking {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "guest_first_name")
+    private String guestFirstName;
+
+    @Column(name = "guest_last_name")
+    private String guestLastName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "slot_id", nullable = false)
     private Slot slot;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invitation_id", nullable = false)
+    private Invitation invitation;
 
     @CreationTimestamp
     @Column(name = "booked_at", updatable = false)

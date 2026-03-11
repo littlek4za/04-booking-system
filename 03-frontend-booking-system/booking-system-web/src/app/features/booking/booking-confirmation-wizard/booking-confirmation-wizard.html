@@ -3,15 +3,58 @@
 <button (click)="closeWizard()">close</button>
 <p>Event Name: {{invitation.event.eventName}}</p>
 @if(invitation.event.eventDescription) {
-    <p>Event Description: {{invitation.event.eventDescription}}</p>
+<p>Event Description: {{invitation.event.eventDescription}}</p>
 }
 
 <h3>Chosen Slot</h3>
 <p>Slot Name: {{slot.slotName}}</p>
 @if(slot.slotDescription) {
-    <p>Slot Name: {{slot.slotDescription}}</p>
+<p>Slot Name: {{slot.slotDescription}}</p>
 }
 <p>Slot StartTime: {{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
 <p>Slot StartTime: {{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
 
+@if(!authTokenPayload){
+<h3>Key in Attendee Details</h3>
+<form class="row g-3 needs-validation" [formGroup]="guestForm" (ngSubmit)="bookSlot(slot)">
+    <div class="col-md-4">
+        <label class="form-label">First Name</label>
+        <input type="text" class="form-control" formControlName="firstName">
+        @if (guestForm.controls['firstName'].invalid && (guestForm.controls['firstName'].touched ||
+        guestForm.controls['firstName'].dirty)){
+        <div class="text-danger">
+            First Name must be between 1 and 100 characters
+        </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Last Name</label>
+        <input type="text" class="form-control" formControlName="lastName">
+        @if (guestForm.controls['lastName'].invalid && (guestForm.controls['lastName'].touched ||
+        guestForm.controls['lastName'].dirty)){
+        <div class="text-danger">
+            Last Name must be between 1 and 100 characters
+        </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Email</label>
+        <input type="text" class="form-control" formControlName="email">
+        @if (guestForm.controls['email'].invalid && (guestForm.controls['email'].touched ||
+        guestForm.controls['email'].dirty)){
+        <div class="text-danger">
+            Invalid Email Address
+        </div>
+        }
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit" [disabled]="guestForm.invalid">Book this slot</button>
+    </div>
+</form>
+} @else {
+<h3>Booked By:</h3>
+<p>First Name: {{authTokenPayload.firstName}}</p>
+<p>Last Name: {{authTokenPayload.lastName}}</p>
+<p>Email Name: {{authTokenPayload.email}}</p>
 <button class="btn btn-primary" (click)="bookSlot(slot)">Book this slot</button>
+}
