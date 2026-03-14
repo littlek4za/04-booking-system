@@ -1,14 +1,16 @@
 import { TimeRange } from "@shared/model/time-range";
 
 export class SlotRequestDto {
-    eventId!:number;
+    eventId!: number;
     slotName!: string;
-    slotDescription?:string;
+    slotDescription?: string;
     slotStartTime!: string; //ISO string
     slotEndTime!: string; //ISO string
     maxBookPerInterval?: number;
     slotIntervalMinutes?: number;
     slotFrequencyIntervalMinutes?: number;
-    businessDaysHours?: Record<number,TimeRange[]>;
+    businessDaysHours?: Record<number, TimeRange[]>;
+    businessTimeZone?: string;
+    businessAllowOt?: boolean;
     flexibleDaysHours?: TimeRange[];
 }

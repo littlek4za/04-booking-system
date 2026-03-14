@@ -197,7 +197,8 @@ export class FullCalendarView {
 
       return {
         value: 'local',
-        label: `${label} (${offset})`
+        label: `${label} (${offset})`,
+        offset: +offset
       };
     }
 
@@ -205,7 +206,8 @@ export class FullCalendarView {
 
     return {
       value,
-      label: `${label} (${offset})`
+      label: `${label} (${offset})`,
+      offset: +offset
     };
   }
 

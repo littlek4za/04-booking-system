@@ -86,6 +86,12 @@ public class Slot {
     @Column(name = "business_days_hours", columnDefinition = "jsonb")
     private Map<Integer, List<TimeRange>> businessDaysHours;
 
+    @Column(name = "business_timezone")
+    private String businessTimeZone;
+
+    @Column(name = "business_allow_ot")
+    private Boolean businessAllowOT;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "flexible_days_hours", columnDefinition = "jsonb")
     private List<InstantRange> flexibleDaysHours;
@@ -106,7 +112,8 @@ public class Slot {
 
     public Slot(Event event, String slotName, String slotDescription, Instant slotStartTime, Instant slotEndTime,
             Integer maxBookPerInterval, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes,
-            Map<Integer, List<TimeRange>> businessDaysHours, List<InstantRange> flexibleDaysHours) {
+            Map<Integer, List<TimeRange>> businessDaysHours, List<InstantRange> flexibleDaysHours, String businessTimeZone,
+            Boolean businessAllowOt) {
         this.event = event;
         this.slotName = slotName;
         this.slotDescription = slotDescription;
@@ -117,6 +124,8 @@ public class Slot {
         this.slotFrequencyIntervalMinutes = slotFrequencyIntervalMinutes;
         this.businessDaysHours = businessDaysHours;
         this.flexibleDaysHours = flexibleDaysHours;
+        this.businessTimeZone = businessTimeZone;
+        this.businessAllowOT = businessAllowOt;
     }
 
     @Override

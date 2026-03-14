@@ -45,6 +45,7 @@ export class InvitationDashboard implements OnChanges {
       next: (res) => {
         console.log('Invitation delete succeed');
         alert('Invitation delete succeed');
+        this.invitationService.triggerRefreshForInvitationList(this.eventId);
       },
       error: (err) => {
         console.log('Invitation delete failed');

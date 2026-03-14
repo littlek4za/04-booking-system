@@ -24,121 +24,132 @@ import jakarta.transaction.Transactional;
 @Service
 public class SlotServiceImpl implements SlotService {
 
-    private final SecurityUtil securityUtil;
-    private final SlotRepository slotRepository;
-    private final EventRepository eventRepository;
-    private final UserRepository userRepository;
-    private final DtoMapper dtoMapper;
-    private final SlotValidator slotValidator;
+        private final SecurityUtil securityUtil;
+        private final SlotRepository slotRepository;
+        private final EventRepository eventRepository;
+        private final UserRepository userRepository;
+        private final DtoMapper dtoMapper;
+        private final SlotValidator slotValidator;
 
-    public SlotServiceImpl(SecurityUtil sercurityUtil, SlotRepository slotRepository, EventRepository eventRepository,
-            UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator) {
-        this.securityUtil = sercurityUtil;
-        this.slotRepository = slotRepository;
-        this.eventRepository = eventRepository;
-        this.userRepository = userRepository;
-        this.dtoMapper = dtoMapper;
-        this.slotValidator = slotValidator;
-    }
-
-    @Override
-    public List<SlotResponseDto> getSlotsByEvent(Long eventId) {
-
-        User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
-
-        Set<Slot> slotSet = slotRepository.findByEvent(event);
-        List<SlotResponseDto> slotResponseDtoList = slotSet.stream()
-                .map(slot -> dtoMapper.toSlotResponseDto(slot))
-                .toList();
-
-        return slotResponseDtoList;
-    }
-
-    @Transactional
-    @Override
-    public SlotResponseDto createSlotByEvent(Long eventId, SlotRequestDto slotRequestDto) {
-
-        User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
-
-        slotValidator.validate(event.getEventType(), slotRequestDto);
-
-        Slot newSlot = dtoMapper.toSlot(slotRequestDto, event);
-
-        if (!event.getEventType().supportMaxBookPerInterval()) {
-            if (newSlot.getMaxBookPerInterval() == null) {
-                newSlot.setMaxBookPerInterval(1);
-            }
+        public SlotServiceImpl(SecurityUtil sercurityUtil, SlotRepository slotRepository,
+                        EventRepository eventRepository,
+                        UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator) {
+                this.securityUtil = sercurityUtil;
+                this.slotRepository = slotRepository;
+                this.eventRepository = eventRepository;
+                this.userRepository = userRepository;
+                this.dtoMapper = dtoMapper;
+                this.slotValidator = slotValidator;
         }
 
-        Slot savedSlot = slotRepository.save(newSlot);
+        @Override
+        public List<SlotResponseDto> getSlotsByEvent(Long eventId) {
 
-        return dtoMapper.toSlotResponseDto(savedSlot);
-    }
+                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                Event event = eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("No event found with this Id and User",
+                                                HttpStatus.NOT_FOUND));
 
-    @Override
-    @Transactional
-    public Long deleteSlotByEventAndSlot(Long eventId, Long slotId) {
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                        HttpStatus.NOT_FOUND));
+                Set<Slot> slotSet = slotRepository.findByEvent(event);
+                List<SlotResponseDto> slotResponseDtoList = slotSet.stream()
+                                .map(slot -> dtoMapper.toSlotResponseDto(slot))
+                                .toList();
 
-        int deleted = this.slotRepository.deleteByIdAndEventId(slotId, event.getId());
-
-        if (deleted == 0) {
-            throw new AppException("No slot found with slotId and Event",
-                    HttpStatus.NOT_FOUND);
+                return slotResponseDtoList;
         }
 
-        return slotId;
-    }
+        @Transactional
+        @Override
+        public SlotResponseDto createSlotByEvent(Long eventId, SlotRequestDto slotRequestDto) {
 
-    @Override
-    public SlotResponseDto getSlotById(Long eventId, Long slotId) {
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                        HttpStatus.NOT_FOUND));
-        Slot slot = slotRepository.findByIdAndEventId(slotId, event.getId())
-                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
-                        HttpStatus.NOT_FOUND));
+                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                Event event = eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("No event found with this Id and User",
+                                                HttpStatus.NOT_FOUND));
 
-        return dtoMapper.toSlotResponseDto(slot);
-    }
+                slotValidator.validate(event.getEventType(), slotRequestDto);
 
-    @Override
-    public SlotResponseDto putSlotByIdAndEventId(Long slotId, Long eventId, SlotRequestDto slotRequestDto) {
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                        HttpStatus.NOT_FOUND));
+                Slot newSlot = dtoMapper.toSlot(slotRequestDto, event);
 
-        Slot existingSlot = slotRepository.findByIdAndEventId(slotId, event.getId())
-                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
-                        HttpStatus.NOT_FOUND));
+                if (!event.getEventType().supportMaxBookPerInterval()) {
+                        if (newSlot.getMaxBookPerInterval() == null) {
+                                newSlot.setMaxBookPerInterval(1);
+                        }
+                }
 
-        slotValidator.validate(event.getEventType(), slotRequestDto);
+                Slot savedSlot = slotRepository.save(newSlot);
 
-        existingSlot.setSlotName(slotRequestDto.slotName());
-        existingSlot.setSlotDescription(slotRequestDto.slotDescription());
-        existingSlot.setSlotStartTime(slotRequestDto.slotStartTime());
-        existingSlot.setSlotEndTime(slotRequestDto.slotEndTime());
-        existingSlot.setMaxBookPerInterval(slotRequestDto.maxBookPerInterval());
-        existingSlot.setSlotIntervalMinutes(slotRequestDto.slotIntervalMinutes());
-        existingSlot.setSlotFrequencyIntervalMinutes(slotRequestDto.slotFrequencyIntervalMinutes());
-        existingSlot.setBusinessDaysHours(slotRequestDto.businessDaysHours());
+                return dtoMapper.toSlotResponseDto(savedSlot);
+        }
 
-        Slot updatedSlot = slotRepository.save(existingSlot);
+        @Override
+        @Transactional
+        public Long deleteSlotByEventAndSlot(Long eventId, Long slotId) {
+                User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                Event event = eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("No event found with eventId and User",
+                                                HttpStatus.NOT_FOUND));
 
-        return dtoMapper.toSlotResponseDto(updatedSlot);
-    }
+                int deleted = this.slotRepository.deleteByIdAndEventId(slotId, event.getId());
+
+                if (deleted == 0) {
+                        throw new AppException("No slot found with slotId and Event",
+                                        HttpStatus.NOT_FOUND);
+                }
+
+                return slotId;
+        }
+
+        @Override
+        public SlotResponseDto getSlotById(Long eventId, Long slotId) {
+                User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                Event event = eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("No event found with eventId and User",
+                                                HttpStatus.NOT_FOUND));
+                Slot slot = slotRepository.findByIdAndEventId(slotId, event.getId())
+                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
+                                                HttpStatus.NOT_FOUND));
+
+                return dtoMapper.toSlotResponseDto(slot);
+        }
+
+        @Override
+        public SlotResponseDto putSlotByIdAndEventId(Long slotId, Long eventId, SlotRequestDto slotRequestDto) {
+                User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                Event event = eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("No event found with eventId and User",
+                                                HttpStatus.NOT_FOUND));
+
+                Slot existingSlot = slotRepository.findByIdAndEventId(slotId, event.getId())
+                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
+                                                HttpStatus.NOT_FOUND));
+
+                slotValidator.validate(event.getEventType(), slotRequestDto);
+
+                existingSlot.setSlotName(slotRequestDto.slotName());
+                existingSlot.setSlotDescription(slotRequestDto.slotDescription());
+                existingSlot.setSlotStartTime(slotRequestDto.slotStartTime());
+                existingSlot.setSlotEndTime(slotRequestDto.slotEndTime());
+                existingSlot.setMaxBookPerInterval(slotRequestDto.maxBookPerInterval());
+                existingSlot.setSlotIntervalMinutes(slotRequestDto.slotIntervalMinutes());
+                existingSlot.setSlotFrequencyIntervalMinutes(slotRequestDto.slotFrequencyIntervalMinutes());
+                existingSlot.setBusinessDaysHours(slotRequestDto.businessDaysHours());
+                existingSlot.setBusinessTimeZone(slotRequestDto.businessTimeZone());
+                existingSlot.setBusinessAllowOT(slotRequestDto.businessAllowOt());
+
+                if (!event.getEventType().supportMaxBookPerInterval()) {
+                        if (existingSlot.getMaxBookPerInterval() == null) {
+                                existingSlot.setMaxBookPerInterval(1);
+                        }
+                }
+
+                Slot updatedSlot = slotRepository.save(existingSlot);
+
+                return dtoMapper.toSlotResponseDto(updatedSlot);
+        }
 }

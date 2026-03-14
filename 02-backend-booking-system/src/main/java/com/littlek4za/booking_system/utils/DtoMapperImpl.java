@@ -67,6 +67,8 @@ public class DtoMapperImpl implements DtoMapper {
                 slot.getSlotIntervalMinutes(),
                 slot.getSlotFrequencyIntervalMinutes(),
                 slot.getBusinessDaysHours(),
+                slot.getBusinessTimeZone(),
+                slot.getBusinessAllowOT(),
                 slot.getFlexibleDaysHours(),
                 slot.getCreatedAt(),
                 slot.getUpdatedAt());
@@ -84,7 +86,9 @@ public class DtoMapperImpl implements DtoMapper {
                 slotRequestDto.slotIntervalMinutes(),
                 slotRequestDto.slotFrequencyIntervalMinutes(),
                 slotRequestDto.businessDaysHours(),
-                slotRequestDto.flexibleDaysHours());
+                slotRequestDto.flexibleDaysHours(),
+                slotRequestDto.businessTimeZone(),
+                slotRequestDto.businessAllowOt());
     }
 
     @Override

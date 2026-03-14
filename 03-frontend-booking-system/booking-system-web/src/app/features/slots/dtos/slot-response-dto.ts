@@ -13,5 +13,7 @@ export class SlotResponseDto {
     createdAt!: string;
     updatedAt!: string;
     businessDaysHours?: Record<number,TimeRange[]>;
+    businessTimeZone?: string;
+    businessAllowOt?: boolean;
     flexibleDaysHours?: TimeRange[];
 }

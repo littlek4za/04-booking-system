@@ -18,6 +18,8 @@ public record SlotResponseDto(
     Integer slotIntervalMinutes,
     Integer slotFrequencyIntervalMinutes,
     Map<Integer, List<TimeRange>> businessDaysHours,
+    String businessTimeZone,
+    Boolean businessAllowOt,
     List<InstantRange> flexibleDaysHours,
     Instant createdAt,
     Instant updatedAt

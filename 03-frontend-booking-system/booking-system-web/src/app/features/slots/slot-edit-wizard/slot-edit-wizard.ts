@@ -15,6 +15,9 @@ import { SlotService } from '../slot-service';
 import { SlotResponseDto } from '../dtos/slot-response-dto';
 import { A11yModule } from "@angular/cdk/a11y";
 import { logFormErrors } from '@shared/utils/logging-utils';
+import moment from 'moment-timezone';
+import { TimeZoneService } from '@shared/model/time-zone-service';
+import { TimeZoneOption } from '@shared/model/time-zone-option';
 
 
 @Component({
@@ -31,26 +34,36 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   @Input() eventType!: string;
   @Input() mode!: 'CREATE' | 'UPDATE';
   @Input() slotId: number | null = null;
+
+  // form
   slotForm!: FormGroup;
   businessDaysHoursForm!: FormGroup;
   flexibleDaysHoursForm!: FormGroup;
+
+  // html show
   showCustomInterval = false;
   showCustomFreq = false;
+
+  // field
   timeOption: string[] = [];
   endTimeOptionsWithState: { value: string, disabled: boolean }[] = [];
-  private destroy$ = new Subject<void>();
   protected readonly EventType = EventTypeModel;
   dayNames: string[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   slotForUpdate?: SlotResponseDto;
   readonly SLOT_INTERVAL_PRESETS = [5, 10, 15, 30, 60, 120];
   readonly SLOT_FREQUENCY_PRESETS = [5, 10, 15, 30, 60, 120];
   submitted: boolean = false;
+  timezones: TimeZoneOption[] = [];
+  userTimeZone!: string;
 
-  // TODO!!
-  // ask if without input() can this be used in other component, for like using constructor 
-  constructor(private formBuilder: FormBuilder, private slotService: SlotService) { }
+  // destroy
+  private destroy$ = new Subject<void>();
+
+  constructor(private formBuilder: FormBuilder, private slotService: SlotService, private timeZoneService: TimeZoneService) { }
 
   ngOnInit(): void {
+    this.userTimeZone = this.timeZoneService.getUserTimeZone();
+    this.timezones = this.timeZoneService.getAllTimeZones();
     this.initSlotForm();
     this.applyEventType();
     this.timeOption = this.generateTimeOption(5);
@@ -81,6 +94,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       slotIntervalMinutes: new FormControl<number | null>(null),
       frequencyType: new FormControl<string | null>(""),
       slotFrequencyIntervalMinutes: new FormControl<number | null>(null),
+      businessAllowOt: new FormControl<boolean | null>(null),
+      businessTimeZone: new FormControl<string | null>(null),
     });
   }
 
@@ -150,6 +165,9 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.slotForm.get('intervalType')?.addValidators([Validators.required]);
     this.slotForm.get('slotFrequencyIntervalMinutes')?.addValidators([Validators.required, Validators.min(1), Validators.max(1440)]);
     this.slotForm.get('frequencyType')?.addValidators([Validators.required]);
+    this.slotForm.get('businessAllowOt')?.addValidators([Validators.required]);
+    this.slotForm.get('businessTimeZone')?.addValidators([Validators.required]);
+    this.slotForm.patchValue({ businessTimeZone: this.userTimeZone });
   }
 
   private enable(fields: string[]) {
@@ -395,7 +413,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       slotName: slot.slotName,
       slotDescription: slot.slotDescription,
 
-
       startDate: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
       endDate: new Date(end.getFullYear(), end.getMonth(), end.getDate()),
       startTime: start.toLocaleTimeString('en-GB', {
@@ -413,6 +430,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       slotIntervalMinutes: slot.slotIntervalMinutes,
       frequencyType: frequencyType,
       slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
+      businessTimeZone: slot.businessTimeZone,
+      businessAllowOt: slot.businessAllowOt,
     });
 
     if (this.eventType == EventTypeModel.BUSINESS) {
@@ -479,7 +498,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       }
     }
 
-    this.businessDaysHoursForm.updateValueAndValidity({emitEvent:false});
+    this.businessDaysHoursForm.updateValueAndValidity({ emitEvent: false });
   }
 
   private resolveIntervalType(slotIntervalMinutes: number | null): string {
@@ -583,6 +602,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       console.log("done 2nd part");
 
       slotRequestDto.businessDaysHours = businessDaysHoursData;
+      slotRequestDto.businessTimeZone = this.slotForm.value.businessTimeZone;
+      slotRequestDto.businessAllowOt = this.slotForm.value.businessAllowOt;
     }
     console.log(slotRequestDto);
 
@@ -652,6 +673,10 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     const minutes = pad(date.getMinutes());
 
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  private mapUndefinedToNull<T>(value: T | undefined | null): T | null {
+    return value == undefined ? null : value;
   }
 }
 

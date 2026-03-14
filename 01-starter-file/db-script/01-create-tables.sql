@@ -52,6 +52,8 @@ CREATE TABLE slots (
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMPTZ NOT NULL,
 	business_days_hours JSONB,
+	business_timezone VARCHAR(50),
+	business_allow_ot BOOLEAN,
 	flexible_days_hours JSONB,
 	CONSTRAINT unique_event_slot_name UNIQUE (event_id, id)
 );

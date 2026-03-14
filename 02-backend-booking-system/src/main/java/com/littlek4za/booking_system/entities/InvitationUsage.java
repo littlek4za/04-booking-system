@@ -6,7 +6,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,13 +26,11 @@ public class InvitationUsage {
     private Long userId;
 
     @ManyToOne
-    @MapsId("invitationId")
-    @JoinColumn(name = "invitation_id")
+    @JoinColumn(name = "invitation_id", insertable = false, updatable = false)
     private Invitation invitation;
 
     @ManyToOne
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
     @Column(name = "usage_count")
@@ -43,6 +40,9 @@ public class InvitationUsage {
     }
 
     public InvitationUsage(Invitation invitation, User user) {
+        this.invitationId = invitation.getId();
+        this.userId = user.getId();
+
         this.invitation = invitation;
         this.user = user;
         this.usageCount = 0;
@@ -57,9 +57,6 @@ public class InvitationUsage {
     }
 
     public void incrementUsage(Integer maxUsagePerUser) {
-        if (maxUsagePerUser == null) {
-            throw new IllegalStateException("Unlimited usage for this invitation");
-        }
         if (maxUsagePerUser != null && this.usageCount >= maxUsagePerUser) {
             throw new IllegalStateException("User has reached the max usage for this invitation");
         }

@@ -256,7 +256,7 @@
                 @for (interval of getTimeIntervals().controls; track $index; let i = $index) {
                 <div [formGroupName]="i">
                     <label class="form-label">Start Time</label>
-                    <input type="datetime-local" formControlName="open" /> 
+                    <input type="datetime-local" formControlName="open" />
                     <label class="form-label">End Time</label>
                     <input type="datetime-local" formControlName="close" />
                     <button type="button" (click)="removeTimeInterval(i)">Delete</button>
@@ -366,8 +366,44 @@
             </div>
         </div>
     </div>
-    }
 
+    <div class="col-md-4">
+        <label class="form-label">Business Time Zone</label>
+        <select class="form-select" formControlName="businessTimeZone">
+            @for (tz of timezones; track $index) {
+            <option [value]="tz.value">
+                {{tz.label}}
+            </option>
+            }
+        </select>
+        @if(slotForm.get('businessTimeZone')?.hasError('required') &&
+        (slotForm.get('businessTimeZone')?.touched ||
+        slotForm.get('businessTimeZone')?.dirty)) {
+        <div class="text-danger">
+            Please choose a Time Zone
+        </div>
+        }
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Business Allow OverTime</label>
+        <select class="form-select" formControlName="businessAllowOt">
+            <option [value]=true>
+                Allow Over Time
+            </option>
+            <option [value]=false>
+                No Over Time
+            </option>
+        </select>
+         @if(slotForm.get('businessAllowOt')?.hasError('required') &&
+        (slotForm.get('businessAllowOt')?.touched ||
+        slotForm.get('businessAllowOt')?.dirty)) {
+        <div class="text-danger">
+            Please choose
+        </div>
+        }
+    </div>
+    }
 
     <div class="col-12">
         <button class="btn btn-primary" type="submit">Submit form</button>

@@ -35,6 +35,10 @@ public record SlotRequestDto(
 
     Map<Integer, List<TimeRange>> businessDaysHours,
 
+    String businessTimeZone,
+
+    Boolean businessAllowOt,
+
     List<InstantRange> flexibleDaysHours
 
 ) {} 

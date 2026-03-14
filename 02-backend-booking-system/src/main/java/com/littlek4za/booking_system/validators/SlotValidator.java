@@ -49,7 +49,8 @@ public class SlotValidator {
         }
 
         if (dto.maxBookPerInterval() == null || dto.maxBookPerInterval() <= 0) {
-            throw new AppException("Fixed Type requires maxBookPerInterval input to be larger than 0", HttpStatus.BAD_REQUEST);
+            throw new AppException("Fixed Type requires maxBookPerInterval input to be larger than 0",
+                    HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() != null) {
@@ -68,6 +69,16 @@ public class SlotValidator {
             throw new AppException("Fixed Type requires slotFrequencyIntervalMinutes input to be NULL",
                     HttpStatus.BAD_REQUEST);
         }
+
+        if (dto.businessAllowOt() != null) {
+            throw new AppException("Fixed Type requires businessAllowOt to be NULL",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.businessTimeZone() != null) {
+            throw new AppException("Fixed Type requires businessTimeZone to be NULL",
+                    HttpStatus.BAD_REQUEST);
+        }
     }
 
     private void validateFlexibleSlot(SlotRequestDto dto) {
@@ -77,7 +88,8 @@ public class SlotValidator {
         }
 
         if (dto.maxBookPerInterval() != null) {
-            throw new AppException("Flexible Type requires maxBookPerInterval input to be NULL", HttpStatus.BAD_REQUEST);
+            throw new AppException("Flexible Type requires maxBookPerInterval input to be NULL",
+                    HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() == null || dto.slotIntervalMinutes() <= 0) {
@@ -100,7 +112,17 @@ public class SlotValidator {
 
         if (dto.slotFrequencyIntervalMinutes() == null || dto.slotFrequencyIntervalMinutes() <= 0
                 || dto.slotFrequencyIntervalMinutes() > 1440) {
-            throw new AppException("Business Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440",
+            throw new AppException("Flexible Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.businessAllowOt() != null) {
+            throw new AppException("Flexible Type requires businessAllowOt to be NULL",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.businessTimeZone() != null) {
+            throw new AppException("Flexible Type requires businessTimeZone to be NULL",
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -112,7 +134,8 @@ public class SlotValidator {
         }
 
         if (dto.maxBookPerInterval() != null) {
-            throw new AppException("Business Type requires maxBookPerInterval input to be NULL", HttpStatus.BAD_REQUEST);
+            throw new AppException("Business Type requires maxBookPerInterval input to be NULL",
+                    HttpStatus.BAD_REQUEST);
         }
 
         if (dto.slotIntervalMinutes() == null || dto.slotIntervalMinutes() <= 0) {
@@ -136,6 +159,16 @@ public class SlotValidator {
         if (dto.slotFrequencyIntervalMinutes() == null || dto.slotFrequencyIntervalMinutes() <= 0
                 || dto.slotFrequencyIntervalMinutes() > 1440) {
             throw new AppException("Business Type requires slotFrequencyIntervalMinutes input to be between 0 and 1440",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.businessAllowOt() == null) {
+            throw new AppException("Business Type requires businessAllowOt",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if (dto.businessTimeZone() == null) {
+            throw new AppException("Business Type requires businessTimeZone",
                     HttpStatus.BAD_REQUEST);
         }
     }

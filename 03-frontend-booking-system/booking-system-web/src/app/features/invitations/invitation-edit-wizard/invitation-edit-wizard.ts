@@ -189,15 +189,15 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     logControls(this.invitationForm);
 
     const invitationRequestDto = new InvitationRequestDto;
-    invitationRequestDto.maxUsage = this.mapNullable(this.invitationForm.get('maxUsage')?.value);
-    invitationRequestDto.maxUsagePerUser = this.mapNullable(this.invitationForm.get('maxUsagePerUser')?.value);
+    invitationRequestDto.maxUsage = this.mapNullToUndefined(this.invitationForm.get('maxUsage')?.value);
+    invitationRequestDto.maxUsagePerUser = this.mapNullToUndefined(this.invitationForm.get('maxUsagePerUser')?.value);
     invitationRequestDto.requiredLogin = this.invitationForm.get('requiredLogin')?.value;
     invitationRequestDto.slotIncludeMode = this.invitationForm.get('slotIncludeMode')?.value;
     invitationRequestDto.slotIdList = this.invitationForm.get('selectedSlotIds')?.value;
 
     // update date with 23:59
     const dateStr = this.invitationForm.value.expiresAt;
-    invitationRequestDto.expiresAt = this.mapNullable(
+    invitationRequestDto.expiresAt = this.mapNullToUndefined(
       dateStr
       ? new Date(`${dateStr}T23:59:59.999`).toISOString()
       : null
@@ -220,7 +220,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   }
 
-  private mapNullable<T>(value: T | null): T | undefined {
+  private mapNullToUndefined<T>(value: T | null): T | undefined {
     return value === null? undefined : value;
   }
 
