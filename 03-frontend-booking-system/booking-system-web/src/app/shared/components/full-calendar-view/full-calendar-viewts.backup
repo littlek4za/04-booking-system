@@ -11,14 +11,11 @@ import { TimeZoneOption } from '@shared/model/time-zone-option';
 import { SlotService } from '@features/slots/slot-service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
-import momentTimeZonePlugin from '@fullcalendar/moment-timezone';
 import { TimeZoneService } from '@shared/model/time-zone-service';
-import { FormsModule } from '@angular/forms';
-import moment from 'moment-timezone';
 
 @Component({
   selector: 'app-full-calendar-view',
-  imports: [CommonModule, FullCalendarModule, CommonModule, FormsModule],
+  imports: [CommonModule, FullCalendarModule],
   templateUrl: './full-calendar-view.html',
   styleUrl: './full-calendar-view.css',
 })
@@ -39,6 +36,8 @@ export class FullCalendarView {
 
   @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
 
+  timeZoneService = inject(TimeZoneService);
+
   // field for slots and slot
   slotList = toSignal(this.slotService.slot$, { initialValue: [] });
   singleSlot = signal<SlotResponseDto | null>(null);
@@ -51,42 +50,14 @@ export class FullCalendarView {
   selectedSlots = new Set<number>();
 
   // field for timezone
-  timeZoneOption: TimeZoneOption[] = [];
-  selectedTimeZone!: string;
+  timeZoneOption: TimeZoneOption[] = this.timeZoneService.getAllTimeZones();
+  currentTimeZone = this.timeZoneService.getUserTimeZone();
 
   // calendar option
-  calendarOptions: CalendarOptions = {
-    initialView: this.initialView,
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, momentTimeZonePlugin],
-    dateClick: (info) => { this.calendarApi.changeView('timeGridDay', info.date) },
-    selectable: false,
-    slotDuration: '00:30:00',
-    select: (info: DateSelectArg) => { alert('event click! ' + info.view) },
-    weekends: true,
-    timeZone: this.selectedTimeZone,
-    events: [],
-    eventClick: (info: EventClickArg) => {
-      alert(
-        `Event Name: ${info.event.title}\n` +
-        `Event Id: ${info.event.id}\n` +
-        `Start Time: ${info.event.start}\n` +
-        `End Time: ${info.event.end}`
-      )
-    },
-    // datesSet: (info) => alert('dateSet click! ' + info.start),
-    headerToolbar: {
-      left: 'prev,next,today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    eventTimeFormat: {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }
-  };
+  calendarOptions!: CalendarOptions;
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log('CurrentTimeZone', this.currentTimeZone);
     if (changes['eventId'] || changes['slotId']) {
       if (!this.eventId) return;
       if (this.slotId) {
@@ -113,10 +84,38 @@ export class FullCalendarView {
     this.destroy$.complete();
   }
 
-  constructor(private timeZoneService: TimeZoneService) {
-    this.timeZoneOption = timeZoneService.getAllTimeZones();
-    this.selectedTimeZone = timeZoneService.getUserTimeZone();
-    console.log("selectedTimeZone", this.selectedTimeZone);
+  constructor() {
+
+    this.calendarOptions = {
+      initialView: this.initialView,
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+      dateClick: (info) => { this.calendarApi.changeView('timeGridDay', info.date) },
+      selectable: false,
+      slotDuration: '00:30:00',
+      select: (info: DateSelectArg) => { alert('event click! ' + info.view) },
+      weekends: true,
+      timeZone: this.currentTimeZone,
+      events: [],
+      eventClick: (info: EventClickArg) => {
+        alert(
+          `Event Name: ${info.event.title}\n` +
+          `Event Id: ${info.event.id}\n` +
+          `Start Time: ${info.event.start}\n` +
+          `End Time: ${info.event.end}`
+        )
+      },
+      // datesSet: (info) => alert('dateSet click! ' + info.start),
+      headerToolbar: {
+        left: 'prev,next,today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      eventTimeFormat: {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }
+    };
 
     effect(() => {
       const slots = this.normalizedSlots();
@@ -139,7 +138,7 @@ export class FullCalendarView {
   }
 
   private get calendarApi() {
-    return this.calendarComponent.getApi();
+    return this.calendarComponent?.getApi();
   }
 
   // Addtional UI Function - toggle Weekend
@@ -167,8 +166,9 @@ export class FullCalendarView {
 
   // Addtional UI Function - Chooseable TimeZone
   onTimeZoneChange(timeZone: string) {
-    this.selectedTimeZone = timeZone;
+    this.currentTimeZone = timeZone;
     this.calendarApi.setOption('timeZone', timeZone);
+    this.calendarApi.refetchEvents();
     this.initCalendarData();
   }
 
@@ -219,23 +219,14 @@ export class FullCalendarView {
       if (eventType == EventTypeModel.BUSINESS) {
         if (!slot.businessDaysHours || Object.keys(slot.businessDaysHours).length === 0) continue;
 
-        const businessTz= slot.businessTimeZone ?? this.selectedTimeZone;
-
         Object.entries(slot.businessDaysHours).forEach(([dayOfWeek, ranges]) => {
           ranges.forEach((range, index) => {
-            const start = moment.tz(range.open, 'HH:mm', businessTz)
-              .tz(this.selectedTimeZone)
-              .format('HH:mm');
-            const end = moment.tz(range.close, 'HH:mm', businessTz)
-              .tz(this.selectedTimeZone)
-              .format('HH:mm');
-
             events.push({
               ...baseEvent,
               id: `event-${eventId}-slot-${slot.id}-${dayOfWeek}-${index}`,
               daysOfWeek: [Number(dayOfWeek)],
-              startTime: start,
-              endTime: end,
+              startTime: range.open,
+              endTime: range.close,
               display: 'auto'
             });
           });
