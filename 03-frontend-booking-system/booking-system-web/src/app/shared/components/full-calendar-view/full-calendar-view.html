@@ -17,7 +17,7 @@
     <div class="slot-filter">
         @for (slot of normalizedSlots(); track $index) {
         <label>
-            <input type="checkbox" [checked]="selectedSlots.has(slot.id)"
+            <input type="checkbox" [checked]="selectedSlots().has(slot.id)"
                 (change)="toggleSlotFilter(slot.id, $event.target.checked)">
             {{slot.slotName}}
         </label>

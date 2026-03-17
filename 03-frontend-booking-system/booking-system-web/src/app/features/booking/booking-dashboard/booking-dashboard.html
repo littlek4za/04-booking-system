@@ -8,7 +8,8 @@
 @if (showBookingConfirmationWizard && slotField && invitationField) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-booking-confirmation-wizard [slot]='slotField' [invitation]='invitationField' (close)="closeBookingConfirmationWizard()"></app-booking-confirmation-wizard>
+    <app-booking-confirmation-wizard [slot]='slotField' [invitation]='invitationField'
+        (close)="closeBookingConfirmationWizard()"></app-booking-confirmation-wizard>
 </div>
 }
 
@@ -22,11 +23,17 @@
             <th scope="col">Start Time</th>
             <th scope="col">End Time</th>
             }
+            @if (invitation()?.event?.eventType == EventTypeModel.FLEXIBLE) {
+            <th scope="col">Time Slot</th>
+            }
+            @if (invitation()?.event?.eventType == EventTypeModel.BUSINESS) {
+            <th scope="col">Time Slot</th>
+            }
             <th scope="col">Action</th>
         </tr>
     </thead>
     <tbody>
-        @for (slot of invitation()?.slotList; track slot.id; let i = $index) {
+        @for (slot of slotListToDisplay(); track slot.id; let i = $index) {
         <tr>
             <td scope="row">{{i+1}}</td>
             <td>{{slot.slotName}}</td>
@@ -39,8 +46,36 @@
             <th scope="col">{{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</th>
             <th scope="col">{{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</th>
             }
+            @if (invitation()?.event?.eventType == EventTypeModel.FLEXIBLE) {
+            <td>
+                @for (range of slot.flexibleDaysHours; track $index) {
+                <div>
+                    {{range.open| date:'yyyy-MM-dd HH:mm'}}
+                    ->
+                    {{range.close| date:'yyyy-MM-dd HH:mm'}}
+                </div>
+                }
+            </td>
+            }
+            @if (invitation()?.event?.eventType == EventTypeModel.BUSINESS) {
+            <td>
+                @for (day of businessDays; track day) {
+                    @if (slot.businessDaysHours?.[day]?.length) {
+                        <div>
+                            <b>{{dayNames[day]}}</b>
+                            @for (range of getSlotBusinessDaysHoursRange(day,slot); track $index) {
+                                <div>
+                                    {{range.open}} -> {{range.close}}
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </td>
+            }
             <th>
-                <button type="button" class="btn btn-outline-info" (click)="openBookingConfirmationWizard(slot)">Select Slot</button>
+                <button type="button" class="btn btn-outline-info" (click)="openBookingConfirmationWizard(slot)">Select
+                    Slot</button>
             </th>
         </tr>
         }

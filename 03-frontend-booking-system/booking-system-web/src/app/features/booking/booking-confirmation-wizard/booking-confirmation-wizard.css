@@ -1,0 +1,13 @@
+.calendar-step-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Fill the whole wizard */
+  min-height: 0; 
+}
+
+.calendar-content {
+  flex: 1;
+  min-height: 0;
+  /* This ensures the calendar-view component has a 
+     defined height to fill, enabling its own scrollbar */
+}

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, computed, effect, EventEmitter, inject, Input, OnChanges, OnInit, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, EventEmitter, inject, Input, OnChanges, OnDestroy, OnInit, Output, signal, SimpleChanges, untracked, ViewChild } from '@angular/core';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -15,6 +15,7 @@ import momentTimeZonePlugin from '@fullcalendar/moment-timezone';
 import { TimeZoneService } from '@shared/model/time-zone-service';
 import { FormsModule } from '@angular/forms';
 import moment from 'moment-timezone';
+import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 
 @Component({
   selector: 'app-full-calendar-view',
@@ -22,14 +23,21 @@ import moment from 'moment-timezone';
   templateUrl: './full-calendar-view.html',
   styleUrl: './full-calendar-view.css',
 })
-export class FullCalendarView {
+export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   private slotService = inject(SlotService);
+  private timeZoneService = inject(TimeZoneService);
   private destroy$ = new Subject<void>();
 
-  @Input() eventType!: EventTypeModel;
-  @Input() eventId!: number;
+  // Input from parent, For View Usage
+  @Input() eventType?: EventTypeModel;
+  @Input() eventId?: number;
   @Input() slotId: number | null = null;
+
+  // Input from parent, For Edit Usage
+  @Input() slot?: SlotResponseDto;
+  @Input() invitation?: InvitationResponseDto;
+
   @Input() initialView: string = 'dayGridMonth';
   @Input() viewDate: Date = new Date();
   @Input() mode!: 'EDIT' | 'VIEW';
@@ -38,9 +46,10 @@ export class FullCalendarView {
   @Output() close = new EventEmitter<void>();
 
   @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
+  calendarReady = signal(false);
 
-  // field for slots and slot
-  slotList = toSignal(this.slotService.slot$, { initialValue: [] });
+  // signal field for slots and slot
+  slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
   singleSlot = signal<SlotResponseDto | null>(null);
 
   normalizedSlots = computed<SlotResponseDto[]>(() => {
@@ -48,11 +57,26 @@ export class FullCalendarView {
     return slot ? [slot] : this.slotList();
   })
 
-  selectedSlots = new Set<number>();
+  filteredSlots = computed<SlotResponseDto[]>(() => {
+    const slots = this.normalizedSlots();
+    const selected = this.selectedSlots();
 
-  // field for timezone
+    return slots.filter(slot => selected.has(slot.id));
+  });
+
+  // html field/logic field
+  selectedSlots = signal<Set<number>>(new Set());
+  selectedTimeZone = signal<string>('local');
+
+  // html field for timezone
   timeZoneOption: TimeZoneOption[] = [];
-  selectedTimeZone!: string;
+
+  // logic field (signal) resulted from view / edit
+  eventIdFromMode!: number;
+  eventTypeFromMode!: EventTypeModel;
+
+  // logic field
+  // firstload = true;
 
   // calendar option
   calendarOptions: CalendarOptions = {
@@ -63,7 +87,7 @@ export class FullCalendarView {
     slotDuration: '00:30:00',
     select: (info: DateSelectArg) => { alert('event click! ' + info.view) },
     weekends: true,
-    timeZone: this.selectedTimeZone,
+    timeZone: 'local',
     events: [],
     eventClick: (info: EventClickArg) => {
       alert(
@@ -87,9 +111,17 @@ export class FullCalendarView {
   };
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['eventId'] || changes['slotId']) {
-      if (!this.eventId) return;
+    console.log("1");
+    if (this.mode == 'VIEW' && (changes['eventId'] || changes['eventType'])) {
+      console.log("2a");
+      if (!this.eventId || !this.eventType) return;
+
+      this.eventIdFromMode = this.eventId;
+      this.eventTypeFromMode = this.eventType;
+
+      // slot id provided, get single slot
       if (this.slotId) {
+        console.log("2a.1");
         this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
@@ -101,10 +133,21 @@ export class FullCalendarView {
               console.log("Get Slot failed");
             }
           });
-      } else {
+      } else { // slot id not provided, get slotList
+        console.log("2a.2");
         this.singleSlot.set(null);
         this.slotService.triggerRefresh(this.eventId);
       }
+    }
+
+    if (this.mode == 'EDIT' && (changes['slot'] || changes['invitation'])) {
+      console.log("2b");
+      if (!this.slot || !this.invitation) return;
+
+      this.eventIdFromMode = this.invitation?.event.id;
+      this.eventTypeFromMode = this.invitation?.event.eventType;
+
+      this.singleSlot.set(this.slot);
     }
   }
 
@@ -113,33 +156,57 @@ export class FullCalendarView {
     this.destroy$.complete();
   }
 
-  constructor(private timeZoneService: TimeZoneService) {
-    this.timeZoneOption = timeZoneService.getAllTimeZones();
-    this.selectedTimeZone = timeZoneService.getUserTimeZone();
-    console.log("selectedTimeZone", this.selectedTimeZone);
-
-    effect(() => {
-      const slots = this.normalizedSlots();
-
-      if (!this.eventId) return;
-      if (!this.eventType) return;
-      if (this.mode !== 'VIEW') return;
-      if (slots.length === 0) return;
-      console.log('View before initClendarData', this.normalizedSlots());
-      slots.forEach(slot => this.selectedSlots.add(slot.id));
-      this.initCalendarData();
-    })
-  }
-
-  private initCalendarData() {
-    const eventInputList: EventInput[] =
-      this.mapSlotToCalendarEvent(this.normalizedSlots(), this.eventId, this.eventType);
-    this.calendarApi.removeAllEvents();
-    this.calendarApi.addEventSource(eventInputList);
-  }
-
   private get calendarApi() {
     return this.calendarComponent.getApi();
+  }
+
+  constructor() {
+    this.timeZoneOption = this.timeZoneService.getAllTimeZones();
+    this.selectedTimeZone.set(this.timeZoneService.getUserTimeZone());
+    // initialized the selectedslot everytime there is mode change
+    effect(() => {
+      const slots = this.normalizedSlots();
+      this.selectedSlots.set(new Set(slots.map(s => s.id)));
+
+    });
+    // init the calendar data
+    effect(() => {
+      const ready = this.calendarReady(); // trigger when calendarComponent ready
+      if (!ready) { // check calendarComponent is ready, if not stop the code, then wait for trigger again
+        return;
+      }
+      const slots = this.filteredSlots(); // trigger when normalize slot update
+      const timeZone = this.selectedTimeZone();// trigger when selectedTimeZone update
+
+      const eventId = this.eventIdFromMode;
+      const eventType = this.eventTypeFromMode;
+
+      console.log("4", ready);
+      console.log(eventId, eventType);
+
+      if (eventId !== undefined && eventType !== undefined) {
+        untracked(() => {
+          this.calendarApi.setOption('timeZone', timeZone);
+          this.initCalendarData(slots, eventId, eventType);
+          console.log("5");
+        });
+      }
+
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.calendarReady.set(true);
+  }
+
+  private initCalendarData(slots: SlotResponseDto[], eventId: number, eventType: EventTypeModel) {
+    const eventInputList: EventInput[] =
+      this.mapSlotToCalendarEvent(slots, eventId, eventType);
+    if(eventType == EventTypeModel.BUSINESS){
+      this.calendarApi.changeView('timeGridWeek');
+    }
+    this.calendarApi.removeAllEvents();
+    this.calendarApi.addEventSource(eventInputList);
   }
 
   // Addtional UI Function - toggle Weekend
@@ -152,24 +219,18 @@ export class FullCalendarView {
 
   // Additional UI Function - filter slot
   toggleSlotFilter(slotId: number, checked: boolean) {
+    const updatedFilterSlotList = new Set(this.selectedSlots());
     if (checked) {
-      this.selectedSlots.add(slotId);
+      updatedFilterSlotList.add(slotId);
     } else {
-      this.selectedSlots.delete(slotId);
+      updatedFilterSlotList.delete(slotId);
     }
-
-    const filteredSlots = this.normalizedSlots().filter(slot => this.selectedSlots.has(slot.id));
-    const events = this.mapSlotToCalendarEvent(filteredSlots, this.eventId, this.eventType);
-
-    this.calendarApi.removeAllEvents();
-    this.calendarApi.addEventSource(events);
+    this.selectedSlots.set(updatedFilterSlotList);
   }
 
   // Addtional UI Function - Chooseable TimeZone
   onTimeZoneChange(timeZone: string) {
-    this.selectedTimeZone = timeZone;
-    this.calendarApi.setOption('timeZone', timeZone);
-    this.initCalendarData();
+    this.selectedTimeZone.set(timeZone);
   }
 
   // core conversion
@@ -219,15 +280,19 @@ export class FullCalendarView {
       if (eventType == EventTypeModel.BUSINESS) {
         if (!slot.businessDaysHours || Object.keys(slot.businessDaysHours).length === 0) continue;
 
-        const businessTz= slot.businessTimeZone ?? this.selectedTimeZone;
+        if (!slot.businessTimeZone) {
+          throw new Error('No Business Time Zone found, please contact administrator');
+        }
+
+        const businessTz = slot.businessTimeZone;
 
         Object.entries(slot.businessDaysHours).forEach(([dayOfWeek, ranges]) => {
           ranges.forEach((range, index) => {
             const start = moment.tz(range.open, 'HH:mm', businessTz)
-              .tz(this.selectedTimeZone)
+              .tz(this.selectedTimeZone())
               .format('HH:mm');
             const end = moment.tz(range.close, 'HH:mm', businessTz)
-              .tz(this.selectedTimeZone)
+              .tz(this.selectedTimeZone())
               .format('HH:mm');
 
             events.push({
@@ -245,12 +310,6 @@ export class FullCalendarView {
 
     return events;
   }
-
-  minutestoFullCalendarDuration(minutes: number) {
-    const hrs = Math.floor(minutes / 60).toString().padStart(2, '0');
-    const mins = (minutes % 60).toString().padStart(2, '0');
-    return `${hrs}:${mins}:00`;
-  } // 00:05:00
 
   closeCalendar() {
     this.close.emit();

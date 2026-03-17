@@ -20,7 +20,7 @@ export class SlotDashboardComponent implements OnInit {
   private slotService = inject(SlotService);
   openSlotWizard: boolean = false;
   updateSlotWizard: boolean = false;
-  slotList = toSignal(this.slotService.slot$, { initialValue: [] });
+  slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
   eventId!: number;
   eventType!: EventTypeModel;
   slotId: number | null = null;

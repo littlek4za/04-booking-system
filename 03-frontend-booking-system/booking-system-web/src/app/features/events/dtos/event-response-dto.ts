@@ -1,3 +1,5 @@
+import { EventTypeModel } from "./event-type-model";
+
 export class EventResponseDto {
     id!:number;
     username?:string;
@@ -7,7 +9,7 @@ export class EventResponseDto {
     includePosition!:boolean;
     latitude?:number;
     longitude?:number;
-    eventType!: 'FIXED'|'FLEXIBLE'|'BUSINESS';
+    eventType!: EventTypeModel;
     createdAt!: string;
     updatedAt!: string;
 }

@@ -38,7 +38,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   showMaxUsagePerUserSelection: boolean = false;
 
   //signal from service
-  slotList = toSignal(this.slotService.slot$, { initialValue: [] });
+  slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
 
   private destroy$ = new Subject<void>();
 

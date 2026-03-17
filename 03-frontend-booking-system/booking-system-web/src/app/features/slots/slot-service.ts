@@ -10,7 +10,7 @@ import { SlotRequestDto } from './dtos/slot-request-dto';
 export class SlotService {
 
   private eventId$ = new BehaviorSubject<number | null>(null);
-  slot$ = this.eventId$.pipe(
+  slotList$ = this.eventId$.pipe(
     filter((id): id is number => id !== null), //skip null
     switchMap(id => this.getSlotsByEventId(id).pipe(
       tap((res) => console.log('GET Slot List succeed', res)),

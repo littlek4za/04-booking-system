@@ -1,4 +1,9 @@
-import { AbstractControl, FormArray, ValidationErrors } from "@angular/forms";
+import { AbstractControl, FormArray, ValidationErrors, ValidatorFn } from "@angular/forms";
+import { EventTypeModel } from "@features/events/dtos/event-type-model";
+import { InvitationResponseDto } from "@features/invitations/dtos/invitation-response-dto";
+import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
+import { TimeRange } from "@shared/model/time-range";
+import moment from "moment";
 
 export function includePositionValidator(control: AbstractControl): ValidationErrors | null {
     const include = control.get('includePosition')!.value;
@@ -154,11 +159,75 @@ export function maxUsagePerUserExceedMaxUsage(abstractControl: AbstractControl):
     const maxUsagePerUser = abstractControl.get('maxUsagePerUser')?.value;
     const maxUsage = abstractControl.get('maxUsage')?.value;
     if (!noMaxUsage && !noMaxUsagePerUser) {
-       if(maxUsage != null &&
-        maxUsagePerUser != null &&
-        maxUsagePerUser>maxUsage){
-        return { maxUsagePerUserMaxError: true }
-       }
+        if (maxUsage != null &&
+            maxUsagePerUser != null &&
+            maxUsagePerUser > maxUsage) {
+            return { maxUsagePerUserMaxError: true }
+        }
     }
     return null;
+}
+
+export function validateStartAndEndTimeBaseOnEvent(slot: SlotResponseDto, invitation: InvitationResponseDto): ValidatorFn | null {
+    return (abstractControl: AbstractControl): ValidationErrors | null => {
+        const requestedStart = abstractControl.get('choosenStartTime')?.value;
+        const requestedEnd = abstractControl.get('choosenEndTime')?.value;
+
+        if (!requestedStart || !requestedEnd) {
+            return null;
+        }
+
+        const requestedStartTimeDate = new Date(requestedStart);
+        const requestedEndTimeDate = new Date(requestedEnd);
+
+        if (invitation.event.eventType == EventTypeModel.FLEXIBLE) {
+            const instantRangeList: TimeRange[] = slot.flexibleDaysHours || [];
+
+            const fitsInInstantRange = instantRangeList.some(range => {
+                const openZdt = new Date(range.open);
+                const closeZdt = new Date(range.close);
+                return requestedStartTimeDate >= openZdt && requestedEndTimeDate <= closeZdt;
+            });
+
+            if (!fitsInInstantRange) {
+                return { startOrEndTimeOutOfRange: true };
+            }
+        }
+
+        if (invitation.event.eventType == EventTypeModel.BUSINESS && slot.businessTimeZone && slot.businessDaysHours && slot.businessAllowOt) {
+            const businessTimeZone = slot.businessTimeZone;
+
+            const requestedStartZdt = moment.tz(requestedStart, businessTimeZone);
+            const requestedEndZdt = moment.tz(requestedEnd, businessTimeZone);
+
+            const startDay = requestedStartZdt.day();
+
+            const businessDaysHours = slot.businessDaysHours;
+            const instantRangListStart = businessDaysHours[startDay] ?? [];
+
+            const fitsInInstantRange = instantRangListStart.some(range => {
+                const openZdt = moment.tz(
+                    requestedStartZdt.format('YYYY-MM-DD') + 'T' + range.open,
+                    businessTimeZone);
+                const closeZdt = moment.tz(
+                    requestedEndZdt.format('YYYY-MM-DD') + 'T' + range.close,
+                    businessTimeZone);
+                if (closeZdt.isBefore(openZdt)) {
+                    closeZdt.add(1, 'day');
+                }
+
+                if (slot.businessAllowOt) {
+                    return requestedStartZdt.isSameOrAfter(openZdt) && requestedStartZdt.isSameOrBefore(closeZdt);
+                } else {
+                    return requestedStartZdt.isSameOrAfter(openZdt) && requestedEndZdt.isSameOrBefore(closeZdt);
+                }
+            })
+
+            if (!fitsInInstantRange) {
+                return { startOrEndTimeOutOfRange: true };
+            }
+        }
+
+        return null;
+    }
 }

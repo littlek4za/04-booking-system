@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
 }
 
 .calendar-header {
@@ -11,9 +12,9 @@
 }
 
 .calendar-body {
-  flex: 1 1 auto;   /* take remaining space */
-  min-height: 0;    /* VERY IMPORTANT for scrolling */
-  overflow: hidden; /* FullCalendar handles inner scroll */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden; /* FullCalendar manages its own scroll */
 }
 
 .slot-filter {

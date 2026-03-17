@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.validators;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -106,21 +107,31 @@ public class BookingRequestValidator {
 
         Instant bookedStartTimeInstant = Instant.parse(dto.bookedStartTime());
         ZoneId zone = ZoneId.of(slot.getBusinessTimeZone());
-        ZonedDateTime zdt = bookedStartTimeInstant.atZone(zone);
-        LocalTime requestedStart = zdt.toLocalTime();
-        LocalTime reqeustedEnd = requestedStart.plusMinutes(slot.getSlotIntervalMinutes());
+        ZonedDateTime requestedStartZdt = bookedStartTimeInstant.atZone(zone);
+        ZonedDateTime reqeustedEndZdt = requestedStartZdt.plusMinutes(slot.getSlotIntervalMinutes());
 
-        int dayOfWeek = zdt.getDayOfWeek().getValue() % 7;
+        LocalDate requestedStartDate = requestedStartZdt.toLocalDate();
+        int dayOfWeekStart = requestedStartZdt.getDayOfWeek().getValue() % 7;
 
         Map<Integer, List<TimeRange>> businessDaysHours = slot.getBusinessDaysHours();
-        List<TimeRange> instantRangeList = businessDaysHours.getOrDefault(dayOfWeek, List.of());
+        List<TimeRange> instantRangeListStart = businessDaysHours.getOrDefault(dayOfWeekStart, List.of());
 
-        boolean fitsInInstantRange = instantRangeList.stream()
+        boolean fitsInInstantRange = instantRangeListStart.stream()
                 .anyMatch(range -> {
-                    LocalTime open = LocalTime.parse(range.getOpen());
-                    LocalTime close = LocalTime.parse(range.getClose());
+                    LocalTime openTime = LocalTime.parse(range.getOpen());
+                    LocalTime closeTime = LocalTime.parse(range.getClose());
+                    ZonedDateTime openZdt = ZonedDateTime.of(requestedStartDate, openTime, zone);
+                    ZonedDateTime closeZdt = ZonedDateTime.of(requestedStartDate, closeTime, zone);
 
-                    return !requestedStart.isBefore(open) && !reqeustedEnd.isAfter(close);
+                    if (closeZdt.isBefore(openZdt)) {
+                        closeZdt = closeZdt.plusDays(1);
+                    }
+
+                    if (Boolean.TRUE.equals(slot.getBusinessAllowOT())) {
+                        return !requestedStartZdt.isBefore(openZdt) && !requestedStartZdt.isAfter(closeZdt);
+                    } else {
+                        return !requestedStartZdt.isBefore(openZdt) && !reqeustedEndZdt.isAfter(closeZdt);
+                    }
                 });
 
         if (!fitsInInstantRange) {
