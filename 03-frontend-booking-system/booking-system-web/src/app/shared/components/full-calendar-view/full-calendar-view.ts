@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, computed, effect, EventEmitter, inject, Input, OnChanges, OnDestroy, OnInit, Output, signal, SimpleChanges, untracked, ViewChild } from '@angular/core';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, DateSelectArg, DurationInput, EventClickArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { CommonModule } from '@angular/common';
@@ -26,7 +26,6 @@ import { InvitationResponseDto } from '@features/invitations/dtos/invitation-res
 export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   private slotService = inject(SlotService);
-  private timeZoneService = inject(TimeZoneService);
   private destroy$ = new Subject<void>();
 
   // Input from parent, For View Usage
@@ -38,7 +37,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   @Input() slot?: SlotResponseDto;
   @Input() invitation?: InvitationResponseDto;
 
-  @Input() initialView: string = 'dayGridMonth';
+  // Output to Parent, For Edit Usage
+  @Output() selectedStartTime = new EventEmitter<Date>();
+
   @Input() viewDate: Date = new Date();
   @Input() mode!: 'EDIT' | 'VIEW';
 
@@ -51,7 +52,6 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   // signal field for slots and slot
   slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
   singleSlot = signal<SlotResponseDto | null>(null);
-
   normalizedSlots = computed<SlotResponseDto[]>(() => {
     const slot = this.singleSlot();
     return slot ? [slot] : this.slotList();
@@ -75,29 +75,23 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   eventIdFromMode!: number;
   eventTypeFromMode!: EventTypeModel;
 
-  // logic field
-  // firstload = true;
-
   // calendar option
   calendarOptions: CalendarOptions = {
-    initialView: this.initialView,
+    initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, momentTimeZonePlugin],
-    dateClick: (info) => { this.calendarApi.changeView('timeGridDay', info.date) },
+    dateClick: (info) => {
+      if (info.view.type === 'dayGridMonth') {
+        this.calendarApi.changeView('timeGridWeek', info.date);
+      } else if (info.view.type === 'timeGridWeek') {
+        this.calendarApi.changeView('timeGridDay', info.date);
+      }
+    },
     selectable: false,
-    slotDuration: '00:30:00',
-    select: (info: DateSelectArg) => { alert('event click! ' + info.view) },
+    allDaySlot: false,
+    slotDuration: '00:60:00',
     weekends: true,
     timeZone: 'local',
     events: [],
-    eventClick: (info: EventClickArg) => {
-      alert(
-        `Event Name: ${info.event.title}\n` +
-        `Event Id: ${info.event.id}\n` +
-        `Start Time: ${info.event.start}\n` +
-        `End Time: ${info.event.end}`
-      )
-    },
-    // datesSet: (info) => alert('dateSet click! ' + info.start),
     headerToolbar: {
       left: 'prev,next,today',
       center: 'title',
@@ -109,6 +103,40 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       hour12: true
     }
   };
+
+  constructor(timeZoneService: TimeZoneService) {
+    this.timeZoneOption = timeZoneService.getAllTimeZones();
+    this.selectedTimeZone.set(timeZoneService.getUserTimeZone());
+    // initialized the selectedslot everytime there is mode change
+    effect(() => {
+      const slots = this.normalizedSlots();
+      this.selectedSlots.set(new Set(slots.map(s => s.id)));
+
+    });
+    // init the calendar data
+    effect(() => {
+      const ready = this.calendarReady(); // trigger when calendarComponent ready
+      if (!ready) { // check calendarComponent is ready, if not stop the code, then wait for trigger again
+        return;
+      }
+      const slots = this.filteredSlots(); // trigger when normalize slot update
+      const timeZone = this.selectedTimeZone();// trigger when selectedTimeZone update
+      const eventId = this.eventIdFromMode;
+      const eventType = this.eventTypeFromMode;
+
+      console.log("4", ready);
+      console.log(eventId, eventType);
+
+      if (eventId !== undefined && eventType !== undefined) {
+        untracked(() => {
+          this.calendarApi.setOption('timeZone', timeZone);
+          this.initCalendarData(slots, eventId, eventType);
+          console.log("5");
+        });
+      }
+
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log("1");
@@ -160,81 +188,68 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     return this.calendarComponent.getApi();
   }
 
-  constructor() {
-    this.timeZoneOption = this.timeZoneService.getAllTimeZones();
-    this.selectedTimeZone.set(this.timeZoneService.getUserTimeZone());
-    // initialized the selectedslot everytime there is mode change
-    effect(() => {
-      const slots = this.normalizedSlots();
-      this.selectedSlots.set(new Set(slots.map(s => s.id)));
-
-    });
-    // init the calendar data
-    effect(() => {
-      const ready = this.calendarReady(); // trigger when calendarComponent ready
-      if (!ready) { // check calendarComponent is ready, if not stop the code, then wait for trigger again
-        return;
-      }
-      const slots = this.filteredSlots(); // trigger when normalize slot update
-      const timeZone = this.selectedTimeZone();// trigger when selectedTimeZone update
-
-      const eventId = this.eventIdFromMode;
-      const eventType = this.eventTypeFromMode;
-
-      console.log("4", ready);
-      console.log(eventId, eventType);
-
-      if (eventId !== undefined && eventType !== undefined) {
-        untracked(() => {
-          this.calendarApi.setOption('timeZone', timeZone);
-          this.initCalendarData(slots, eventId, eventType);
-          console.log("5");
-        });
-      }
-
-    });
-  }
-
   ngAfterViewInit(): void {
     this.calendarReady.set(true);
+    this.setUpCalendarOption();
+    this.setUpCalendarOptionForViewMode();
+  }
+
+  private setUpCalendarOption() {
+    this.calendarApi.setOption('navLinks', true);
+    this.calendarApi.setOption('dayMaxEvents', true);
+
+    this.calendarApi.setOption('navLinkDayClick', (date) => {
+      const viewType = this.calendarApi.view.type;
+
+      if (viewType === 'dayGridMonth') {
+        this.calendarApi.changeView('timeGridWeek', date);
+      } else if (viewType === 'timeGridWeek') {
+        this.calendarApi.changeView('timeGridDay', date);
+      }
+    });
+  }
+  private setUpCalendarOptionForViewMode() {
+    if (this.mode != 'VIEW') return;
+    this.calendarApi.setOption('eventClick', (info) => {
+      const timeZone = this.selectedTimeZone();
+      const start = info.event.start
+        ? moment.tz(info.event.start, timeZone).format('YYYY-MM-DD hh:mm a Z')
+        : 'N/A';
+      const end = info.event.end
+        ? moment.tz(info.event.end, timeZone).format('YYYY-MM-DD hh:mm a Z')
+        : 'N/A';
+
+      alert(
+        `Event Name: TO ADD LATER\n` +
+        `Slot Name: ${info.event.title}\n` +
+        `Id: ${info.event.id}\n` +
+        `Start Time: ${start}\n` +
+        `End Time: ${end}`
+      )
+    });
   }
 
   private initCalendarData(slots: SlotResponseDto[], eventId: number, eventType: EventTypeModel) {
-    const eventInputList: EventInput[] =
-      this.mapSlotToCalendarEvent(slots, eventId, eventType);
-    if(eventType == EventTypeModel.BUSINESS){
-      this.calendarApi.changeView('timeGridWeek');
-    }
-    this.calendarApi.removeAllEvents();
-    this.calendarApi.addEventSource(eventInputList);
-  }
 
-  // Addtional UI Function - toggle Weekend
-  toggleWeekends() {
-    this.calendarOptions = {
-      ...this.calendarOptions,
-      weekends: !this.calendarOptions.weekends
-    };
-  }
-
-  // Additional UI Function - filter slot
-  toggleSlotFilter(slotId: number, checked: boolean) {
-    const updatedFilterSlotList = new Set(this.selectedSlots());
-    if (checked) {
-      updatedFilterSlotList.add(slotId);
+    if (this.mode == "VIEW") {
+      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForViewMode(slots, eventId, eventType);
+      this.calendarApi.removeAllEvents();
+      this.calendarApi.addEventSource(eventInputList);
+    } else if (this.mode == "EDIT") {
+      const slot = slots[0]; //EDIT only one slot will be choosen for process, convert it to one slot
+      if (!slot) return;
+      this.setUpCalendarOptionForEditMode(slot, eventType);
+      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForEditMode(slot, eventId, eventType);
+      this.calendarApi.removeAllEvents();
+      this.calendarApi.addEventSource(eventInputList);
     } else {
-      updatedFilterSlotList.delete(slotId);
+      console.error("Calendar Mode Error");
     }
-    this.selectedSlots.set(updatedFilterSlotList);
   }
 
-  // Addtional UI Function - Chooseable TimeZone
-  onTimeZoneChange(timeZone: string) {
-    this.selectedTimeZone.set(timeZone);
-  }
 
   // core conversion
-  private mapSlotToCalendarEvent(slotList: SlotResponseDto[], eventId: number, eventType: EventTypeModel): EventInput[] {
+  private mapSlotToCalendarEventForViewMode(slotList: SlotResponseDto[], eventId: number, eventType: EventTypeModel): EventInput[] {
 
     const events: EventInput[] = [];
 
@@ -246,7 +261,6 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
           slotId: slot.id,
           slotDescription: slot.slotDescription,
           maxBookPerInterval: slot.maxBookPerInterval,
-          slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
         }
       }
 
@@ -256,6 +270,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
           id: `event-${eventId}-slot-${slot.id}`,
           start: slot.slotStartTime,
           end: slot.slotEndTime,
+          extendedProps: {
+            ...baseEvent.extendedProps
+          }
         });
       }
 
@@ -265,24 +282,20 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         slot.flexibleDaysHours.forEach((range, index) => {
           events.push({
             ...baseEvent,
-            id: `event-${eventId}-slot-${slot.id}-${index}`,
+            id: `event-${eventId}-slot-${slot.id}-rangeIndex-${index}`,
             start: range.open,
             end: range.close,
             extendedProps: {
               ...baseEvent.extendedProps,
               slotIntervalMinutes: slot.slotIntervalMinutes,
-              slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes
+              slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
             }
           });
         });
       }
 
       if (eventType == EventTypeModel.BUSINESS) {
-        if (!slot.businessDaysHours || Object.keys(slot.businessDaysHours).length === 0) continue;
-
-        if (!slot.businessTimeZone) {
-          throw new Error('No Business Time Zone found, please contact administrator');
-        }
+        if (!slot.businessDaysHours || !slot.businessTimeZone || Object.keys(slot.businessDaysHours).length === 0) continue;
 
         const businessTz = slot.businessTimeZone;
 
@@ -297,11 +310,18 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
             events.push({
               ...baseEvent,
-              id: `event-${eventId}-slot-${slot.id}-${dayOfWeek}-${index}`,
+              id: `event-${eventId}-slot-${slot.id}-day-${dayOfWeek}-rangeIndex-${index}`,
               daysOfWeek: [Number(dayOfWeek)],
               startTime: start,
               endTime: end,
-              display: 'auto'
+              display: 'auto',
+              extendedProps: {
+                ...baseEvent.extendedProps,
+                slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
+                slotIntervalMinutes: slot.slotIntervalMinutes,
+                businessTimeZone: slot.businessTimeZone,
+                businessAllowOt: slot.businessAllowOt
+              }
             });
           });
         });
@@ -309,6 +329,232 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     }
 
     return events;
+  }
+
+  private setUpCalendarOptionForEditMode(slot: SlotResponseDto, eventType: EventTypeModel) {
+    if (this.mode != 'EDIT' || !slot || !eventType) return;
+
+    this.calendarApi.setOption('displayEventTime', false);
+
+    if (eventType == EventTypeModel.FLEXIBLE) {
+
+      if (slot.slotFrequencyIntervalMinutes == null) return;
+      const slotFrequencyIntervalMinutes = slot.slotFrequencyIntervalMinutes;
+      const slotDuration = this.covertToSlotDuration(slotFrequencyIntervalMinutes);
+
+      this.calendarApi.setOption('slotDuration', slotDuration);
+      this.calendarApi.setOption('snapDuration', slotDuration);
+
+      // get view to display
+      const timeRanges = slot.flexibleDaysHours;
+      if (!timeRanges || timeRanges.length === 0) return;
+
+      const uniqueDays = new Set<string>();
+      timeRanges.forEach(range => {
+
+        const open = moment.tz(range.open, this.selectedTimeZone());
+        const close = moment.tz(range.close, this.selectedTimeZone());
+
+        const openDate = open.format('YYYY-MM-DD')
+        const closeDate = close.format('YYYY-MM-DD')
+
+        if (!uniqueDays.has(openDate)) {
+          uniqueDays.add(openDate);
+        }
+        if (!uniqueDays.has(closeDate)) {
+          uniqueDays.add(closeDate);
+        }
+      })
+
+      let viewType: 'timeGridDay' | 'timeGridWeek' = 'timeGridDay'
+      if (uniqueDays.size > 1) {
+        viewType = 'timeGridWeek';
+      }
+
+      // get date to display
+      const sortedDays = Array.from(uniqueDays).sort();
+      const firstDay = sortedDays[0];
+      const displayDate = moment.tz(firstDay, 'YYYY-MM-DD', this.selectedTimeZone()).toDate();
+
+      // set view and date
+      this.calendarApi.changeView(viewType, displayDate);
+      this.setUpEventClickForEditMode(slot);
+    }
+
+    if (eventType == EventTypeModel.BUSINESS) {
+
+      if (slot.slotFrequencyIntervalMinutes == null) return;
+      const slotFrequencyIntervalMinutes = slot.slotFrequencyIntervalMinutes;
+      const slotDuration = this.covertToSlotDuration(slotFrequencyIntervalMinutes);
+
+      this.calendarApi.setOption('slotDuration', slotDuration);
+      this.calendarApi.setOption('snapDuration', slotDuration);
+      this.calendarApi.changeView('timeGridWeek');
+      this.setUpEventClickForEditMode(slot);
+    }
+  }
+
+  private setUpEventClickForEditMode(slot:SlotResponseDto) {
+    this.calendarApi.setOption('eventClick', (info) => {
+      const start = info.event.start;
+      if (!start) return;
+
+      const startZdt = moment.tz(start, this.selectedTimeZone());
+      const confirmed = confirm(`Select this time?\nStart Time: ${startZdt.format('YYYY-MM-DD hh:mm a Z')}\nEnd Time: ${startZdt.add(slot.slotIntervalMinutes,'minutes').format('YYYY-MM-DD hh:mm a Z')}`);
+      if (confirmed) {
+        this.selectedStartTime.emit(start);
+        console.log('Selected time', start);
+        this.closeCalendar();
+      }
+
+    });
+  }
+
+  mapSlotToCalendarEventForEditMode(slot: SlotResponseDto, eventId: number, eventType: EventTypeModel): EventInput[] {
+
+    const events: EventInput[] = [];
+
+    const baseEvent: EventInput = {
+      title: slot.slotName,
+      extendedProps: {
+        eventId: eventId,
+        slotId: slot.id,
+        slotDescription: slot.slotDescription,
+        maxBookPerInterval: slot.maxBookPerInterval,
+      }
+    }
+
+    if (eventType == EventTypeModel.FIXED) {
+      const start = moment(slot.slotStartTime, this.selectedTimeZone());
+      const end = moment(slot.slotEndTime, this.selectedTimeZone())
+      events.push({
+        ...baseEvent,
+        title: `${start.format('hh:mm a')} - ${end.format('hh:mm a')} - ${slot.slotName}`,
+        id: `event-${eventId}-slot-${slot.id}`,
+        start: slot.slotStartTime,
+        end: slot.slotEndTime,
+        extendedProps: {
+          ...baseEvent.extendedProps
+        }
+      });
+    }
+
+    if (eventType == EventTypeModel.FLEXIBLE) {
+      if (!slot.flexibleDaysHours?.length) return events;
+
+      const slotFrequencyIntervalMinutes = slot.slotFrequencyIntervalMinutes;
+      const slotIntervalMinutes = slot.slotIntervalMinutes;
+
+      if (!slotFrequencyIntervalMinutes || !slotIntervalMinutes) return events;
+
+      slot.flexibleDaysHours.forEach((range, index) => {
+
+        const startZdt = moment(range.open);
+        const endZdt = moment(range.close);
+
+        let current = startZdt.clone();
+        let i = 0;
+
+        while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
+          const nextEnd = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
+
+          const startTitle = current.clone().format('hh:mm a');
+          const endTitle = current.clone().add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+          events.push({
+            ...baseEvent,
+            title: `${startTitle} - ${endTitle} - ${slot.slotName}`,
+            id: `event-${eventId}-slot-${slot.id}-rangeIndex-${index}-${i}`,
+            start: current.toDate(),
+            end: nextEnd.toDate(),
+            extendedProps: {
+              ...baseEvent.extendedProps,
+              slotIntervalMinutes: slotIntervalMinutes,
+              slotFrequencyIntervalMinutes: slotFrequencyIntervalMinutes,
+            }
+          });
+          current = nextEnd;
+          i++;
+        }
+      });
+    }
+
+    if (eventType == EventTypeModel.BUSINESS) {
+      if (!slot.businessDaysHours
+        || !slot.businessTimeZone
+        || Object.keys(slot.businessDaysHours).length === 0) return events;
+
+      const businessTz = slot.businessTimeZone;
+      const slotFrequencyIntervalMinutes = slot.slotFrequencyIntervalMinutes;
+      const slotIntervalMinutes = slot.slotIntervalMinutes;
+
+      if (!slotFrequencyIntervalMinutes || !slotIntervalMinutes) return events;
+
+      Object.entries(slot.businessDaysHours).forEach(([dayOfWeek, ranges]) => {
+        ranges.forEach((range, index) => {
+          const startZdt = moment.tz(range.open, 'HH:mm', businessTz);
+          // .tz(this.selectedTimeZone())
+          // .format('HH:mm');
+          const endZdt = moment.tz(range.close, 'HH:mm', businessTz);
+          // .tz(this.selectedTimeZone())
+          // .format('HH:mm');
+
+          let current = startZdt.clone();
+          let i = 0;
+          while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
+            const next = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
+
+            const startTime = current.clone().tz(this.selectedTimeZone()).format('HH:mm');
+            const nextEnd = next.clone().tz(this.selectedTimeZone()).format('HH:mm');
+
+            const startTitle = current.clone().tz(this.selectedTimeZone()).format('hh:mm a');
+            const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes,'minutes').format('hh:mm a');
+            events.push({
+              ...baseEvent,
+              title: `${startTitle} - ${endTitle} - ${slot.slotName}`,
+              id: `event-${eventId}-slot-${slot.id}-day-${dayOfWeek}-rangeIndex-${index}-${i}`,
+              daysOfWeek: [Number(dayOfWeek)],
+              startTime: startTime,
+              endTime: nextEnd,
+              extendedProps: {
+                ...baseEvent.extendedProps,
+                slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
+                slotIntervalMinutes: slot.slotIntervalMinutes,
+                businessTimeZone: slot.businessTimeZone,
+                businessAllowOt: slot.businessAllowOt,
+              }
+            });
+            current = next;
+            i++;
+          }
+        });
+      });
+    }
+
+    return events;
+  }
+
+
+  covertToSlotDuration(slotFrequencyIntervalMinutes: number): any {
+    const hh = Math.floor(slotFrequencyIntervalMinutes / 60).toString().padStart(2, '0');
+    const mm = (slotFrequencyIntervalMinutes % 60).toString().padStart(2, '0');
+
+    return `${hh}:${mm}:00`;
+  }
+
+  // Addtional UI Function - Chooseable TimeZone
+  onTimeZoneChange(timeZone: string) {
+    this.selectedTimeZone.set(timeZone);
+  }
+
+  // Additional UI Function - filter slot
+  toggleSlotFilter(slotId: number, checked: boolean) {
+    const updatedFilterSlotList = new Set(this.selectedSlots());
+    if (checked) {
+      updatedFilterSlotList.add(slotId);
+    } else {
+      updatedFilterSlotList.delete(slotId);
+    }
+    this.selectedSlots.set(updatedFilterSlotList);
   }
 
   closeCalendar() {

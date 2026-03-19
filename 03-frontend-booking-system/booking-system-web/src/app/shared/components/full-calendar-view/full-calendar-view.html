@@ -2,7 +2,6 @@
 <div class="calendar-wrapper">
     <div class="calendar-header">
         <button (click)="closeCalendar()">Close</button>
-        <button (click)="toggleWeekends()">Toggle Weekends</button>
 
         <label>View Time Zone as:</label>
         <select class="form-select" [(ngModel)]="selectedTimeZone" (ngModelChange)="onTimeZoneChange($event)">
