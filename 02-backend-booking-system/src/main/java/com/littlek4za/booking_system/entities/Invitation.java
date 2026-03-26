@@ -96,6 +96,10 @@ public class Invitation {
     }
 
     public void incrementUsedCount() {
+        if (maxUsage == null) {
+            usedCount++;
+            return;
+        }
         if (usedCount < maxUsage) {
             usedCount++;
         } else {

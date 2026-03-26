@@ -234,14 +234,14 @@
 
     </mat-form-field>
 
-    @if(slotForm.hasError('dateTimeRangeInvalid') && (slotForm.controls['endDate'].touched ||
+    @if(slotForm.hasError('endBeforeStart') && (slotForm.controls['endDate'].touched ||
     slotForm.controls['endTime'].dirty)){
     <div class="text-danger">
         End date & time must be after start date & time
     </div>
     }
 
-    @if(slotForm.hasError('slotIntervalInvalid') && (slotForm.controls['endDate'].touched ||
+    @if(slotForm.hasError('rangeTooShortForInterval') && (slotForm.controls['endDate'].touched ||
     slotForm.controls['endTime'].dirty)){
     <div class="text-danger">
         End time must be at least {{ slotForm.value.slotIntervalMinutes }} minutes after start time
@@ -261,7 +261,7 @@
                     <input type="datetime-local" formControlName="close" />
                     <button type="button" (click)="removeTimeInterval(i)">Delete</button>
                 </div>
-                @if (getTimeIntervals().at(i).hasError('timeRangeInvalid') &&
+                @if (getTimeIntervals().at(i).hasError('endBeforeStart') &&
                 (getTimeIntervals().at(i).get('open')?.touched ||
                 getTimeIntervals().at(i).get('open')?.dirty) &&
                 (getTimeIntervals().at(i).get('close')?.touched ||
@@ -270,7 +270,7 @@
                     End time must be later than start time
                 </div>
                 }
-                @if (getTimeIntervals().at(i).hasError('minIntervalNotMet') &&
+                @if (getTimeIntervals().at(i).hasError('rangeTooShortForInterval') &&
                 (getTimeIntervals().at(i).get('open')?.touched ||
                 getTimeIntervals().at(i).get('open')?.dirty) &&
                 (getTimeIntervals().at(i).get('close')?.touched ||

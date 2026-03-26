@@ -20,7 +20,7 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
             LEFT JOIN FETCH i.slotSet
             WHERE i.event = :event
             """)
-    Set<Invitation> findByEventWithSlotSet(Event event);
+    Set<Invitation> findByEventWithSlotSet(@Param("event") Event event);
 
     boolean existsByAccessToken(String token);
 

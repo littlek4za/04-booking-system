@@ -1,6 +1,9 @@
 package com.littlek4za.booking_system.services;
 
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -54,9 +57,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Transactional
     @Override
-    public BookingResponseDto createBooking(BookingRequestDto dto) {
+    public BookingResponseDto createBooking(BookingRequestDto dto, Long slotId) {
 
-        Slot slot = slotRepository.findByIdWithEvent(dto.slotId())
+        Slot slot = slotRepository.findByIdWithEvent(slotId)
                 .orElseThrow(() -> new AppException("Unknow Slot Id", HttpStatus.NOT_FOUND));
         Invitation invitation = invitationRepository.findByIdWithEventAndSlotSets(dto.invitationId())
                 .orElseThrow(() -> new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND));
@@ -65,7 +68,7 @@ public class BookingServiceImpl implements BookingService {
         bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
         bookingRequestValidator.validateGuestOrUserFields(dto);
         bookingRequestValidator.validateBookingInfo(dto, invitation, slot);
-        
+
         BookingResponseDto bookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
 
         return bookingResponseDto;
@@ -96,41 +99,56 @@ public class BookingServiceImpl implements BookingService {
     // create booking by Event Type sub method
     private BookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
             User user) {
-        InvitationUsage invitationUsage = invitationUsageRepository
-                .findByUserIdAndInvitationId(user.getId(), invitation.getId())
-                .orElseGet(() -> {
-                    InvitationUsage newUsage = new InvitationUsage(invitation, user);
-                    return newUsage;
-                });
+
+        Instant requestedStartTime;
+        Instant requestedEndTime;
 
         if (EventType.FIXED.equals(invitation.getEvent().getEventType())) {
+            requestedStartTime = slot.getSlotStartTime();
+            requestedEndTime = slot.getSlotEndTime();
 
-            if (securityUtil.isAuthenticated()) {
-                Integer maxUsagePerUser = invitation.getMaxUsagePerUser();
-                invitationUsage.incrementUsage(maxUsagePerUser);
-                ;
-            }
-            Booking newBooking = new Booking(user, slot, slot.getSlotStartTime(), slot.getSlotEndTime());
-            if (user.getGuest()) {
-                newBooking.setGuestFirstName(dto.firstName());
-                newBooking.setGuestLastName(dto.lastName());
-            }
-            newBooking.setBookingToken(generateUniqueBookingToken());
-            invitation.addBooking(newBooking);
-            invitation.incrementUsedCount();
+        } else if (EventType.FLEXIBLE.equals(invitation.getEvent().getEventType())
+                || EventType.BUSINESS.equals(invitation.getEvent().getEventType())) {
 
-            Booking savedBooking = bookingRepository.save(newBooking);
-            invitationUsageRepository.save(invitationUsage);
-
-            return dtoMapper.toBookingResponseDto(savedBooking);
-
-            // } else if (EventType.FLEXIBLE.equals(invitation.getEvent().getEventType())){
-
-            // } else if (EventType.BUSINESS.equals(invitation.getEvent().getEventType())){
+            requestedStartTime = Instant.parse(dto.bookedStartTime());
+            requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
         } else {
             throw new AppException("EventType not found", HttpStatus.BAD_REQUEST);
         }
+
+        Optional<InvitationUsage> existingInvitationUsage = invitationUsageRepository
+                .findByUserIdAndInvitationId(user.getId(), invitation.getId());
+
+        InvitationUsage invitationUsage;
+
+        if(existingInvitationUsage.isPresent()){
+            invitationUsage = existingInvitationUsage.get();
+        } else {
+            invitationUsage = new InvitationUsage(invitation, user);
+            invitationUsageRepository.save(invitationUsage);
+        }
+
+        if (securityUtil.isAuthenticated()) {
+            Integer maxUsagePerUser = invitation.getMaxUsagePerUser();
+            invitationUsage.incrementUsage(maxUsagePerUser);
+        }
+
+        Booking newBooking = new Booking(user, slot, requestedStartTime, requestedEndTime);
+        if (user.getGuest()) {
+            newBooking.setGuestFirstName(dto.firstName());
+            newBooking.setGuestLastName(dto.lastName());
+        }
+
+        newBooking.setBookingToken(generateUniqueBookingToken());
+        invitation.addBooking(newBooking);
+        invitation.incrementUsedCount();
+
+        Booking savedBooking = bookingRepository.save(newBooking);
+        invitationRepository.save(invitation);
+        invitationUsageRepository.save(invitationUsage);
+
+        return dtoMapper.toBookingResponseDto(savedBooking);
 
     }
 
@@ -152,5 +170,30 @@ public class BookingServiceImpl implements BookingService {
         }
         return token.toString();
     }
+
+    @Override
+    public List<BookingResponseDto> getBookingsBySlot(Long slotId) {
+
+        Slot slot = slotRepository.findByIdWithEvent(slotId)
+                .orElseThrow(() -> new AppException("Unknow Slot Id", HttpStatus.NOT_FOUND));
+
+        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+
+        List<BookingResponseDto> bookingResponseDtoList = bookingList.stream()
+                .map(booking -> dtoMapper.toBookingResponseDto(booking)).toList();
+
+        return bookingResponseDtoList;
+    }
+
+    @Override
+    public Integer getCountBySlotId(Long slotId) {
+        
+        Slot slot = slotRepository.findByIdWithEvent(slotId)
+                .orElseThrow(() -> new AppException("Unknow Slot Id", HttpStatus.NOT_FOUND));
+
+        return bookingRepository.getBookingsCountBySlot(slot);
+    }
+
+    
 
 }

@@ -145,6 +145,7 @@ public class DtoMapperImpl implements DtoMapper {
     public BookingResponseDto toBookingResponseDto(Booking savedBooking) {
         
         return new BookingResponseDto(
+                savedBooking.getId(),
                 savedBooking.getUser().getUsername(),
                 savedBooking.getUser().getLastName(),
                 savedBooking.getUser().getFirstName(),

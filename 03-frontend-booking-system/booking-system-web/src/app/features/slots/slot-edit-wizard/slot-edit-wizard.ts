@@ -64,9 +64,9 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.userTimeZone = this.timeZoneService.getUserTimeZone();
     this.timezones = this.timeZoneService.getAllTimeZones();
+    this.timeOption = this.generateTimeOption(5);
     this.initSlotForm();
     this.applyEventType();
-    this.timeOption = this.generateTimeOption(5);
     this.actionWhenFormValueChanges();
   }
 
@@ -146,7 +146,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.initFlexibleDaysHoursForm();
     this.enable(['slotIntervalMinutes', 'slotFrequencyIntervalMinutes']);
     this.disable(['maxBookPerInterval', 'startTime', 'endTime', 'startDate', 'endDate']);
-    this.slotForm.setValidators(dateTimeRangeValidator);
     this.slotForm.get('slotName')?.addValidators([Validators.required, Validators.minLength(1), Validators.maxLength(350)]);
     this.slotForm.get('slotDescription')?.addValidators([Validators.maxLength(2500)]);
     this.slotForm.get('slotIntervalMinutes')?.addValidators([Validators.required, Validators.min(5), divisibleBy5Validator]);

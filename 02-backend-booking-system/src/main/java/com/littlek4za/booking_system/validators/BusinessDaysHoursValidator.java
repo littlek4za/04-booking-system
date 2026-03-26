@@ -71,7 +71,7 @@ public class BusinessDaysHoursValidator {
 
         // overlap check
         for (int i = 1; i < times.size(); i++) {
-            if (!times.get(i)[0].isAfter(times.get(i - 1)[1])) {
+            if (times.get(i)[0].isBefore(times.get(i - 1)[1])) {
                 throw new AppException("Overlapping business hours detected", HttpStatus.BAD_REQUEST);
             }
         }

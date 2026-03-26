@@ -3,6 +3,7 @@ package com.littlek4za.booking_system.dtos;
 import java.time.Instant;
 
 public record BookingResponseDto(
+    Long id,
     String username,
     String lastName,
     String firstName,

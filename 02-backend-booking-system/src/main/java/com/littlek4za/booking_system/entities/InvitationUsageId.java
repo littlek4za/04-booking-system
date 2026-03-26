@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.entities;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class InvitationUsageId implements Serializable{
     private Long invitationId;
@@ -14,35 +15,17 @@ public class InvitationUsageId implements Serializable{
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((invitationId == null) ? 0 : invitationId.hashCode());
-        result = prime * result + ((userId == null) ? 0 : userId.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof InvitationUsageId)) return false;
+        InvitationUsageId that = (InvitationUsageId) o;
+        return Objects.equals(invitationId, that.invitationId) &&
+               Objects.equals(userId, that.userId);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        InvitationUsageId other = (InvitationUsageId) obj;
-        if (invitationId == null) {
-            if (other.invitationId != null)
-                return false;
-        } else if (!invitationId.equals(other.invitationId))
-            return false;
-        if (userId == null) {
-            if (other.userId != null)
-                return false;
-        } else if (!userId.equals(other.userId))
-            return false;
-        return true;
+    public int hashCode() {
+        return Objects.hash(invitationId, userId);
     }
-
 
 }

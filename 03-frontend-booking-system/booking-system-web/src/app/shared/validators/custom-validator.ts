@@ -35,6 +35,7 @@ export function passwordMatchedValidator(abstractControl: AbstractControl): Vali
 }
 
 export function dateTimeRangeValidator(abstractControl: AbstractControl): ValidationErrors | null {
+
     const startDate = abstractControl.get('startDate')?.value;
     const endDate = abstractControl.get('endDate')?.value;
     const startTime = abstractControl.get('startTime')?.value;
@@ -48,13 +49,13 @@ export function dateTimeRangeValidator(abstractControl: AbstractControl): Valida
     const combineEndTime = combineDateAndTime(endDate, endTime);
 
     if (combineEndTime <= combineStartTime) {
-        return { dateTimeRangeInvalid: true };
+        return { endBeforeStart: true };
     }
 
     if (interval != null) {
         const diffMinutes = (combineEndTime.getTime() - combineStartTime.getTime()) / (1000 * 60);
         if (diffMinutes < interval) {
-            return { slotIntervalInvalid: true };
+            return { rangeTooShortForInterval: true };
         }
     }
 
@@ -90,13 +91,13 @@ export function timeRangeValidator(getSlotIntervalMinutes?: () => number | null)
         const closeMinutes = timeToMinutes(closeTime);
 
         if (openMinutes >= closeMinutes) {
-            return { timeRangeInvalid: true };
+            return { endBeforeStart: true };
         }
 
         if (getSlotIntervalMinutes) {
             const minInterval = getSlotIntervalMinutes();
             if (minInterval && closeMinutes - openMinutes < minInterval) {
-                return { minIntervalNotMet: true };
+                return { rangeTooShortForInterval: true };
             }
         }
         return null;

@@ -5,9 +5,6 @@ import jakarta.validation.constraints.NotNull;
 public record BookingRequestDto(
 
     @NotNull
-    Long slotId,
-
-    @NotNull
     Long invitationId,
     
     String bookedStartTime,

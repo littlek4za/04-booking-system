@@ -16,6 +16,8 @@ import { TimeZoneService } from '@shared/model/time-zone-service';
 import { FormsModule } from '@angular/forms';
 import moment from 'moment-timezone';
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
+import { BookingService } from '@features/booking/booking-service';
+import { BookingResponseDto } from '@features/booking/dtos/booking-response-dto';
 
 @Component({
   selector: 'app-full-calendar-view',
@@ -26,6 +28,7 @@ import { InvitationResponseDto } from '@features/invitations/dtos/invitation-res
 export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   private slotService = inject(SlotService);
+  private bookingService = inject(BookingService);
   private destroy$ = new Subject<void>();
 
   // Input from parent, For View Usage
@@ -39,6 +42,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   // Output to Parent, For Edit Usage
   @Output() selectedStartTime = new EventEmitter<Date>();
+  @Output() timeZone = new EventEmitter<string>();
 
   @Input() viewDate: Date = new Date();
   @Input() mode!: 'EDIT' | 'VIEW';
@@ -64,6 +68,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     return slots.filter(slot => selected.has(slot.id));
   });
 
+  // singal field for booking list
+  bookingList = toSignal(this.bookingService.bookingList$, { initialValue: [] as BookingResponseDto[] });
+
   // html field/logic field
   selectedSlots = signal<Set<number>>(new Set());
   selectedTimeZone = signal<string>('local');
@@ -77,7 +84,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   // calendar option
   calendarOptions: CalendarOptions = {
-    initialView: 'dayGridMonth',
+    initialView: 'timeGridWeek',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, momentTimeZonePlugin],
     dateClick: (info) => {
       if (info.view.type === 'dayGridMonth') {
@@ -121,6 +128,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       }
       const slots = this.filteredSlots(); // trigger when normalize slot update
       const timeZone = this.selectedTimeZone();// trigger when selectedTimeZone update
+      const bookingList = this.bookingList();// trigger when bookingList update
       const eventId = this.eventIdFromMode;
       const eventType = this.eventTypeFromMode;
 
@@ -130,7 +138,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       if (eventId !== undefined && eventType !== undefined) {
         untracked(() => {
           this.calendarApi.setOption('timeZone', timeZone);
-          this.initCalendarData(slots, eventId, eventType);
+          this.initCalendarData(slots, eventId, eventType, bookingList);
           console.log("5");
         });
       }
@@ -174,6 +182,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
       this.eventIdFromMode = this.invitation?.event.id;
       this.eventTypeFromMode = this.invitation?.event.eventType;
+      this.bookingService.triggerRefreshForBookingList(this.slot.id);
 
       this.singleSlot.set(this.slot);
     }
@@ -200,7 +209,6 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
     this.calendarApi.setOption('navLinkDayClick', (date) => {
       const viewType = this.calendarApi.view.type;
-
       if (viewType === 'dayGridMonth') {
         this.calendarApi.changeView('timeGridWeek', date);
       } else if (viewType === 'timeGridWeek') {
@@ -229,7 +237,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     });
   }
 
-  private initCalendarData(slots: SlotResponseDto[], eventId: number, eventType: EventTypeModel) {
+  private initCalendarData(slots: SlotResponseDto[], eventId: number, eventType: EventTypeModel, bookingList: BookingResponseDto[]) {
 
     if (this.mode == "VIEW") {
       let eventInputList: EventInput[] = this.mapSlotToCalendarEventForViewMode(slots, eventId, eventType);
@@ -239,7 +247,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       const slot = slots[0]; //EDIT only one slot will be choosen for process, convert it to one slot
       if (!slot) return;
       this.setUpCalendarOptionForEditMode(slot, eventType);
-      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForEditMode(slot, eventId, eventType);
+      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForEditMode(slot, eventId, eventType, bookingList);
       this.calendarApi.removeAllEvents();
       this.calendarApi.addEventSource(eventInputList);
     } else {
@@ -394,15 +402,21 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     }
   }
 
-  private setUpEventClickForEditMode(slot:SlotResponseDto) {
+  private setUpEventClickForEditMode(slot: SlotResponseDto) {
     this.calendarApi.setOption('eventClick', (info) => {
+      if (info.event.extendedProps['isSlotBooked']) {
+        alert('Booked by others');
+        return;
+      }
       const start = info.event.start;
       if (!start) return;
 
       const startZdt = moment.tz(start, this.selectedTimeZone());
-      const confirmed = confirm(`Select this time?\nStart Time: ${startZdt.format('YYYY-MM-DD hh:mm a Z')}\nEnd Time: ${startZdt.add(slot.slotIntervalMinutes,'minutes').format('YYYY-MM-DD hh:mm a Z')}`);
+      const confirmed = confirm(`Select this time?\nStart Time: ${startZdt.format('YYYY-MM-DD hh:mm a Z')}\nEnd Time: ${startZdt.clone().add(slot.slotIntervalMinutes, 'minutes').format('YYYY-MM-DD hh:mm a Z')}`);
       if (confirmed) {
         this.selectedStartTime.emit(start);
+        const datePipeTimeZone = moment().tz(this.selectedTimeZone()).format('ZZ');
+        this.timeZone.emit(datePipeTimeZone);
         console.log('Selected time', start);
         this.closeCalendar();
       }
@@ -410,7 +424,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     });
   }
 
-  mapSlotToCalendarEventForEditMode(slot: SlotResponseDto, eventId: number, eventType: EventTypeModel): EventInput[] {
+  mapSlotToCalendarEventForEditMode(slot: SlotResponseDto, eventId: number, eventType: EventTypeModel, bookingList: BookingResponseDto[]): EventInput[] {
 
     const events: EventInput[] = [];
 
@@ -456,23 +470,31 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         let i = 0;
 
         while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
-          const nextEnd = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
+          const selectEnd = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
+          const startTitle = current.clone().tz(this.selectedTimeZone()).format('hh:mm a');
+          const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+          const slotEnd = current.clone().add(slot.slotIntervalMinutes, 'minutes');
 
-          const startTitle = current.clone().format('hh:mm a');
-          const endTitle = current.clone().add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+          const isSlotBooked = this.isSlotBooked(current.clone().toDate(), slotEnd.clone().toDate(), bookingList);
+
           events.push({
             ...baseEvent,
             title: `${startTitle} - ${endTitle} - ${slot.slotName}`,
             id: `event-${eventId}-slot-${slot.id}-rangeIndex-${index}-${i}`,
             start: current.toDate(),
-            end: nextEnd.toDate(),
+            end: selectEnd.toDate(),
+            backgroundColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
+            borderColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
+            textColor: isSlotBooked ? '#000000' : '#ffffff',
             extendedProps: {
               ...baseEvent.extendedProps,
               slotIntervalMinutes: slotIntervalMinutes,
               slotFrequencyIntervalMinutes: slotFrequencyIntervalMinutes,
+              isSlotBooked: isSlotBooked,
             }
           });
-          current = nextEnd;
+
+          current = selectEnd;
           i++;
         }
       });
@@ -489,6 +511,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
       if (!slotFrequencyIntervalMinutes || !slotIntervalMinutes) return events;
 
+      // push recurring event first
       Object.entries(slot.businessDaysHours).forEach(([dayOfWeek, ranges]) => {
         ranges.forEach((range, index) => {
           const startZdt = moment.tz(range.open, 'HH:mm', businessTz);
@@ -500,14 +523,18 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
           let current = startZdt.clone();
           let i = 0;
-          while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
+          let endZdtBaseOnAllowOt = endZdt
+          if (!slot.businessAllowOt) {
+            endZdtBaseOnAllowOt = endZdt.clone().subtract(slotIntervalMinutes, 'minutes');
+          }
+          while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdtBaseOnAllowOt)) {
             const next = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
 
             const startTime = current.clone().tz(this.selectedTimeZone()).format('HH:mm');
             const nextEnd = next.clone().tz(this.selectedTimeZone()).format('HH:mm');
 
             const startTitle = current.clone().tz(this.selectedTimeZone()).format('hh:mm a');
-            const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes,'minutes').format('hh:mm a');
+            const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
             events.push({
               ...baseEvent,
               title: `${startTitle} - ${endTitle} - ${slot.slotName}`,
@@ -515,6 +542,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
               daysOfWeek: [Number(dayOfWeek)],
               startTime: startTime,
               endTime: nextEnd,
+              display: 'background',
+              color: '#5d9edf',
+              className: 'block-slot-item',
               extendedProps: {
                 ...baseEvent.extendedProps,
                 slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
@@ -528,9 +558,39 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
           }
         });
       });
+
+      bookingList.forEach(booking => {
+        const startTime = moment(booking.bookedStartTime).clone().toDate();
+        const endTime = moment(booking.bookedStartTime).clone().add(slot.slotIntervalMinutes, 'minutes').toDate();
+        const startTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).format('hh:mm a');
+        const endTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+        events.push({
+          title: `BOOKED: ${startTitle} - ${endTitle} - ${slot.slotName}`,
+          id: `booked-${booking.id}`,
+          start: startTime,
+          end: endTime,
+          display: 'background',
+          color: '#fc6a6d',
+          className: 'booked-slot-item',
+          extendedProps: {
+            isSlotBooked: true
+          }
+        });
+      });
     }
 
     return events;
+  }
+
+  private isSlotBooked(slotStart: Date, slotEnd: Date, bookingList: BookingResponseDto[]): boolean {
+    if (!slotStart || !slotEnd || !bookingList) return false;
+
+    return bookingList.some(b => {
+      const bookedStart = new Date(b.bookedStartTime);
+      const bookedEnd = new Date(b.bookedEndTime);
+
+      return slotStart < bookedEnd && slotEnd > bookedStart;
+    });
   }
 
 

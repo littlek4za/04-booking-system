@@ -47,4 +47,5 @@ export class SlotService {
   putSlotByIdAndEventId(eventId:number, slotId: number, slotRequestDto: SlotRequestDto): Observable<SlotResponseDto> {
     return this.httpClient.put<SlotResponseDto>(`${this.eventsUrl}/${eventId}/slots/${slotId}`, slotRequestDto);
   }
+
 }

@@ -1,11 +1,12 @@
 package com.littlek4za.booking_system.validators;
 
+import com.littlek4za.booking_system.repos.BookingRepository;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
+import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.exception.AppException;
@@ -25,10 +27,12 @@ import com.littlek4za.booking_system.security.SecurityUtil;
 @Component
 public class BookingRequestValidator {
 
+    private final BookingRepository bookingRepository;
     private final SecurityUtil securityUtil;
 
-    public BookingRequestValidator(SecurityUtil securityUtil) {
+    public BookingRequestValidator(SecurityUtil securityUtil, BookingRepository bookingRepository) {
         this.securityUtil = securityUtil;
+        this.bookingRepository = bookingRepository;
     }
 
     public void validateSlotBelongsToInvitation(Slot slot, Invitation invitation) {
@@ -78,21 +82,40 @@ public class BookingRequestValidator {
         if (dto.bookedStartTime() != null) {
             throw new AppException(("Fixed Type Event do not need start time"), HttpStatus.BAD_REQUEST);
         }
+
+        int count = bookingRepository.getBookingsCountBySlot(slot);
+
+        if(count >= slot.getMaxBookPerInterval()){
+            throw new AppException(("Booking failed. Max booking limit for this slot has reached."), HttpStatus.BAD_REQUEST);
+        }
     }
 
     private void validateFlexibleBooking(BookingRequestDto dto, Slot slot, Invitation invitation) {
         if (dto.bookedStartTime() == null) {
             throw new AppException(("Flexible Type Event require input for start time"), HttpStatus.BAD_REQUEST);
         }
+        
+        Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
+        Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
-        Instant bookedStartTimeInstant = Instant.parse(dto.bookedStartTime());
-        Instant bookedEndTimeInstant = bookedStartTimeInstant.plus(slot.getSlotIntervalMinutes(), ChronoUnit.MINUTES);
+        // check if the time is occupied
+        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
+            Instant occupiedStartTime = book.getBookedStartTime();
+            Instant occupiedEndTime = book.getBookedEndTime();
 
+            return requestedStartTime.isBefore(occupiedEndTime) && occupiedStartTime.isBefore(requestedEndTime);
+        });
+
+        if(timeIsBookedByOthers){
+            throw new AppException(("The selected time is booked by others"), HttpStatus.BAD_REQUEST);
+        }
+
+        // check if selected book time is out of timerange
         List<InstantRange> instantRangeList = slot.getFlexibleDaysHours();
-
         boolean fitsInInstantRange = instantRangeList.stream()
-                .anyMatch(range -> !bookedStartTimeInstant.isBefore(range.open)
-                        && !bookedEndTimeInstant.isAfter(range.close));
+                .anyMatch(range -> !requestedStartTime.isBefore(range.open)
+                        && !requestedEndTime.isAfter(range.close));
 
         if (!fitsInInstantRange) {
             throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"),
@@ -105,18 +128,35 @@ public class BookingRequestValidator {
             throw new AppException(("Business Type Event require input for start time"), HttpStatus.BAD_REQUEST);
         }
 
-        Instant bookedStartTimeInstant = Instant.parse(dto.bookedStartTime());
-        ZoneId zone = ZoneId.of(slot.getBusinessTimeZone());
-        ZonedDateTime requestedStartZdt = bookedStartTimeInstant.atZone(zone);
-        ZonedDateTime reqeustedEndZdt = requestedStartZdt.plusMinutes(slot.getSlotIntervalMinutes());
+        Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
+        Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
+        
 
-        LocalDate requestedStartDate = requestedStartZdt.toLocalDate();
-        int dayOfWeekStart = requestedStartZdt.getDayOfWeek().getValue() % 7;
+        // check if the time is occupied
+        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
+            Instant occupiedStartTime = book.getBookedStartTime();
+            Instant occupiedEndTime = book.getBookedEndTime();
+
+            return requestedStartTime.isBefore(occupiedEndTime) && occupiedStartTime.isBefore(requestedEndTime);
+        });
+
+        if(timeIsBookedByOthers){
+            throw new AppException(("The selected time is booked by others"), HttpStatus.BAD_REQUEST);
+        }
+
+        // check if selected book time is out of timerange
+        ZoneId zone = ZoneId.of(slot.getBusinessTimeZone());
+        ZonedDateTime requestedStartTimeZdt = requestedStartTime.atZone(zone);
+        ZonedDateTime reqeustedEndTimeZdt = requestedStartTimeZdt.plusMinutes(slot.getSlotIntervalMinutes());
+
+        LocalDate requestedStartDate = requestedStartTimeZdt.toLocalDate();
+        int dayOfWeekStart = requestedStartTimeZdt.getDayOfWeek().getValue() % 7;
 
         Map<Integer, List<TimeRange>> businessDaysHours = slot.getBusinessDaysHours();
-        List<TimeRange> instantRangeListStart = businessDaysHours.getOrDefault(dayOfWeekStart, List.of());
+        List<TimeRange> instantRangeList = businessDaysHours.getOrDefault(dayOfWeekStart, List.of());
 
-        boolean fitsInInstantRange = instantRangeListStart.stream()
+        boolean fitsInInstantRange = instantRangeList.stream()
                 .anyMatch(range -> {
                     LocalTime openTime = LocalTime.parse(range.getOpen());
                     LocalTime closeTime = LocalTime.parse(range.getClose());
@@ -128,9 +168,9 @@ public class BookingRequestValidator {
                     }
 
                     if (Boolean.TRUE.equals(slot.getBusinessAllowOT())) {
-                        return !requestedStartZdt.isBefore(openZdt) && !requestedStartZdt.isAfter(closeZdt);
+                        return !requestedStartTimeZdt.isBefore(openZdt) && !requestedStartTimeZdt.isAfter(closeZdt);
                     } else {
-                        return !requestedStartZdt.isBefore(openZdt) && !reqeustedEndZdt.isAfter(closeZdt);
+                        return !requestedStartTimeZdt.isBefore(openZdt) && !reqeustedEndTimeZdt.isAfter(closeZdt);
                     }
                 });
 

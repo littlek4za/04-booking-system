@@ -43,8 +43,8 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         request -> request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register", "/api/v1/bookings").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate","/api/v1/invitations/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register", "/api/v1/slots/*/bookings").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate","/api/v1/invitations/*","/api/v1/slots/*/bookings","/api/v1/slots/*/bookings/count").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

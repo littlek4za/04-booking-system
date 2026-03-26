@@ -60,7 +60,7 @@ public class FlexiblaDaysHoursValidator {
         Instant currentOpen = times.get(i)[0];
         Instant previousClose = times.get(i - 1)[1];
 
-        if (!currentOpen.isAfter(previousClose)) {
+        if (currentOpen.isBefore(previousClose)) {
             throw new AppException(
                 "Overlapping time ranges detected",
                 HttpStatus.BAD_REQUEST

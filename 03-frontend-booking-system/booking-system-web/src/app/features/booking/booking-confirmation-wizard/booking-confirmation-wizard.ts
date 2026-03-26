@@ -11,6 +11,7 @@ import { AuthTokenPayload } from '@features/auth/dtos/auth-token-payload';
 import { BookingResponseDto } from '../dtos/booking-response-dto';
 import { validateStartAndEndTimeBaseOnEvent } from '@shared/validators/custom-validator';
 import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
+import moment from 'moment';
 
 @Component({
   selector: 'app-booking-confirmation-wizard',
@@ -30,6 +31,7 @@ export class BookingConfirmationWizard implements OnInit {
   token: string | null = null;
   authTokenPayload: AuthTokenPayload | null = null;
   bookingResponseDto: BookingResponseDto | null = null;
+  timeZone: string = 'local';
 
   // field Model
   readonly EventTypeModel = EventTypeModel;
@@ -77,8 +79,6 @@ export class BookingConfirmationWizard implements OnInit {
     }
   }
 
-
-
   bookSlot(slot: SlotResponseDto) {
     const bookingRequestDto = new BookingRequestDto;
 
@@ -89,10 +89,8 @@ export class BookingConfirmationWizard implements OnInit {
     }
 
     if (this.invitation.event.eventType == EventTypeModel.FIXED) {
-      bookingRequestDto.slotId = slot.id;
       bookingRequestDto.invitationId = this.invitation.id;
     } else if (this.invitation.event.eventType == EventTypeModel.BUSINESS || this.invitation.event.eventType == EventTypeModel.FLEXIBLE) {
-      bookingRequestDto.slotId = slot.id;
       bookingRequestDto.invitationId = this.invitation.id;
       bookingRequestDto.bookedStartTime = this.guestForm.get('choosenStartTime')?.value;
     } else {
@@ -101,7 +99,7 @@ export class BookingConfirmationWizard implements OnInit {
     }
 
     console.log("BookingRequestDto", bookingRequestDto);
-    this.bookingService.createBooking(bookingRequestDto).subscribe({
+    this.bookingService.createBooking(bookingRequestDto, slot.id).subscribe({
       next: (res) => {
         this.bookingResponseDto = res;
         console.log("Booking created successfully");
@@ -123,6 +121,38 @@ export class BookingConfirmationWizard implements OnInit {
   }
   closeCalendar() {
     this.showCalendar = false;
+  }
+
+  processSelectedStartTime($event: Date) {
+
+    const startTimeIso = moment($event).tz(this.timeZone).toISOString();
+    const endTimeIso = moment(startTimeIso)
+      .add(this.slot.slotIntervalMinutes, 'minutes')
+      .toISOString();
+
+    this.guestForm.patchValue({
+      choosenStartTime: startTimeIso,
+      choosenEndTime: endTimeIso
+    }, { emitEvent: true });
+
+    this.guestForm.updateValueAndValidity({ emitEvent: true });
+  }
+
+  processSelectedTimeZone(tz: string) {
+    this.timeZone = tz;
+    const startTime = this.guestForm.get('choosenStartTime')?.value;
+    const endTime = this.guestForm.get('choosenEndTime')?.value;
+
+    if (startTime) {
+      const startTimeIso = moment(startTime).tz(this.timeZone).toISOString();
+      this.guestForm.get('choosenStartTime')?.patchValue(startTimeIso, { emitEvent: false });
+    }
+
+    if (endTime) {
+      const endTimeIso = moment(startTime).tz(this.timeZone).toISOString();
+      this.guestForm.get('choosenStartTime')?.patchValue(endTimeIso, { emitEvent: false });
+    }
+    this.guestForm.updateValueAndValidity({ emitEvent: false });
   }
 
 }

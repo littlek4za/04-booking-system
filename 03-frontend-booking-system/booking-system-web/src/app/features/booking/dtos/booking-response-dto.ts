@@ -2,6 +2,7 @@ import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
 
 export class BookingResponseDto {
 
+    id!: number;
     username?: string;
     lastName!: string;
     firstName!: string;
