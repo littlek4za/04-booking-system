@@ -9,8 +9,10 @@ public interface BookingService {
 
     BookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId);
 
-    List<BookingResponseDto> getBookingsBySlot(Long slotId);
+    List<BookingResponseDto> getBookingsBySlotId(Long slotId);
 
     Integer getCountBySlotId(Long slotId);
+
+    List<BookingResponseDto> getBookingsByEventId(Long eventId);
 
 }

@@ -1,8 +1,13 @@
-
 <div class="calendar-wrapper">
     <div class="calendar-header">
         <button (click)="closeCalendar()">Close</button>
-
+        @if(mode == 'VIEW'){
+        <label>
+            <input type="checkbox" [checked]="showBookings()" (change)="toggleShowBookings($event.target.checked)" />
+            Show Booked Slots
+        </label>
+        <br>
+        }
         <label>View Time Zone as:</label>
         <select class="form-select" [(ngModel)]="selectedTimeZone" (ngModelChange)="onTimeZoneChange($event)">
             @for (timeZone of timeZoneOption; track $index) {
@@ -14,6 +19,9 @@
         <full-calendar #calendar [options]="calendarOptions"></full-calendar>
     </div>
     <div class="slot-filter">
+        <label>
+            Show slots for:  
+        </label>
         @for (slot of normalizedSlots(); track $index) {
         <label>
             <input type="checkbox" [checked]="selectedSlots().has(slot.id)"
@@ -22,5 +30,19 @@
         </label>
         }
     </div>
+    @if(mode == 'VIEW' && showBookings()){
+    <div class="slot-filter">
+        <label>
+            Show bookings for:  
+        </label>
+        @for (slot of distinctBookingSlots(); track $index) {
+        <label>
+            <input type="checkbox" [checked]="selectedBookingList().has(slot.id)"
+                (change)="toggleBookingFilter(slot.id, $event.target.checked)">
+            {{slot.slotName}}
+        </label>
+        }
+    </div>
+    }
 
 </div>

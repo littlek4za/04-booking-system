@@ -99,7 +99,7 @@ public class BookingRequestValidator {
         Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
         // check if the time is occupied
-        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+        List<Booking> bookingList = bookingRepository.findBySlot(slot);
         boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
             Instant occupiedStartTime = book.getBookedStartTime();
             Instant occupiedEndTime = book.getBookedEndTime();
@@ -133,7 +133,7 @@ public class BookingRequestValidator {
         
 
         // check if the time is occupied
-        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+        List<Booking> bookingList = bookingRepository.findBySlot(slot);
         boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
             Instant occupiedStartTime = book.getBookedStartTime();
             Instant occupiedEndTime = book.getBookedEndTime();

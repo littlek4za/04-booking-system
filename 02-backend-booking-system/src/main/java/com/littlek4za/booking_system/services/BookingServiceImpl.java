@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
 import com.littlek4za.booking_system.entities.Booking;
+import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.InvitationUsage;
 import com.littlek4za.booking_system.entities.Slot;
@@ -19,6 +20,7 @@ import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.repos.BookingRepository;
+import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.InvitationUsageRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
@@ -37,12 +39,14 @@ public class BookingServiceImpl implements BookingService {
     private final SlotRepository slotRepository;
     private final InvitationRepository invitationRepository;
     private final BookingRepository bookingRepository;
+    private final EventRepository eventRepository;
     private final InvitationUsageRepository invitationUsageRepository;
     private final DtoMapper dtoMapper;
     private final BookingRequestValidator bookingRequestValidator;
 
     public BookingServiceImpl(SecurityUtil securityUtil, UserRepository userRepository, SlotRepository slotRepository,
             InvitationRepository invitationRepository, BookingRepository bookingRepository,
+            EventRepository eventRepository,
             InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper,
             BookingRequestValidator bookingRequestValidator) {
         this.securityUtil = securityUtil;
@@ -50,6 +54,7 @@ public class BookingServiceImpl implements BookingService {
         this.slotRepository = slotRepository;
         this.invitationRepository = invitationRepository;
         this.bookingRepository = bookingRepository;
+        this.eventRepository = eventRepository;
         this.invitationUsageRepository = invitationUsageRepository;
         this.dtoMapper = dtoMapper;
         this.bookingRequestValidator = bookingRequestValidator;
@@ -122,7 +127,7 @@ public class BookingServiceImpl implements BookingService {
 
         InvitationUsage invitationUsage;
 
-        if(existingInvitationUsage.isPresent()){
+        if (existingInvitationUsage.isPresent()) {
             invitationUsage = existingInvitationUsage.get();
         } else {
             invitationUsage = new InvitationUsage(invitation, user);
@@ -172,12 +177,12 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDto> getBookingsBySlot(Long slotId) {
+    public List<BookingResponseDto> getBookingsBySlotId(Long slotId) {
 
         Slot slot = slotRepository.findByIdWithEvent(slotId)
                 .orElseThrow(() -> new AppException("Unknow Slot Id", HttpStatus.NOT_FOUND));
 
-        List<Booking> bookingList = bookingRepository.getBySlot(slot);
+        List<Booking> bookingList = bookingRepository.findBySlot(slot);
 
         List<BookingResponseDto> bookingResponseDtoList = bookingList.stream()
                 .map(booking -> dtoMapper.toBookingResponseDto(booking)).toList();
@@ -187,13 +192,28 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Integer getCountBySlotId(Long slotId) {
-        
+
         Slot slot = slotRepository.findByIdWithEvent(slotId)
                 .orElseThrow(() -> new AppException("Unknow Slot Id", HttpStatus.NOT_FOUND));
 
         return bookingRepository.getBookingsCountBySlot(slot);
     }
 
-    
+    @Override
+    public List<BookingResponseDto> getBookingsByEventId(Long eventId) {
+
+        User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+        Event event = eventRepository.findByIdAndUser(eventId, user)
+                .orElseThrow(() -> new AppException("No event found with this Id and User",
+                        HttpStatus.NOT_FOUND));
+
+        List<Booking> bookingList = bookingRepository.findActiveBookingsByEventId(event);
+
+        List<BookingResponseDto> bookingResponseDtoList = bookingList.stream()
+                .map(booking -> dtoMapper.toBookingResponseDto(booking)).toList();
+
+        return bookingResponseDtoList;
+    }
 
 }

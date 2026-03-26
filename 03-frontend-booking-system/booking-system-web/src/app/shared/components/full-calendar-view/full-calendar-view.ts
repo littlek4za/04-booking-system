@@ -18,6 +18,7 @@ import moment from 'moment-timezone';
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 import { BookingService } from '@features/booking/booking-service';
 import { BookingResponseDto } from '@features/booking/dtos/booking-response-dto';
+import { BookingRequestDto } from '@features/booking/dtos/booking-request-dto';
 
 @Component({
   selector: 'app-full-calendar-view',
@@ -35,6 +36,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   @Input() eventType?: EventTypeModel;
   @Input() eventId?: number;
   @Input() slotId: number | null = null;
+  showBookings = signal<boolean>(false);
 
   // Input from parent, For Edit Usage
   @Input() slot?: SlotResponseDto;
@@ -69,10 +71,47 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   });
 
   // singal field for booking list
-  bookingList = toSignal(this.bookingService.bookingList$, { initialValue: [] as BookingResponseDto[] });
+  bookingListBySlotId = toSignal(this.bookingService.bookingListBySlotId$, { initialValue: [] as BookingResponseDto[] });
+  bookingListByEventId = toSignal(this.bookingService.bookingListByEventId$, {initialValue: [] as BookingResponseDto[] });
+  bookingList = computed<BookingResponseDto[]> (()=>{
+    const mode =this.mode;
+    const slotIdFromView = this.slotId;
+    const bookingListByEventId = this.bookingListByEventId();
+    const bookingListBySlotId = this.bookingListBySlotId();
+    if(mode === 'EDIT'){
+      return bookingListBySlotId;
+    }
+    if(mode === 'VIEW'){
+      if(slotIdFromView){
+        return bookingListBySlotId;
+      }
+      return bookingListByEventId;
+    }
+    return bookingListBySlotId ? bookingListBySlotId : bookingListByEventId;
+  });
+
+  filteredBookingList = computed<BookingResponseDto[]>(()=>{
+    const bookingList = this.bookingList();
+    const selectedBookingList = this.selectedBookingList();
+
+    return bookingList.filter(booking => selectedBookingList.has(booking.slot.id));
+  })
+
+  distinctBookingSlots = computed<SlotResponseDto[]>(()=>{
+    const bookingList = this.bookingList();
+    const map =  new Map<number,SlotResponseDto>();
+
+    bookingList.forEach(booking =>{
+      if(!map.has(booking.slot.id)) {
+        map.set(booking.slot.id,booking.slot);
+      }
+    });
+    return Array.from(map.values());
+  })
 
   // html field/logic field
   selectedSlots = signal<Set<number>>(new Set());
+  selectedBookingList = signal<Set<number>>(new Set());
   selectedTimeZone = signal<string>('local');
 
   // html field for timezone
@@ -120,6 +159,12 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       this.selectedSlots.set(new Set(slots.map(s => s.id)));
 
     });
+    // initialized the selectedbookinglist everytime there is update
+    effect(() => {
+      const bookingList = this.bookingList();
+      this.selectedBookingList.set(new Set(bookingList.map(booking => booking.slot.id)));
+
+    });
     // init the calendar data
     effect(() => {
       const ready = this.calendarReady(); // trigger when calendarComponent ready
@@ -128,7 +173,8 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       }
       const slots = this.filteredSlots(); // trigger when normalize slot update
       const timeZone = this.selectedTimeZone();// trigger when selectedTimeZone update
-      const bookingList = this.bookingList();// trigger when bookingList update
+      const bookingList = this.filteredBookingList();// trigger when bookingList update
+      const showBookings = this.showBookings(); // trigger when showBookings is checked, only in VIEW Mode
       const eventId = this.eventIdFromMode;
       const eventType = this.eventTypeFromMode;
 
@@ -154,10 +200,11 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
       this.eventIdFromMode = this.eventId;
       this.eventTypeFromMode = this.eventType;
-
+      this.bookingService.triggerRefreshForBookingListByEventId(this.eventIdFromMode);
       // slot id provided, get single slot
       if (this.slotId) {
         console.log("2a.1");
+        this.bookingService.triggerRefreshForBookingListBySlotId(this.slotId);
         this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
@@ -182,7 +229,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
       this.eventIdFromMode = this.invitation?.event.id;
       this.eventTypeFromMode = this.invitation?.event.eventType;
-      this.bookingService.triggerRefreshForBookingList(this.slot.id);
+      this.bookingService.triggerRefreshForBookingListBySlotId(this.slot.id);
 
       this.singleSlot.set(this.slot);
     }
@@ -240,7 +287,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   private initCalendarData(slots: SlotResponseDto[], eventId: number, eventType: EventTypeModel, bookingList: BookingResponseDto[]) {
 
     if (this.mode == "VIEW") {
-      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForViewMode(slots, eventId, eventType);
+      let eventInputList: EventInput[] = this.mapSlotToCalendarEventForViewMode(slots, eventId, eventType, bookingList);
       this.calendarApi.removeAllEvents();
       this.calendarApi.addEventSource(eventInputList);
     } else if (this.mode == "EDIT") {
@@ -257,7 +304,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
 
   // core conversion
-  private mapSlotToCalendarEventForViewMode(slotList: SlotResponseDto[], eventId: number, eventType: EventTypeModel): EventInput[] {
+  private mapSlotToCalendarEventForViewMode(slotList: SlotResponseDto[], eventId: number, eventType: EventTypeModel, bookingList: BookingResponseDto[]): EventInput[] {
 
     const events: EventInput[] = [];
 
@@ -335,7 +382,26 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         });
       }
     }
-
+    if (this.showBookings() && bookingList && bookingList.length) {
+        bookingList.forEach(booking => {
+          const startTime = moment(booking.bookedStartTime).clone().toDate();
+          const endTime = moment(booking.bookedStartTime).clone().add(booking.slot.slotIntervalMinutes, 'minutes').toDate();
+          const startTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).format('hh:mm a');
+          const endTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).add(booking.slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+          events.push({
+            title: `BOOKED: ${startTitle} - ${endTitle} - ${booking.slot.slotName}`,
+            id: `booked-${booking.id}`,
+            start: startTime,
+            end: endTime,
+            display: 'background',
+            color: '#fc6a6d',
+            className: 'booked-slot-item',
+            extendedProps: {
+              isSlotBooked: true
+            }
+          });
+        });
+      }
     return events;
   }
 
@@ -616,6 +682,21 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     }
     this.selectedSlots.set(updatedFilterSlotList);
   }
+
+  toggleBookingFilter(slotId: number, checked:boolean){
+    const updatedFilterBookingList = new Set(this.selectedBookingList());
+    if(checked){
+      updatedFilterBookingList.add(slotId);
+    } else {
+      updatedFilterBookingList.delete(slotId);
+    }
+    this.selectedBookingList.set(updatedFilterBookingList);
+  }
+
+  toggleShowBookings(checked: boolean) {
+    this.showBookings.set(checked);
+  }
+
 
   closeCalendar() {
     this.close.emit();

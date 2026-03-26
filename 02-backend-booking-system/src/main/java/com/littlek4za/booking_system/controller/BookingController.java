@@ -38,7 +38,13 @@ public class BookingController {
 
     @GetMapping(path = "{version}/slots/{slotId}/bookings", version = "1")
     public ResponseEntity<List<BookingResponseDto>> getBookingsBySlotV1(@PathVariable ("slotId") Long slotId) {
-        List<BookingResponseDto> bookingResponseDto = bookingService.getBookingsBySlot(slotId);
+        List<BookingResponseDto> bookingResponseDto = bookingService.getBookingsBySlotId(slotId);
+        return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
+    }
+
+    @GetMapping(path = "{version}/events/{eventId}/bookings", version = "1")
+    public ResponseEntity<List<BookingResponseDto>> getBookingsByEventIdV1(@PathVariable ("eventId") Long eventId) {
+        List<BookingResponseDto> bookingResponseDto = bookingService.getBookingsByEventId(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
     }
     
