@@ -19,6 +19,7 @@ import com.littlek4za.booking_system.models.TimeRange;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,7 +45,7 @@ public class Slot {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     @JsonBackReference
     private Event event;
@@ -60,6 +61,9 @@ public class Slot {
 
     @Column(name = "slot_end_time")
     private Instant slotEndTime;
+
+    @Column(name = "max_bookings_per_identity")
+    private Integer maxBookingsPerIdentity; // null means unlimited usage for user
 
     @Column(name = "max_book_per_interval", nullable = false)
     private Integer maxBookPerInterval;
@@ -111,7 +115,7 @@ public class Slot {
     }
 
     public Slot(Event event, String slotName, String slotDescription, Instant slotStartTime, Instant slotEndTime,
-            Integer maxBookPerInterval, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes,
+            Integer maxBookingsPerIdentity, Integer maxBookPerInterval, Integer slotIntervalMinutes, Integer slotFrequencyIntervalMinutes,
             Map<Integer, List<TimeRange>> businessDaysHours, List<InstantRange> flexibleDaysHours, String businessTimeZone,
             Boolean businessAllowOt) {
         this.event = event;
@@ -119,6 +123,7 @@ public class Slot {
         this.slotDescription = slotDescription;
         this.slotStartTime = slotStartTime;
         this.slotEndTime = slotEndTime;
+        this.maxBookingsPerIdentity = maxBookingsPerIdentity;
         this.maxBookPerInterval = maxBookPerInterval;
         this.slotIntervalMinutes = slotIntervalMinutes;
         this.slotFrequencyIntervalMinutes = slotFrequencyIntervalMinutes;

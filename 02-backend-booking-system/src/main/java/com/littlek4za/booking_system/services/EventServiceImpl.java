@@ -11,10 +11,12 @@ import com.littlek4za.booking_system.dtos.EventRequestDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.entities.Event;
+import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.repos.EventRepository;
+import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.repos.projections.EventSlotCount;
@@ -30,15 +32,17 @@ public class EventServiceImpl implements EventService {
         private final UserRepository userRepository;
         private final DtoMapper dtoMapper;
         private final SlotRepository slotRepository;
-        public final SecurityUtil securityUtil;
+        private final SecurityUtil securityUtil;
+        private final InvitationRepository invitationRepository;
 
         public EventServiceImpl(EventRepository eventRepository, UserRepository userRepository, DtoMapper dtoMapper,
-                        SlotRepository slotRepository, SecurityUtil securityUtil) {
+                        SlotRepository slotRepository, SecurityUtil securityUtil, InvitationRepository invitationRepository) {
                 this.eventRepository = eventRepository;
                 this.userRepository = userRepository;
                 this.dtoMapper = dtoMapper;
                 this.slotRepository = slotRepository;
                 this.securityUtil = securityUtil;
+                this.invitationRepository = invitationRepository;
         }
 
         @Override
@@ -54,6 +58,7 @@ public class EventServiceImpl implements EventService {
                                 eRequestDto.eventDescription(),
                                 eRequestDto.eventLocationAddress(),
                                 eRequestDto.includePosition(),
+                                eRequestDto.maxBookingsPerIdentity(),
                                 eventTypeEnum);
 
                 if (Boolean.TRUE.equals(newEvent.getIncludePosition())) {
@@ -116,6 +121,7 @@ public class EventServiceImpl implements EventService {
                 event.setIncludePosition(eRequestDto.includePosition());
                 event.setLatitude(eRequestDto.latitude());
                 event.setLongitude(eRequestDto.longitude());
+                event.setMaxBookingsPerIdentity(eRequestDto.maxBookingsPerIdentity());
                 event.setEventType(eventTypeEnum);
 
                 Event updatedEvent = eventRepository.save(event);
@@ -129,6 +135,14 @@ public class EventServiceImpl implements EventService {
         public Long deleteEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
                                 .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+
+                List<Invitation> invitationList = invitationRepository.findByEventIdWithSlotSet(eventId);
+
+                invitationList.forEach(invitation -> {
+                        invitation.getSlotSet().clear();
+                        invitationRepository.save(invitation);
+                        invitationRepository.delete(invitation);
+                });
 
                 int deleted = eventRepository.deleteByIdAndUserId(eventId, user.getId());
 

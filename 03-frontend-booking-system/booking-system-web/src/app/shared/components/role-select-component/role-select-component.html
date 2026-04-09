@@ -1,4 +1,31 @@
-<p>role-select-component works!</p>
+<div class="full-vh flex-column">
 
-<button routerLink="/eventDashboard">Organizer</button>
-<button routerLink="/invitation">Attendee</button>
+  <h3 class="mb-5 fw-semibold text-center">
+    How would you like to continue?
+  </h3>
+
+  <div class="d-flex gap-4">
+
+    <!-- Organizer -->
+    <div class="card text-center p-4 shadow-sm role-card"
+         routerLink="/eventDashboard"
+         style="width: 200px; cursor: pointer;">
+      
+      <i class="fa-solid fa-user-gear fa-2x mb-3 text-primary"></i>
+      <h5 class="mb-0">Organizer</h5>
+
+    </div>
+
+    <!-- Attendee -->
+    <div class="card text-center p-4 shadow-sm role-card"
+         routerLink="/invitation"
+         style="width: 200px; cursor: pointer;">
+      
+      <i class="fa-solid fa-user fa-2x mb-3 text-secondary"></i>
+      <h5 class="mb-0">Attendee</h5>
+
+    </div>
+
+  </div>
+
+</div>

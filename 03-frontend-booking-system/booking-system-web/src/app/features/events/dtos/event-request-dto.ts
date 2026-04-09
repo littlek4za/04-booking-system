@@ -7,6 +7,7 @@ export class EventRequestDto {
     includePosition!:boolean;
     latitude?:number;
     longitude?:number;
+    maxBookingsPerIdentity?: number;
     eventType!: EventTypeModel;
 
 }

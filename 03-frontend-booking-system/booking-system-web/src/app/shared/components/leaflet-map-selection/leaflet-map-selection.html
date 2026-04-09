@@ -1,23 +1,26 @@
-<div class="map-wrapper">
-  <div class="map-container">
+<div class="map-wrapper card shadow-sm p-3 mt-2">
+  <div class="map-container mb-3">
     <div id="map" class="map"></div>
   </div>
-  <!-- <div>
-    @if (selectedLatLng) {
-    <p>
-      Current Position:
-      Lat: {{ selectedLatLng.lat.toFixed(5)}},
-      Lng: {{ selectedLatLng.lng.toFixed(5)}}
+  @if(selectedLatLng()){
+  <div class="mb-3 text-center">
+    <p class="mb-1">
+      <strong>Position on Map:</strong>
     </p>
-    }
-  </div> -->
-  <div *ngIf="selectedLatLng">
-    <p>
-      Position On Map:
-      Lat: {{ selectedLatLng()?.lat }},
-      Lng: {{ selectedLatLng()?.lng }}
+    <p class="mb-0">
+      Lat: {{ selectedLatLng()?.lat | number:'1.5-5' }},
+      Lng: {{ selectedLatLng()?.lng | number:'1.5-5' }}
     </p>
   </div>
-  <button type="button" (click)="submitLocation()">Select Location</button>
-  <button type="button" (click)="clearLocation()">Clear Location</button>
+  }
+
+  <!-- Action Buttons -->
+  <div class="d-flex justify-content-center gap-2">
+    <button type="button" class="btn btn-success btn-sm" title="Confirm the selected location" (click)="submitLocation()">
+      Select Location
+    </button>
+    <button type="button" class="btn btn-outline-danger btn-sm" (click)="clearLocation()">
+      Clear Location
+    </button>
+  </div>
 </div>

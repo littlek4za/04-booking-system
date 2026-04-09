@@ -15,4 +15,6 @@ public interface BookingService {
 
     List<BookingResponseDto> getBookingsByEventId(Long eventId);
 
+    BookingResponseDto softDeleteBooking(Long slotId, Long bookingId);
+
 }

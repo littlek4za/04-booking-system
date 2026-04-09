@@ -65,6 +65,9 @@ public class Event {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Column(name = "max_bookings_per_identity")
+    private Integer maxBookingsPerIdentity; // null means unlimited usage for user
+
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     private EventType eventType;
@@ -88,12 +91,13 @@ public class Event {
     }
 
     public Event(User user, String eventName, String eventDescription, String eventLocationAddress,
-            Boolean includePosition, EventType eventType) {
+            Boolean includePosition, Integer maxBookingsPerIdentity, EventType eventType) {
         this.user = user;
         this.eventName = eventName;
         this.eventDescription = eventDescription;
         this.eventLocationAddress = eventLocationAddress;
         this.includePosition = includePosition;
+        this.maxBookingsPerIdentity = maxBookingsPerIdentity;
         this.eventType = eventType;
     }
 

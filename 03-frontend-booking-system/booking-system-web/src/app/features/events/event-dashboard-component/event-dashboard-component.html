@@ -1,6 +1,180 @@
-<p>event-dashboard-component works!</p>
+<div class="d-flex justify-content-between align-items-center mb-3 p-2">
+  <h4 class="mb-0">Events Manager</h4>
+  <button type="button" class="btn btn-success" (click)="openCreateEventWizard()">
+    <i class="fa-solid fa-plus me-1"></i> Create Event
+  </button>
+</div>
+<div class="table-responsive d-none d-md-block">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Event</th>
+        <th class="d-none d-md-table-cell">Description</th>
+        <th scope="col">Location Address</th>
+        <th scope="col">Event Type</th>
+        <th scope="col">Action</th>
+        <th scope="col">Slot Manager</th>
+        <th scope="col">Invitations</th>
+        <th class="d-none d-md-table-cell">Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (event of (eventList()); track event.id; let i = $index) {
+      <tr>
+        <th scope="row">{{i+1}}</th>
+        <td>{{event.eventName}}</td>
+        <td class="d-none d-md-table-cell">{{event.eventDescription}}</td>
+        <td>
+          <div>{{ event.eventLocationAddress }}</div>
+          @if (event.includePosition) {
+          <div class="mt-1">
+            <a [href]="'https://www.google.com/maps/place/'+ event.latitude + ',' + event.longitude" target="_blank"
+              class="text-decoration-none text-primary small">
+              <i class="fa-solid fa-map-location-dot me-1"></i>
+              Map
+            </a>
+          </div>
+          }
+        </td>
+        <td>{{event.eventType}}</td>
+        <td>
+          <div class="d-flex flex-column flex-md-row gap-2">
+            <button class="btn btn-sm btn-outline-primary" (click)="openCalendar(event.id, event.eventType)">View
+              Calendar</button>
+            <button class="btn btn-sm btn-warning" (click)="openUpdateEventWizard(event.id)">Update</button>
+            <button class="btn btn-sm btn-danger"
+              (click)="confirmDeleteEvent(event.id, event.slotCount)">Delete</button>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex flex-column gap-1">
+            <span class="badge bg-light text-dark">
+              {{event.slotCount}} {{event.slotCount <= 1 ? 'slot' : 'slots' }} </span>
+                <a class="btn btn-sm btn-outline-dark" [routerLink]="['/eventDashboard', event.id, 'slots']">
+                  Manage {{event.slotCount <= 1 ? 'Slot' : 'Slots' }} </a>
+          </div>
+        </td>
+        <td>
+          <div class="d-flex flex-column gap-2">
+            <button type="button" class="btn btn-sm btn-success"
+              (click)="openInvitationWizard(event.id, event.eventType)">
+              Create Invitation
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-dark" (click)="openInvitationDashboard(event.id)">
+              View Invitation
+            </button>
+          </div>
+        </td>
+        <td class="d-none d-md-table-cell">
+          <div class="fw-semibold">
+            {{event.updatedAt | date:'dd MMM yyyy'}}
+          </div>
+          <div class="text-muted small">
+            {{event.updatedAt | date:'hh:mm a'}}
+          </div>
+        </td>
+      </tr>
+      } @empty {
+      <tr>
+        <td colspan="9" class="text-center">No event found.</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>
 
-<button (click)="openCreateEventWizard()">+ Create Event</button>
+<!-- mobile card -->
+<div class="d-md-none">
+  @for (event of (eventList()); track event.id; let i = $index) {
+  <div class="card mobile-event-card mb-3 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div class="flex-grow-1">
+          <h5 class="card-title mb-1">{{ event.eventName }}</h5>
+          <small class="text-muted d-block">#{{ i + 1 }}</small>
+        </div>
+        <span class="badge bg-primary">{{ event.eventType }}</span>
+      </div>
+
+      <div class="mb-2">
+        <small class="text-muted d-block">Description</small>
+        <div>{{ event.eventDescription || '-' }}</div>
+      </div>
+
+      <div class="mb-2">
+        <small class="text-muted d-block">Location</small>
+        <div>{{ event.eventLocationAddress }}</div>
+
+        @if (event.includePosition) {
+        <a [href]="'https://www.google.com/maps/place/' + event.latitude + ',' + event.longitude" target="_blank"
+          class="text-decoration-none text-primary small d-inline-block mt-1">
+          <i class="fa-solid fa-map-location-dot me-1"></i>
+          View on map
+        </a>
+        }
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <small class="text-muted d-block">Slots</small>
+          <span class="badge bg-light text-dark">
+            {{ event.slotCount }} {{ event.slotCount <= 1 ? 'slot' : 'slots' }} </span>
+        </div>
+        <div class="text-end">
+          <small class="text-muted d-block">Last Updated</small>
+          <small>{{ event.updatedAt | date:'yyyy-MM-dd HH:mm' }}</small>
+        </div>
+      </div>
+
+      <div class="mobile-card-actions-grid">
+        <button class="btn btn-sm btn-outline-primary" (click)="openCalendar(event.id, event.eventType)">
+          View Calendar
+        </button>
+
+        <a class="btn btn-sm btn-outline-dark" [routerLink]="['/eventDashboard', event.id, 'slots']">
+          Manage Slot
+        </a>
+
+        <button class="btn btn-sm btn-outline-primary" (click)="openInvitationDashboard(event.id)">
+          View Invitation
+        </button>
+
+        <button class="btn btn-sm btn-success" (click)="openInvitationWizard(event.id, event.eventType)">
+          Create Invitation
+        </button>
+
+        <button class="btn btn-sm btn-warning" (click)="openUpdateEventWizard(event.id)">
+          Update
+        </button>
+
+        <button class="btn btn-sm btn-danger" (click)="confirmDeleteEvent(event.id, event.slotCount)">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+  } @empty {
+  <div class="text-center text-muted py-4">No event found.</div>
+  }
+</div>
+
+
+@if (showCalendarView === true && eventId != null && eventType != null) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-full-calendar-view [eventId]="eventId" [eventType]="eventType" [slotId]="null" mode="VIEW"
+    (close)="closeCalendar()"></app-full-calendar-view>
+</div>
+}
+
+@if (showInvitationWizard === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-invitation-edit-wizard [eventId]="eventId!" [eventType]="eventType!" mode="CREATE"
+    (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
+</div>
+}
 
 @if (showEventWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
@@ -14,83 +188,5 @@
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
   <app-invitation-dashboard [eventId]="updateEventId!" (close)="closeInvitationDashboard()"></app-invitation-dashboard>
-</div>
-}
-
-<table class="table table-striped table-dark">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">Event</th>
-      <th scope="col">Description</th>
-      <th scope="col">Location Address</th>
-      <th scope="col">Location Link</th>
-      <th scope="col">Event Type</th>
-      <th scope="col">Action</th>
-      <th scope="col">Slot Available</th>
-      <th scope="col">Last Updated</th>
-    </tr>
-  </thead>
-  <tbody>
-    @for (event of (eventList()); track event.id; let i = $index) {
-    <tr>
-      <th scope="row">{{i+1}}</th>
-      <td>{{event.eventName}}</td>
-      <td>{{event.eventDescription}}</td>
-      <td>{{event.eventLocationAddress}}</td>
-      @if (event.includePosition) {
-      <td>
-        <a [href]="'https://www.google.com/maps/place/'+ event.latitude + ',' + event.longitude" target="_blank">
-          View on map
-        </a>
-      </td>
-      } @else {
-      <td>Location position not included</td>
-      }
-      <td>{{event.eventType}}</td>
-      <td>
-        <button type="button" class="btn btn-outline-info" (click)="openCalendar(event.id, event.eventType)">
-          View Calendar
-        </button>
-        <button type="button" class="btn btn-outline-info" (click)="openInvitationDashboard(event.id)">
-          View Invitation
-        </button>
-        <button type="button" class="btn btn btn-success" (click)="openInvitationWizard(event.id, event.eventType)">
-          Create Invitation
-        </button>
-        <button type="button" class="btn btn-outline-warning" (click)="openUpdateEventWizard(event.id)">
-          Update
-        </button>
-        <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteEvent(event.id, event.slotCount)">
-          Delete
-        </button>
-      </td>
-      <td>
-        <div>{{event.slotCount}}</div>
-        <button type="button" [routerLink]="['/eventDashboard', event.id, 'slots']">Manage Slot</button>
-      </td>
-      <td>{{event.updatedAt | date:'yyyy-MM-dd HH:mm:ss z'}}</td>
-    </tr>
-    } @empty {
-    <tr>
-      <td colspan="9" class="text-center">No event found.</td>
-    </tr>
-    }
-  </tbody>
-</table>
-
-@if (showCalendarView === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-  <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" mode="VIEW"
-    (close)="closeCalendar()"></app-full-calendar-view>
-</div>
-}
-
-@if (showInvitationWizard === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-  <app-invitation-edit-wizard [eventId]="eventId!" [eventType]="eventType!" mode="CREATE"
-    (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
 </div>
 }

@@ -3,7 +3,6 @@ package com.littlek4za.booking_system.services;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,18 +14,18 @@ import com.littlek4za.booking_system.dtos.InvitationResponseDto;
 import com.littlek4za.booking_system.dtos.InvitationValidationResponseDto;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
-import com.littlek4za.booking_system.entities.InvitationUsage;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
+import com.littlek4za.booking_system.models.ValidationResult;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
-import com.littlek4za.booking_system.repos.InvitationUsageRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
 import com.littlek4za.booking_system.utils.DtoMapper;
+import com.littlek4za.booking_system.validators.InvitationValidator;
 
 @Service
 public class InvitationServiceImpl implements InvitationService {
@@ -36,19 +35,19 @@ public class InvitationServiceImpl implements InvitationService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final SlotRepository slotRepository;
-    private final InvitationUsageRepository invitationUsageRepository;
     private final DtoMapper dtoMapper;
+    private final InvitationValidator invitationValidator;
 
     public InvitationServiceImpl(InvitationRepository invitationRepository, SecurityUtil securityUtil,
             UserRepository userRepository, EventRepository eventRepository, SlotRepository slotRepository,
-            InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper) {
+            DtoMapper dtoMapper, InvitationValidator invitationValidator) {
         this.invitationRepository = invitationRepository;
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
         this.slotRepository = slotRepository;
-        this.invitationUsageRepository = invitationUsageRepository;
         this.dtoMapper = dtoMapper;
+        this.invitationValidator = invitationValidator;
     }
 
     @Override
@@ -86,6 +85,7 @@ public class InvitationServiceImpl implements InvitationService {
 
             newInvitation = dtoMapper.toInvitation(invitationRequestDto, event, user);
             newInvitation.setSlotSet(slotSet);
+            newInvitation.setSlotIncludeMode(SlotIncludeMode.SELECTED);
 
         } else if (SlotIncludeMode.ALL_AND_FUTURE.name().equals(invitationRequestDto.slotIncludeMode())) {
 
@@ -142,11 +142,34 @@ public class InvitationServiceImpl implements InvitationService {
         Set<Invitation> invitationSet = invitationRepository.findByEventWithSlotSet(event);
         Set<Slot> allEventSlots = slotRepository.findByEvent(event);
 
-        List<InvitationResponseDto> invitationResponseDtoList = 
-        invitationSet.stream().map(invitation -> {
+        List<InvitationResponseDto> invitationResponseDtoList = invitationSet.stream().map(invitation -> {
             Set<Slot> slotSetToUse;
-            if(invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
-                slotSetToUse = allEventSlots; 
+            if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
+                slotSetToUse = allEventSlots;
+            } else {
+                slotSetToUse = invitation.getSlotSet();
+            }
+            return dtoMapper.toInvitationResponseDto(invitation, slotSetToUse);
+        }).collect(Collectors.toList());
+
+        return invitationResponseDtoList;
+    }
+
+    @Override
+    public List<InvitationResponseDto> getInvitationsByEventIdAndSlotId(Long eventId, Long slotId) {
+        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+        Event event = eventRepository.findByIdAndUser(eventId, user)
+                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
+
+        Set<Invitation> invitationSet = invitationRepository.findByEventIdAndSlotIdOrAllAndFutureWithEventAndSlotSets(eventId, slotId,
+                SlotIncludeMode.ALL_AND_FUTURE);
+        Set<Slot> allEventSlots = slotRepository.findByEvent(event);
+
+        List<InvitationResponseDto> invitationResponseDtoList = invitationSet.stream().map(invitation -> {
+            Set<Slot> slotSetToUse;
+            if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
+                slotSetToUse = allEventSlots;
             } else {
                 slotSetToUse = invitation.getSlotSet();
             }
@@ -175,51 +198,14 @@ public class InvitationServiceImpl implements InvitationService {
         Invitation invitation = invitationRepository.findByAccessTokenWithEvent(token)
                 .orElseThrow(() -> new AppException("Unknown token", HttpStatus.NOT_FOUND));
 
-        Instant now = Instant.now();
+        Long userId = securityUtil.getCurrentAuthUserIdOrNull();
 
-        if (now.isAfter(invitation.getExpiresAt())) {
-            return buildInvitationValidationResponseDto(
-                    false,
-                    invitation,
-                    "TOKEN EXPIRED");
-        }
-
-        if (invitation.getMaxUsage() != null && invitation.getUsedCount() >= invitation.getMaxUsage()) {
-            return buildInvitationValidationResponseDto(
-                    false,
-                    invitation,
-                    "REACHED MAXIMUM USAGE");
-        }
-
-        if (invitation.getMaxUsagePerUser() != null) {
-
-            Long userId = securityUtil.getCurrentAuthUserIdOrNull();
-
-            if (userId != null) {
-                Optional<InvitationUsage> invitationUsage = invitationUsageRepository
-                        .findByUserIdAndInvitationId(userId, invitation.getId());
-
-                // int usageCount = 0;
-                // if(invitationUsage.isPresent()){
-                // usageCount = invitationUsage.get().getUsageCount();
-                // }
-
-                int usageCount = invitationUsage.map(u -> u.getUsageCount()).orElse(0);
-
-                if (usageCount >= invitation.getMaxUsagePerUser()) {
-                    return buildInvitationValidationResponseDto(
-                            false,
-                            invitation,
-                            "REACHED MAXIMUM USAGE PER USER");
-                }
-            }
-
-        }
+        ValidationResult result = invitationValidator.validateAccess(invitation, userId);
 
         return buildInvitationValidationResponseDto(
-                true,
+                result.isValid(),
                 invitation,
-                null);
+                result.getMessage());
 
     }
 
@@ -237,14 +223,15 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public InvitationResponseDto getInvitationByToken(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEventAndSlotSet(token)
-                        .orElseThrow(()-> new AppException("no Invitation Found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("no Invitation Found", HttpStatus.NOT_FOUND));
 
         Set<Slot> slotSet;
-        if(invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE){
+        if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
             slotSet = slotRepository.findByEvent(invitation.getEvent());
         } else {
             slotSet = invitation.getSlotSet();
         }
-        return dtoMapper.toInvitationResponseDto(invitation,slotSet);
+        return dtoMapper.toInvitationResponseDto(invitation, slotSet);
     }
+
 }

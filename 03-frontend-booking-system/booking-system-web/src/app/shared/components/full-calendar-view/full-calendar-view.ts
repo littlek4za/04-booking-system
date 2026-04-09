@@ -33,8 +33,8 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
 
   // Input from parent, For View Usage
-  @Input() eventType?: EventTypeModel;
-  @Input() eventId?: number;
+  @Input() eventType: EventTypeModel | null = null;
+  @Input() eventId: number | null = null;
   @Input() slotId: number | null = null;
   showBookings = signal<boolean>(false);
 
@@ -72,17 +72,17 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   // singal field for booking list
   bookingListBySlotId = toSignal(this.bookingService.bookingListBySlotId$, { initialValue: [] as BookingResponseDto[] });
-  bookingListByEventId = toSignal(this.bookingService.bookingListByEventId$, {initialValue: [] as BookingResponseDto[] });
-  bookingList = computed<BookingResponseDto[]> (()=>{
-    const mode =this.mode;
+  bookingListByEventId = toSignal(this.bookingService.bookingListByEventId$, { initialValue: [] as BookingResponseDto[] });
+  bookingList = computed<BookingResponseDto[]>(() => {
+    const mode = this.mode;
     const slotIdFromView = this.slotId;
     const bookingListByEventId = this.bookingListByEventId();
     const bookingListBySlotId = this.bookingListBySlotId();
-    if(mode === 'EDIT'){
+    if (mode === 'EDIT') {
       return bookingListBySlotId;
     }
-    if(mode === 'VIEW'){
-      if(slotIdFromView){
+    if (mode === 'VIEW') {
+      if (slotIdFromView) {
         return bookingListBySlotId;
       }
       return bookingListByEventId;
@@ -90,20 +90,20 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     return bookingListBySlotId ? bookingListBySlotId : bookingListByEventId;
   });
 
-  filteredBookingList = computed<BookingResponseDto[]>(()=>{
+  filteredBookingList = computed<BookingResponseDto[]>(() => {
     const bookingList = this.bookingList();
     const selectedBookingList = this.selectedBookingList();
 
     return bookingList.filter(booking => selectedBookingList.has(booking.slot.id));
   })
 
-  distinctBookingSlots = computed<SlotResponseDto[]>(()=>{
+  distinctBookingSlots = computed<SlotResponseDto[]>(() => {
     const bookingList = this.bookingList();
-    const map =  new Map<number,SlotResponseDto>();
+    const map = new Map<number, SlotResponseDto>();
 
-    bookingList.forEach(booking =>{
-      if(!map.has(booking.slot.id)) {
-        map.set(booking.slot.id,booking.slot);
+    bookingList.forEach(booking => {
+      if (!map.has(booking.slot.id)) {
+        map.set(booking.slot.id, booking.slot);
       }
     });
     return Array.from(map.values());
@@ -202,8 +202,8 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       this.eventTypeFromMode = this.eventType;
       this.bookingService.triggerRefreshForBookingListByEventId(this.eventIdFromMode);
       // slot id provided, get single slot
-      if (this.slotId) {
-        console.log("2a.1");
+      if (this.slotId != null) {
+        console.log("Single slot mode, triggering slot refresh");
         this.bookingService.triggerRefreshForBookingListBySlotId(this.slotId);
         this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
           .pipe(takeUntil(this.destroy$))
@@ -217,7 +217,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
             }
           });
       } else { // slot id not provided, get slotList
-        console.log("2a.2");
+        console.log("Multi-slot mode, triggering all slots refresh");
         this.singleSlot.set(null);
         this.slotService.triggerRefresh(this.eventId);
       }
@@ -369,7 +369,6 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
               daysOfWeek: [Number(dayOfWeek)],
               startTime: start,
               endTime: end,
-              display: 'auto',
               extendedProps: {
                 ...baseEvent.extendedProps,
                 slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
@@ -383,25 +382,32 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       }
     }
     if (this.showBookings() && bookingList && bookingList.length) {
-        bookingList.forEach(booking => {
-          const startTime = moment(booking.bookedStartTime).clone().toDate();
-          const endTime = moment(booking.bookedStartTime).clone().add(booking.slot.slotIntervalMinutes, 'minutes').toDate();
-          const startTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).format('hh:mm a');
-          const endTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).add(booking.slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
-          events.push({
-            title: `BOOKED: ${startTitle} - ${endTitle} - ${booking.slot.slotName}`,
-            id: `booked-${booking.id}`,
-            start: startTime,
-            end: endTime,
-            display: 'background',
-            color: '#fc6a6d',
-            className: 'booked-slot-item',
-            extendedProps: {
-              isSlotBooked: true
-            }
-          });
+      bookingList.forEach(booking => {
+        let startTime;
+        let endTime;
+        if (eventType == EventTypeModel.FIXED) {
+          startTime = moment(booking.bookedStartTime).clone();
+          endTime = moment(booking.bookedEndTime).clone();
+        } else {
+          startTime = moment(booking.bookedStartTime).clone();
+          // endTime = moment(booking.bookedStartTime).clone().add(booking.slot.slotIntervalMinutes, 'minutes');
+          endTime = moment(booking.bookedEndTime).clone();
+        }
+
+        const startTitle = startTime.clone().tz(this.selectedTimeZone()).format('hh:mm a');
+        const endTitle = endTime.clone().tz(this.selectedTimeZone()).format('hh:mm a');
+        events.push({
+          title: ` - Booked by: ${booking.lastName} ${booking.lastName}, Email: ${booking.email}`,
+          id: `bookingId-${booking.id}`,
+          start: startTime.toDate(),
+          end: endTime.toDate(),
+          color: '#fc6a6d',
+          extendedProps: {
+            isSlotBooked: true
+          }
         });
-      }
+      });
+    }
     return events;
   }
 
@@ -610,7 +616,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
               endTime: nextEnd,
               display: 'background',
               color: '#5d9edf',
-              className: 'block-slot-item',
+              className: 'slot-item',
               extendedProps: {
                 ...baseEvent.extendedProps,
                 slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
@@ -627,12 +633,14 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
       bookingList.forEach(booking => {
         const startTime = moment(booking.bookedStartTime).clone().toDate();
-        const endTime = moment(booking.bookedStartTime).clone().add(slot.slotIntervalMinutes, 'minutes').toDate();
+        // const endTime = moment(booking.bookedStartTime).clone().add(slot.slotIntervalMinutes, 'minutes').toDate();
+        const endTime = moment(booking.bookedEndTime).clone().toDate();
         const startTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).format('hh:mm a');
-        const endTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+        // const endTitle = moment(booking.bookedStartTime).clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
+        const endTitle = moment(booking.bookedEndTime).clone().tz(this.selectedTimeZone()).format('hh:mm a');
         events.push({
           title: `BOOKED: ${startTitle} - ${endTitle} - ${slot.slotName}`,
-          id: `booked-${booking.id}`,
+          id: `bookingId-${booking.id}`,
           start: startTime,
           end: endTime,
           display: 'background',
@@ -683,9 +691,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     this.selectedSlots.set(updatedFilterSlotList);
   }
 
-  toggleBookingFilter(slotId: number, checked:boolean){
+  toggleBookingFilter(slotId: number, checked: boolean) {
     const updatedFilterBookingList = new Set(this.selectedBookingList());
-    if(checked){
+    if (checked) {
       updatedFilterBookingList.add(slotId);
     } else {
       updatedFilterBookingList.delete(slotId);

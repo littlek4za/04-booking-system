@@ -18,7 +18,7 @@ export class RegisterComponent {
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
 
-  successRegisterReturnUrl: string ='/login';
+  successRegisterReturnUrl: string = '/login';
 
   constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
 
@@ -78,7 +78,7 @@ export class RegisterComponent {
         console.log('Register success', response);
         alert("Registration Success! Please proceed to log in");
 
-        if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login' ) {
+        if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login') {
           this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.successRegisterReturnUrl }
           });
@@ -91,6 +91,9 @@ export class RegisterComponent {
         console.log('Registration failed');
       },
     });
+  }
+  goLogin() {
+    this.router.navigate(['/login']);
   }
 }
 

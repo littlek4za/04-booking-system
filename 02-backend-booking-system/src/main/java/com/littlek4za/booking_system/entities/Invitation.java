@@ -63,8 +63,8 @@ public class Invitation {
     @Column(name = "required_login", nullable = false)
     private boolean requiredLogin = true;
 
-    @Column(name = "max_usage_per_user")
-    private Integer maxUsagePerUser; // null means unlimited usage for user
+    @Column(name = "max_usage_per_identity")
+    private Integer maxUsagePerIdentity; // null means unlimited usage for user
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -84,14 +84,14 @@ public class Invitation {
     }
 
     public Invitation(Event event, User user, Instant expiresAt, Integer maxUsage,
-            SlotIncludeMode slotIncludeMode, boolean requiredLogin, Integer maxUsagePerUser) {
+            SlotIncludeMode slotIncludeMode, boolean requiredLogin, Integer maxUsagePerIdentity) {
         this.event = event;
         this.user = user;
         this.expiresAt = expiresAt;
         this.maxUsage = maxUsage;
         this.slotIncludeMode = slotIncludeMode;
         this.requiredLogin = requiredLogin;
-        this.maxUsagePerUser = maxUsagePerUser;
+        this.maxUsagePerIdentity = maxUsagePerIdentity;
 
     }
 

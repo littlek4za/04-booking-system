@@ -7,8 +7,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { SlotService } from '@features/slots/slot-service';
 import { logControls, logFormErrors } from '@shared/utils/logging-utils';
 import { InvitationRequestDto } from '../dtos/invitation-request-dto';
-import { maxUsagePerUserExceedMaxUsage } from '@shared/validators/custom-validator';
+import { maxUsagePerIdentityExceedMaxUsage} from '@shared/validators/custom-validator';
 import { InvitationService } from '../invitation-service';
+import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 
 @Component({
   selector: 'app-invitation-edit-wizard',
@@ -20,7 +21,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   private slotService = inject(SlotService);
 
-  @Input() mode!: 'CREATE' | 'VIEW';
+  @Input() mode!: 'CREATE';
   @Input() eventId!: number;
   @Input() eventType!: EventTypeModel;
   @Input() slotId: number | null = null;
@@ -31,19 +32,46 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   readonly includeMode = SlotIncludeMode;
   today: string = '';
 
-  //html boolean usage
-  showCustomSlotSelection: boolean = false;
-  showExpiryDateSelection: boolean = false;
-  showMaxUsageSelection: boolean = false;
-  showMaxUsagePerUserSelection: boolean = false;
-
   //signal from service
   slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
 
+  //data from service
+  slotSingle?: SlotResponseDto;
+
   private destroy$ = new Subject<void>();
 
-  ngOnInit(): void {
+  constructor(private invitationService: InvitationService) {
     this.initInvitationForm();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+
+    if (!this.invitationForm) return;
+
+    if (this.slotId != null &&
+      this.eventId != null &&
+      (changes['slotId'] || changes['eventId'])) {
+      this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            this.slotSingle = res;
+            console.log('GET slot succesfull', res);
+            this.prefillInvitationFormForSingleSlotUsage();
+          },
+          error: (error) => {
+            console.log('GET slot failed');
+          }
+        })
+      return;
+    }
+
+    if (changes['eventId'] && this.eventId) {
+      this.slotService.triggerRefresh(this.eventId);
+    }
+  }
+
+  ngOnInit(): void {
     this.actionWhenFormValueChanges();
     this.today = new Date().toISOString().split('T')[0];
   }
@@ -53,27 +81,19 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     this.destroy$.complete();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['eventId'] && this.eventId) {
-      this.slotService.triggerRefresh(this.eventId);
-    }
-  }
-
-  constructor(private invitationService: InvitationService){}
-
   private initInvitationForm() {
     this.invitationForm = new FormGroup({
       noExpiry: new FormControl<boolean>(true, [Validators.required]),
       expiresAt: new FormControl<Date | null>(null),
       noMaxUsage: new FormControl<boolean>(true, [Validators.required]),
       maxUsage: new FormControl<number | null>(null),
-      noMaxUsagePerUser: new FormControl<boolean>(true, [Validators.required]),
-      maxUsagePerUser: new FormControl<number | null>(null),
+      noMaxUsagePerIdentity: new FormControl<boolean>(true, [Validators.required]),
+      maxUsagePerIdentity: new FormControl<number | null>(null),
       slotIncludeMode: new FormControl<SlotIncludeMode>(SlotIncludeMode.ALL_AND_FUTURE),
       selectedSlotIds: new FormControl<number[]>([]),
       requiredLogin: new FormControl<boolean>(true, [Validators.required]),
     }, {
-      validators: maxUsagePerUserExceedMaxUsage
+      validators: maxUsagePerIdentityExceedMaxUsage
     });
   }
 
@@ -90,20 +110,22 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => this.onNoMaxUsageChanges(value));
 
-    this.invitationForm.get('noMaxUsagePerUser')!.valueChanges
+    this.invitationForm.get('noMaxUsagePerIdentity')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoMaxUsagePerUserChanges(value));
+      .subscribe(value => this.onNoMaxUsagePerIdentityChanges(value));
+  }
+
+  get isCustomSlot(): boolean {
+    return this.invitationForm.getRawValue().slotIncludeMode === SlotIncludeMode.SELECTED;
   }
 
   private onSlotIncludeModeChanges(value: SlotIncludeMode): void {
     this.invitationForm.get('slotIncludeMode')?.markAsTouched();
     const selectedSlotIdsControls = this.invitationForm.get('selectedSlotIds');
     if (value == SlotIncludeMode.SELECTED) {
-      this.showCustomSlotSelection = true;
       selectedSlotIdsControls?.setValidators([Validators.required]);
-      selectedSlotIdsControls?.markAsTouched(); 
+      selectedSlotIdsControls?.markAsTouched();
     } else {
-      this.showCustomSlotSelection = false;
       selectedSlotIdsControls?.clearValidators();
       selectedSlotIdsControls?.setValue([]);
     }
@@ -111,66 +133,78 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     this.invitationForm.get('selectedSlotIds')?.updateValueAndValidity();
   }
 
+  get hasExpiry(): boolean {
+    return this.invitationForm.getRawValue().noExpiry === false;
+  }
+
   private onNoExpiryChanges(value: boolean): void {
     if (value == true) {
-      this.showExpiryDateSelection = false;
       this.invitationForm.get('expiresAt')?.clearValidators();
       this.invitationForm.get('expiresAt')?.updateValueAndValidity();
       this.invitationForm.get('expiresAt')?.patchValue(null);
     } else {
-      this.showExpiryDateSelection = true;
       this.invitationForm.get('expiresAt')?.setValidators([Validators.required]);
       this.invitationForm.get('expiresAt')?.updateValueAndValidity();
       this.invitationForm.get('expiresAt')?.markAllAsTouched();
     }
   }
 
+  get hasMaxUsage(): boolean {
+    return this.invitationForm.getRawValue().noMaxUsage === false;
+  }
+
   private onNoMaxUsageChanges(value: boolean): void {
     this.invitationForm.get('noMaxUsage')?.markAsTouched();
     if (value == true) {
-      this.showMaxUsageSelection = false;
       this.invitationForm.get('maxUsage')?.clearValidators();
       this.invitationForm.get('maxUsage')?.setValue(null);
 
     } else {
-      this.showMaxUsageSelection = true;
       this.invitationForm.get('maxUsage')?.setValidators([Validators.required, Validators.min(1)]);
     }
     this.invitationForm.get('maxUsage')?.updateValueAndValidity();
   }
 
-  private onNoMaxUsagePerUserChanges(value: boolean): void {
-    this.invitationForm.get('noMaxUsagePerUser')?.markAsTouched();
+  get hasMaxUsagePerIdentity():boolean {
+    return this.invitationForm.getRawValue().noMaxUsagePerIdentity === false;
+  }
+
+  private onNoMaxUsagePerIdentityChanges(value: boolean): void {
+    this.invitationForm.get('noMaxUsagePerIdentity')?.markAsTouched();
     if (value == true) {
-      this.showMaxUsagePerUserSelection = false;
       this.invitationForm.get('requiredLogin')?.enable();
-      this.invitationForm.get('maxUsagePerUser')?.clearValidators();
+      this.invitationForm.get('maxUsagePerIdentity')?.clearValidators();
       this.invitationForm.updateValueAndValidity();
-      this.invitationForm.get('maxUsagePerUser')?.setValue(null);
+      this.invitationForm.get('maxUsagePerIdentity')?.setValue(null);
     } else {
-      this.showMaxUsagePerUserSelection = true;
-      this.invitationForm.get('maxUsagePerUser')?.setValidators([Validators.required, Validators.min(1)]);
+      this.invitationForm.get('maxUsagePerIdentity')?.setValidators([Validators.required, Validators.min(1)]);
       this.invitationForm.updateValueAndValidity();
-      this.invitationForm.get('requiredLogin')?.patchValue(true);
-      this.invitationForm.get('requiredLogin')?.disable();
+      // this.invitationForm.get('requiredLogin')?.patchValue(true);
+      // this.invitationForm.get('requiredLogin')?.disable();
     }
+  }
+
+  prefillInvitationFormForSingleSlotUsage() {
+    this.invitationForm.get('selectedSlotIds')?.patchValue([this.slotId]);
+    this.invitationForm.get('slotIncludeMode')?.patchValue(this.includeMode.SELECTED);
+    this.invitationForm.get('slotIncludeMode')?.disable();
   }
 
   onSlotToggle(slotId: number, event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
-    const control = this.invitationForm.get('selectedSlotIds')!;
-    const current: number[] = control.value ?? [];
+    const selectedSlotIdsControl = this.invitationForm.get('selectedSlotIds')!;
+    const current: number[] = selectedSlotIdsControl.value ?? [];
 
     if (checked) {
       if (!current.includes(slotId)) {
-        control.patchValue([...current, slotId]);
+        selectedSlotIdsControl.patchValue([...current, slotId]);
       }
     } else {
-      control.patchValue(current.filter(id => id !== slotId));
+      selectedSlotIdsControl.patchValue(current.filter(id => id !== slotId));
     }
 
-    control.markAsTouched();
-    control.updateValueAndValidity();
+    selectedSlotIdsControl.markAsTouched();
+    selectedSlotIdsControl.updateValueAndValidity();
   }
 
   closeInvitationWizard() {
@@ -190,30 +224,35 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
     const invitationRequestDto = new InvitationRequestDto;
     invitationRequestDto.maxUsage = this.mapNullToUndefined(this.invitationForm.get('maxUsage')?.value);
-    invitationRequestDto.maxUsagePerUser = this.mapNullToUndefined(this.invitationForm.get('maxUsagePerUser')?.value);
+    invitationRequestDto.maxUsagePerIdentity = this.mapNullToUndefined(this.invitationForm.get('maxUsagePerIdentity')?.value);
     invitationRequestDto.requiredLogin = this.invitationForm.get('requiredLogin')?.value;
-    invitationRequestDto.slotIncludeMode = this.invitationForm.get('slotIncludeMode')?.value;
     invitationRequestDto.slotIdList = this.invitationForm.get('selectedSlotIds')?.value;
+    if(this.mode==='CREATE' && this.eventId != null && this.eventType != null && this.slotId != null){
+      invitationRequestDto.slotIncludeMode = this.invitationForm.getRawValue().slotIncludeMode;
+    } else {
+      invitationRequestDto.slotIncludeMode = this.invitationForm.get('slotIncludeMode')?.value;
+    }
+    
 
     // update date with 23:59
     const dateStr = this.invitationForm.value.expiresAt;
     invitationRequestDto.expiresAt = this.mapNullToUndefined(
       dateStr
-      ? new Date(`${dateStr}T23:59:59.999`).toISOString()
-      : null
+        ? new Date(`${dateStr}T23:59:59.999`).toISOString()
+        : null
     );
 
     console.log("InvitationRequestDto: ", invitationRequestDto);
     console.log("event Id", this.eventId);
 
-    this.invitationService.createInvitation(invitationRequestDto,this.eventId).subscribe({
-      next: (res) =>{
+    this.invitationService.createInvitation(invitationRequestDto, this.eventId).subscribe({
+      next: (res) => {
         console.log('Create invitation success', invitationRequestDto);
         alert("Create invitation success");
         this.invitationService.triggerRefreshForInvitationList(this.eventId);
         this.closeInvitationWizard();
       },
-      error: (err) =>{
+      error: (err) => {
         console.warn('Create invitation failed');
       }
     })
@@ -221,8 +260,6 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   }
 
   private mapNullToUndefined<T>(value: T | null): T | undefined {
-    return value === null? undefined : value;
+    return value === null ? undefined : value;
   }
-
-
 }

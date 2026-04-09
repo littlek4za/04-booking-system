@@ -17,5 +17,7 @@ public interface InvitationService {
     InvitationValidationResponseDto validateAccessToken(String token);
 
     InvitationResponseDto getInvitationByToken(String token);
+
+    List<InvitationResponseDto> getInvitationsByEventIdAndSlotId(Long eventId, Long slotId);
     
 }

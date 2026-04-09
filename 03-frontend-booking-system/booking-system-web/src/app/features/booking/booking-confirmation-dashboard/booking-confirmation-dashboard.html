@@ -4,6 +4,14 @@
 @if (invitation()?.event?.eventDescription) {
 <p>Event Description: {{invitation()?.event?.eventDescription}}</p>
 }
+<p>Event Location Address: {{invitation()?.event?.eventLocationAddress}}</p>
+<p>
+    Event Location Link:
+    <a [href]="'https://www.google.com/maps/place/'+ invitation()?.event?.latitude + ',' + invitation()?.event?.longitude"
+        target="_blank">
+        View on map
+    </a>
+</p>
 
 @if (showBookingConfirmationWizard && slotField && invitationField) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
@@ -60,16 +68,16 @@
             @if (invitation()?.event?.eventType == EventTypeModel.BUSINESS) {
             <td>
                 @for (day of businessDays; track day) {
-                    @if (slot.businessDaysHours?.[day]?.length) {
-                        <div>
-                            <b>{{dayNames[day]}}</b>
-                            @for (range of getSlotBusinessDaysHoursRange(day,slot); track $index) {
-                                <div>
-                                    {{range.open}} -> {{range.close}}
-                                </div>
-                            }
-                        </div>
+                @if (slot.businessDaysHours?.[day]?.length) {
+                <div>
+                    <b>{{dayNames[day]}}</b>
+                    @for (range of getSlotBusinessDaysHoursRange(day,slot); track $index) {
+                    <div>
+                        {{range.open}} -> {{range.close}}
+                    </div>
                     }
+                </div>
+                }
                 }
             </td>
             }

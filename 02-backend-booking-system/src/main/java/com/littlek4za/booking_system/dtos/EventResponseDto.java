@@ -11,6 +11,7 @@ public record EventResponseDto(
     Boolean includePosition,
     Double latitude,
     Double longitude,
+    Integer maxBookingsPerIdentity,
     String eventType,
     Instant createdAt,
     Instant updateAt

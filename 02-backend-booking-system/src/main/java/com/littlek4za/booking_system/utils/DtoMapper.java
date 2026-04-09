@@ -24,13 +24,15 @@ public interface DtoMapper {
 
     SlotResponseDto toSlotResponseDto(Slot slot);
 
+    SlotResponseDto toSlotResponseDto(Slot slot, Long bookingsCount);
+
     Slot toSlot(SlotRequestDto slotRequestDto, Event event);
 
     EventResponseDto toEventResponseDto(Event event);
 
     Invitation toInvitation(InvitationRequestDto invitationRequestDto, Event event, User user);
 
-    InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotSet );
+    InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotList);
 
     BookingResponseDto toBookingResponseDto(Booking savedBooking);
 

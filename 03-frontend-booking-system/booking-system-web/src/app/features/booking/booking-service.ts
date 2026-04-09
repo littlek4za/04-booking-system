@@ -60,4 +60,9 @@ export class BookingService {
   triggerRefreshForBookingListByEventId(eventId: number) {
     this.eventId$.next(eventId);
   }
+
+  softDeleteForBooking(slotId:number, bookingId: number): Observable<BookingResponseDto>{
+    const bookingsUrl = `${this.slotsUrl}/${slotId}/bookings/${bookingId}/delete`;
+    return this.httpClient.patch<BookingResponseDto>(bookingsUrl,{});
+  }
 }

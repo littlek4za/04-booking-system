@@ -11,7 +11,8 @@ import { EventDashboardComponent } from './features/events/event-dashboard-compo
 import { LeafletMapSelection } from './shared/components/leaflet-map-selection/leaflet-map-selection';
 import { SlotDashboardComponent } from '@features/slots/slot-dashboard-component/slot-dashboard-component';
 import { InvitationAccessComponent } from '@features/invitations/invitation-access-component/invitation-access-component';
-import { BookingDashboard } from '@features/booking/booking-dashboard/booking-dashboard';
+import { BookingConfirmationDashboard } from '@features/booking/booking-confirmation-dashboard/booking-confirmation-dashboard';
+
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
@@ -24,7 +25,7 @@ export const routes: Routes = [
     { path: 'eventDashboard', component: EventDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'mapSelection', component: LeafletMapSelection },
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
-    { path: 'booking/:token', component: BookingDashboard },
+    { path: 'booking/:token', component: BookingConfirmationDashboard },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }
 ];

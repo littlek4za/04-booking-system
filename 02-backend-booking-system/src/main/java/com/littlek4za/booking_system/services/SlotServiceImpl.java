@@ -1,7 +1,9 @@
 package com.littlek4za.booking_system.services;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,10 +11,14 @@ import org.springframework.stereotype.Service;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
 import com.littlek4za.booking_system.entities.Event;
+import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.models.SlotIncludeMode;
+import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.repos.EventRepository;
+import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
@@ -30,30 +36,42 @@ public class SlotServiceImpl implements SlotService {
         private final UserRepository userRepository;
         private final DtoMapper dtoMapper;
         private final SlotValidator slotValidator;
+        private final BookingRepository bookingRepository;
+        private final InvitationRepository invitationRepository;
 
         public SlotServiceImpl(SecurityUtil sercurityUtil, SlotRepository slotRepository,
                         EventRepository eventRepository,
-                        UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator) {
+                        UserRepository userRepository, DtoMapper dtoMapper, SlotValidator slotValidator,
+                        BookingRepository bookingRepository, InvitationRepository invitationRepository) {
                 this.securityUtil = sercurityUtil;
                 this.slotRepository = slotRepository;
                 this.eventRepository = eventRepository;
                 this.userRepository = userRepository;
                 this.dtoMapper = dtoMapper;
                 this.slotValidator = slotValidator;
+                this.bookingRepository = bookingRepository;
+                this.invitationRepository = invitationRepository;
         }
 
         @Override
-        public List<SlotResponseDto> getSlotsByEvent(Long eventId) {
+        public List<SlotResponseDto> getSlotsByEventId(Long eventId) {
 
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
                                 .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("No event found with this Id and User",
                                                 HttpStatus.NOT_FOUND));
-
+                Map<Long, Long> bookingsCountMap = this.bookingRepository.countBookingsByEventGrouped(eventId)
+                                                        .stream()
+                                                        .collect(Collectors.toMap(
+                                                                row -> (Long) row[0],
+                                                                row -> (Long) row[1]));
                 Set<Slot> slotSet = slotRepository.findByEvent(event);
                 List<SlotResponseDto> slotResponseDtoList = slotSet.stream()
-                                .map(slot -> dtoMapper.toSlotResponseDto(slot))
+                                .map(slot -> {
+                                        Long bookingsCount = bookingsCountMap.getOrDefault(slot.getId(), 0L);
+                                        return dtoMapper.toSlotResponseDto(slot, bookingsCount);
+                                })
                                 .toList();
 
                 return slotResponseDtoList;
@@ -92,6 +110,20 @@ public class SlotServiceImpl implements SlotService {
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("No event found with eventId and User",
                                                 HttpStatus.NOT_FOUND));
+                // handle invitation deletion                                
+                Slot slot = slotRepository.findByIdAndEventIdWithInvitationSet(slotId, event.getId())
+                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
+                                                HttpStatus.NOT_FOUND));
+                for(Invitation invitation : slot.getInvitationSet()){
+                        if(invitation.getSlotIncludeMode() == SlotIncludeMode.SELECTED){
+                                if(invitation.getSlotSet().size() == 1) {
+                                        invitationRepository.delete(invitation);
+                                } else {
+                                        invitation.getSlotSet().remove(slot);
+                                        invitationRepository.save(invitation);
+                                }
+                        }
+                }
 
                 int deleted = this.slotRepository.deleteByIdAndEventId(slotId, event.getId());
 
@@ -104,7 +136,7 @@ public class SlotServiceImpl implements SlotService {
         }
 
         @Override
-        public SlotResponseDto getSlotById(Long eventId, Long slotId) {
+        public SlotResponseDto getSlotByIdAndEventId(Long eventId, Long slotId) {
                 User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
                                 .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
@@ -113,8 +145,10 @@ public class SlotServiceImpl implements SlotService {
                 Slot slot = slotRepository.findByIdAndEventId(slotId, event.getId())
                                 .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
                                                 HttpStatus.NOT_FOUND));
+                
+                Long bookingsCount = bookingRepository.countBySlotId(slotId);
 
-                return dtoMapper.toSlotResponseDto(slot);
+                return dtoMapper.toSlotResponseDto(slot, bookingsCount);
         }
 
         @Override
@@ -131,16 +165,22 @@ public class SlotServiceImpl implements SlotService {
 
                 slotValidator.validate(event.getEventType(), slotRequestDto);
 
+                Long bookingsCount = bookingRepository.countBySlotId(slotId);
+
+                slotValidator.validateForUpdate(event.getEventType(), slotRequestDto, existingSlot, bookingsCount);
+
                 existingSlot.setSlotName(slotRequestDto.slotName());
                 existingSlot.setSlotDescription(slotRequestDto.slotDescription());
                 existingSlot.setSlotStartTime(slotRequestDto.slotStartTime());
                 existingSlot.setSlotEndTime(slotRequestDto.slotEndTime());
+                existingSlot.setMaxBookingsPerIdentity(slotRequestDto.maxBookingsPerIdentity());
                 existingSlot.setMaxBookPerInterval(slotRequestDto.maxBookPerInterval());
                 existingSlot.setSlotIntervalMinutes(slotRequestDto.slotIntervalMinutes());
                 existingSlot.setSlotFrequencyIntervalMinutes(slotRequestDto.slotFrequencyIntervalMinutes());
                 existingSlot.setBusinessDaysHours(slotRequestDto.businessDaysHours());
                 existingSlot.setBusinessTimeZone(slotRequestDto.businessTimeZone());
                 existingSlot.setBusinessAllowOT(slotRequestDto.businessAllowOt());
+                existingSlot.setFlexibleDaysHours(slotRequestDto.flexibleDaysHours());
 
                 if (!event.getEventType().supportMaxBookPerInterval()) {
                         if (existingSlot.getMaxBookPerInterval() == null) {

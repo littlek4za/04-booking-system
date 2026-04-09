@@ -1,9 +1,126 @@
-<p>slot-dashboard-component works!</p>
+<div class="d-flex justify-content-between align-items-center mb-3 p-2">
+    <h4 class="mb-0">Slots Manager</h4>
+    <div class="ms-auto">
+        <button type="button" class="btn btn-success me-2" (click)="openCreateSlotWizard()">
+            <i class="fa-solid fa-plus me-1"></i> Create Slot
+        </button>
+        <button type="button" class="btn btn-secondary" [routerLink]="['/eventDashboard']">
+            <i class="fa-solid fa-undo me-1"></i> Back to Event Manager
+        </button>
+    </div>
+</div>
+<div class="table-responsive d-none d-md-block">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Slot Name</th>
+                <th scope="col">Description</th>
+                @if(eventType === EventType.FIXED){
+                <th scope="col">Number of Bookings / <br>Maximum Bookings Allowed</th>
+                } @else {
+                <th scope="col">Number of Bookings</th>
+                }
 
-<button type="button" (click)="openCreateSlotWizard()">+ Create Slot</button>
-<button type="button" [routerLink]="['/eventDashboard']">Back to DashBoard</button>
+                @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
+                <th scope="col">Attendee Slot Booking Interval</th>
+                }
+                <th scope="col">Action</th>
+                <th scope="col">Booking Manager</th>
+                <th scope="col">Invitations</th>
+                <th scope="col">Last Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (slot of slotList(); track slot.id; let i = $index) {
+            <tr>
+                <th scope="row">{{i+1}}</th>
+                <td>{{slot.slotName}}</td>
+                <td>{{slot.slotDescription}}</td>
+                @if(eventType == EventType.FIXED){
+                <td>{{slot.bookingsCount}}/{{slot.maxBookPerInterval}}</td>
+                } @else {
+                <td>{{slot.bookingsCount}}</td>
+                }
 
-@if(openSlotWizard === true) {
+                @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
+                <td>{{formatDuration(slot.slotIntervalMinutes)}}</td>
+                }
+                <td>
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="openCalendar(slot.id)">View Calendar</button>
+                        <button type="button" class="btn btn-sm btn-warning"
+                            (click)="openUpdateSlotWizard(slot.id)">Update</button>
+                        <button type="button" class="btn btn-sm btn-danger"
+                            (click)="confirmDeleteSlot(slot.id)">Delete</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex flex-column gap-1">
+                        <span class="badge bg-light text-dark">
+                            {{slot.bookingsCount}} {{slot.bookingsCount <= 1 ? "booking" : "bookings" }}</span>
+                                <button type="button" class="btn btn-sm btn-outline-dark"
+                                    (click)="openBookingManagerDashboard(slot.id)">
+                                    Manage {{slot.bookingsCount <= 1 ? "Booking" : "Bookings" }} </button>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" class="btn btn-sm btn-success" (click)="openInvitationWizard(slot.id)">
+                            Create Invitation for this slot
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-dark"
+                            (click)="openInvitationDashboard(slot.id)">
+                            View Invitation for this slot
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <div class="fw-semibold">
+                        {{slot.updatedAt | date:'dd MMM yyyy'}}
+                    </div>
+                    <div class="text-muted small">
+                        {{slot.updatedAt | date:'hh:mm a'}}
+                    </div>
+                </td>
+            </tr>
+            }
+            @empty {
+            <tr>
+                <td colspan="9" class="text-center">No slot found.</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@if (openCalendarView === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+    <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" [slotId]="slotId" mode="VIEW"
+        (close)="closeCalendar()"></app-full-calendar-view>
+</div>
+}
+
+@if (showInvitationWizard === true && slotId && eventId && eventType) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+    <app-invitation-edit-wizard [eventId]="eventId" [eventType]="eventType" [slotId]="slotId" mode="CREATE"
+        (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
+</div>
+}
+
+@if (showInvitationDashboard === true && slotId != null) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+    <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId"
+        (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+</div>
+}
+
+@if(showSlotWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
     <app-slot-edit-wizard [eventId]="eventId" [eventType]="eventType" [mode]="modeSlotWizard" [slotId]="slotId"
@@ -11,56 +128,10 @@
 </div>
 }
 
-<table class="table table-striped table-dark">
-    <thead>
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">Slot Name</th>
-            <th scope="col">Description</th>
-            <th scope="col">Number of Attendee/maxBookPerInterval (TODO include booking count)</th>
-            @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
-            <th scope="col">Attendee Slot Booking Interval</th>
-            }
-            <th scope="col">Last Updated</th>
-            <th scope="col">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (slot of slotList(); track slot.id; let i = $index) {
-        <tr>
-            <th scope="row">{{i+1}}</th>
-            <td>{{slot.slotName}}</td>
-            <td>{{slot.slotDescription}}</td>
-            <td>XX/{{slot.maxBookPerInterval}}</td>
-            @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
-            <td>{{formatDuration(slot.slotIntervalMinutes)}}</td>
-            }
-            <td>{{slot.updatedAt| date:'yyyy-MM-dd HH:mm:ss z'}}</td>
-            <td>
-                <div>slot id: {{slot.id}}</div>
-                <button type="button" class="btn btn-outline-info" (click)="openCalendar(slot.id)">
-                    View TimeTable
-                </button>
-                <button type="button" class="btn btn-outline-warning" (click)="openUpdateSlotWizard(slot.id)">
-                    Update
-                </button>
-                <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSlot(slot.id)">
-                    Delete
-                </button>
-            </td>
-        </tr>
-        }
-        @empty {
-        <tr>
-            <td colspan="9" class="text-center">No slot found.</td>
-        </tr>
-        }
-    </tbody>
-</table>
-
-@if (openCalendarView === true) {
+@if(showBookingManagerDashboard === true && slotId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" [slotId]="slotId" mode="VIEW" (close)="closeCalendar()"></app-full-calendar-view>
+    <app-booking-manager-dashboard [slotId]="slotId"
+        (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
 </div>
 }

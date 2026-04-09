@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 export class LoginComponent implements OnInit {
 
   loginForm!: FormGroup;
+  showPassword: boolean = false;
 
   constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
 

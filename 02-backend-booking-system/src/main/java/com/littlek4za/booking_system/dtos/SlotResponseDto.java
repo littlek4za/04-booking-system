@@ -14,6 +14,7 @@ public record SlotResponseDto(
     String slotDescription,
     Instant slotStartTime,
     Instant slotEndTime,
+    Integer maxBookingsPerIdentity,
     Integer maxBookPerInterval,
     Integer slotIntervalMinutes,
     Integer slotFrequencyIntervalMinutes,
@@ -22,5 +23,6 @@ public record SlotResponseDto(
     Boolean businessAllowOt,
     List<InstantRange> flexibleDaysHours,
     Instant createdAt,
-    Instant updatedAt
+    Instant updatedAt,
+    Long bookingsCount
 ) {} 

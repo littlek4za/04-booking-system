@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SlotService } from '../slot-service';
@@ -7,18 +7,22 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { EventService } from '@features/events/event-service';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
 import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
+import { BookingManagerDashboard } from "@features/booking/booking-manager-dashboard/booking-manager-dashboard";
+import { InvitationEditWizard } from '@features/invitations/invitation-edit-wizard/invitation-edit-wizard';
+import { Subject, takeUntil } from 'rxjs';
+import { InvitationDashboard } from '@features/invitations/invitation-dashboard/invitation-dashboard';
 
 @Component({
   standalone: true,
   selector: 'app-slot-dashboard-component',
-  imports: [CommonModule, RouterLink, SlotEditWizard, DatePipe, FullCalendarView],
+  imports: [CommonModule, RouterLink, SlotEditWizard, DatePipe, FullCalendarView, BookingManagerDashboard, InvitationEditWizard, InvitationDashboard],
   templateUrl: './slot-dashboard-component.html',
   styleUrl: './slot-dashboard-component.css',
 })
-export class SlotDashboardComponent implements OnInit {
+export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   private slotService = inject(SlotService);
-  openSlotWizard: boolean = false;
+
   updateSlotWizard: boolean = false;
   slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
   eventId!: number;
@@ -28,6 +32,15 @@ export class SlotDashboardComponent implements OnInit {
   openCalendarView: boolean = false;
   protected readonly EventType = EventTypeModel;
 
+  // show or hide component
+  showSlotWizard: boolean = false;
+  showBookingManagerDashboard: boolean = false;
+  showInvitationWizard: boolean = false;
+  showInvitationDashboard: boolean = false;
+
+  // for destroy usage
+  private destroy$ = new Subject<void>();
+
 
   constructor(private route: ActivatedRoute, private eventService: EventService) { }
 
@@ -36,8 +49,15 @@ export class SlotDashboardComponent implements OnInit {
     this.subscribeEventType();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   private refreshSlotListWithEventId() {
-    this.route.paramMap.subscribe(
+    this.route.paramMap
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(
       paramMap => {
         this.eventId = +paramMap.get('id')!;
         if (this.eventId) {
@@ -48,7 +68,9 @@ export class SlotDashboardComponent implements OnInit {
   }
 
   private subscribeEventType() {
-    this.eventService.getEventById(this.eventId).subscribe({
+    this.eventService.getEventById(this.eventId)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (res) => {
         console.log('GET Event Succesful', res);
         this.eventType = res.eventType;
@@ -66,7 +88,9 @@ export class SlotDashboardComponent implements OnInit {
   }
 
   private deleteSlotById(slotId: number) {
-    this.slotService.deleteSlotByIdAndEvent(this.eventId, slotId).subscribe({
+    this.slotService.deleteSlotByIdAndEvent(this.eventId, slotId)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (res) => {
         console.log('Delete Slot Succesfully');
         this.slotService.triggerRefresh(this.eventId);
@@ -91,26 +115,53 @@ export class SlotDashboardComponent implements OnInit {
   openCreateSlotWizard() {
     this.modeSlotWizard = 'CREATE';
     this.slotId = null;
-    this.openSlotWizard = true;
+    this.showSlotWizard = true;
   }
 
   openUpdateSlotWizard(slotId: number) {
     this.modeSlotWizard = 'UPDATE';
     this.slotId = slotId;
-    this.openSlotWizard = true;
+    this.showSlotWizard = true;
   }
 
   closeSlotWizard() {
-    this.openSlotWizard = false;
+    this.showSlotWizard = false;
   }
 
-  openCalendar(slotId:number){
+  openCalendar(slotId: number) {
     this.slotId = slotId;
+    console.log('Opening Calendar View', this.slotId);
     this.openCalendarView = true;
   }
 
-  closeCalendar(){
+  closeCalendar() {
     this.openCalendarView = false;
   }
 
+  openBookingManagerDashboard(slotId: number) {
+    this.showBookingManagerDashboard = true;
+    this.slotId = slotId;
+  }
+
+  closeBookingManagerDashboard() {
+    this.showBookingManagerDashboard = false;
+  }
+
+  closeInvitationWizard() {
+    this.showInvitationWizard = false;
+  }
+
+  openInvitationWizard(slotId: number) {
+    this.slotId = slotId;
+    this.showInvitationWizard = true;
+  }
+
+  openInvitationDashboard(slotId: number) {
+    this.slotId = slotId;
+    this.showInvitationDashboard = true;
+  }
+
+  closeInvitationDashboard() {
+    this.showInvitationDashboard = false;
+  }
 }

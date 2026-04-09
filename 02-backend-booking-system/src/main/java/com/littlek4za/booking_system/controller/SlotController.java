@@ -35,13 +35,13 @@ public class SlotController {
 
     @GetMapping(path = "{version}/events/{eventId}/slots", version="1")
     public ResponseEntity<List<SlotResponseDto>> getSlotsByEventV1(@PathVariable("eventId") Long eventId){
-        List<SlotResponseDto> slotList = slotService.getSlotsByEvent(eventId);
+        List<SlotResponseDto> slotList = slotService.getSlotsByEventId(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(slotList);
     }
 
     @GetMapping(path = "{version}/events/{eventId}/slots/{slotId}", version="1")
-    public ResponseEntity<SlotResponseDto> getSlotByIdV1(@PathVariable("eventId") Long eventId, @PathVariable("slotId") Long slotId){
-        SlotResponseDto slot = slotService.getSlotById(eventId, slotId);
+    public ResponseEntity<SlotResponseDto> getSlotByIdAndEventIdV1(@PathVariable("eventId") Long eventId, @PathVariable("slotId") Long slotId){
+        SlotResponseDto slot = slotService.getSlotByIdAndEventId(eventId, slotId);
         return ResponseEntity.status(HttpStatus.OK).body(slot);
     }
 

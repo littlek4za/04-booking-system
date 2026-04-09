@@ -15,7 +15,7 @@ public record InvitationResponseDto(
     String accessToken,
     SlotIncludeMode slotIncludeMode,
     boolean requiredLogin,
-    Integer maxUsagePerUser,
+    Integer maxUsagePerIdentity,
     Instant createdAt,
     List<SlotResponseDto> slotList
 

@@ -12,12 +12,12 @@ import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 import { SlotService } from '@features/slots/slot-service';
 
 @Component({
-  selector: 'app-booking-dashboard',
+  selector: 'app-booking-confirmation-dashboard',
   imports: [DatePipe, BookingConfirmationWizard],
-  templateUrl: './booking-dashboard.html',
-  styleUrl: './booking-dashboard.css',
+  templateUrl: './booking-confirmation-dashboard.html',
+  styleUrl: './booking-confirmation-dashboard.css',
 })
-export class BookingDashboard {
+export class BookingConfirmationDashboard {
 
   //service
   private invitationService = inject(InvitationService);
@@ -34,7 +34,7 @@ export class BookingDashboard {
   invitationField: InvitationResponseDto | null = null;
 
   // signal data
-  invitation = toSignal(this.invitationService.invitation$, { initialValue: null });
+  invitation = toSignal(this.invitationService.invitationByToken$, { initialValue: null });
   slotList = toSignal(this.slotService.slotList$, { initialValue: [] })
 
   // html field

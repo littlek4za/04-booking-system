@@ -11,7 +11,7 @@ import { InvitationValidationResponseDto } from './dtos/invitation-validation-re
 export class InvitationService {
 
   private eventId$ = new BehaviorSubject<number | null>(null);
-  invitationList$ = this.eventId$.pipe(
+  invitationListByEventId$ = this.eventId$.pipe(
     filter((id): id is number => id !==null),
     switchMap(id => this.getInvitationsByEventId(id).pipe(
       tap((res) => console.log('GET Invitation list succeed', res)),
@@ -21,8 +21,9 @@ export class InvitationService {
       })
     ))
   );
+
   private token$ = new BehaviorSubject<string | null> (null);
-  invitation$ = this.token$.pipe(
+  invitationByToken$ = this.token$.pipe(
     filter((token): token is string => token !== null),
     switchMap(token => this.getInvitationByToken(token).pipe(
       tap((res)=> console.log('GET Invitation succeed', res)),
@@ -46,6 +47,11 @@ export class InvitationService {
 
   getInvitationsByEventId(eventId: number): Observable<InvitationResponseDto[]> {
     const url = `${this.eventsUrl}/${eventId}/invitations`;
+    return this.httpClient.get<InvitationResponseDto[]>(url);
+  }
+
+  getInvitationsByEventIdAndSlotId(eventId:number, slotId: number): Observable<InvitationResponseDto[]> {
+    const url = `${this.eventsUrl}/${eventId}/invitations?slotId=${slotId}`;
     return this.httpClient.get<InvitationResponseDto[]>(url);
   }
 

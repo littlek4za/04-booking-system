@@ -33,6 +33,8 @@ public record EventRequestDto(
         @DecimalMax(value = "180.0", message = "Longitude must be <= 180")
         Double longitude,
 
+        Integer maxBookingsPerIdentity,
+
         @ValidEventType
         String eventType) {
 

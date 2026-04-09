@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 
@@ -52,6 +53,12 @@ public class BookingController {
     public ResponseEntity<Integer> countBySlotIdV1(@PathVariable ("slotId") Long slotId) {
         Integer count = bookingService.getCountBySlotId(slotId);
         return ResponseEntity.status(HttpStatus.OK).body(count);
+    }
+
+    @PatchMapping(path = "{version}/slots/{slotId}/bookings/{bookingId}/delete", version = "1")
+    public ResponseEntity<BookingResponseDto> softDeleteBookingV1(@PathVariable ("slotId") Long slotId, @PathVariable ("bookingId") Long bookingId){
+        BookingResponseDto bookingResponseDto = bookingService.softDeleteBooking(slotId,bookingId);
+        return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
     }
     
 

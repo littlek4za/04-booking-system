@@ -10,6 +10,7 @@ public record EventWithSlotCountReponseDto(
     Boolean includePosition,
     Double latitude,
     Double longitude,
+    Integer maxBookingsPerIdentity,
     String eventType,
     Instant createdAt,
     Instant updatedAt,

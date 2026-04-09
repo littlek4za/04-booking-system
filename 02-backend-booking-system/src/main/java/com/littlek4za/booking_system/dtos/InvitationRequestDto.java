@@ -15,7 +15,7 @@ public record InvitationRequestDto(
     
     Integer maxUsage,
     
-    Integer maxUsagePerUser,
+    Integer maxUsagePerIdentity,
 
     @NotNull
     boolean requiredLogin,

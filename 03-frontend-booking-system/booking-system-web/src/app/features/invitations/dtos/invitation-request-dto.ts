@@ -4,7 +4,7 @@ export class InvitationRequestDto {
 
     expiresAt?: string;
     maxUsage?: number;
-    maxUsagePerUser?: number;
+    maxUsagePerIdentity?: number;
     requiredLogin!: boolean;
     slotIncludeMode!: SlotIncludeMode;
     slotIdList?: number[];

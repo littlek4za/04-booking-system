@@ -154,16 +154,16 @@ function timeToMinutes(value: string) {
     return hours * 60 + minutes;
 }
 
-export function maxUsagePerUserExceedMaxUsage(abstractControl: AbstractControl): ValidationErrors | null {
+export function maxUsagePerIdentityExceedMaxUsage(abstractControl: AbstractControl): ValidationErrors | null {
     const noMaxUsage = abstractControl.get('noMaxUsage')?.value;
-    const noMaxUsagePerUser = abstractControl.get('noMaxUsagePerUser')?.value;
-    const maxUsagePerUser = abstractControl.get('maxUsagePerUser')?.value;
+    const noMaxUsagePerIdentity = abstractControl.get('noMaxUsagePerIdentity')?.value;
+    const maxUsagePerIdentity = abstractControl.get('maxUsagePerIdentity')?.value;
     const maxUsage = abstractControl.get('maxUsage')?.value;
-    if (!noMaxUsage && !noMaxUsagePerUser) {
+    if (!noMaxUsage && !noMaxUsagePerIdentity) {
         if (maxUsage != null &&
-            maxUsagePerUser != null &&
-            maxUsagePerUser > maxUsage) {
-            return { maxUsagePerUserMaxError: true }
+            maxUsagePerIdentity != null &&
+            maxUsagePerIdentity > maxUsage) {
+            return { maxUsagePerIdentityMaxError: true }
         }
     }
     return null;

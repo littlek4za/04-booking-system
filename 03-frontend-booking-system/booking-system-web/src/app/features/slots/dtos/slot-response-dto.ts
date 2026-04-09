@@ -7,6 +7,7 @@ export class SlotResponseDto {
     slotDescription?:string;
     slotStartTime!: string;
     slotEndTime!: string;
+    maxBookingsPerIdentity!: number | null;
     maxBookPerInterval!: number;
     slotIntervalMinutes!: number;
     slotFrequencyIntervalMinutes?: number;
@@ -16,4 +17,5 @@ export class SlotResponseDto {
     businessTimeZone?: string;
     businessAllowOt?: boolean;
     flexibleDaysHours?: TimeRange[];
+    bookingsCount!: number;
 }

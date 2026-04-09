@@ -32,7 +32,7 @@ public class Booking {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "guest_first_name")
@@ -42,11 +42,11 @@ public class Booking {
     private String guestLastName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "slot_id", nullable = false)
+    @JoinColumn(name = "slot_id")
     private Slot slot;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invitation_id", nullable = false)
+    @JoinColumn(name = "invitation_id")
     private Invitation invitation;
 
     @CreationTimestamp
@@ -72,15 +72,42 @@ public class Booking {
     @Column(name = "booking_token", nullable = false, unique = true)
     private String bookingToken;
 
+    // history info to keep
+    @Column(name = "event_name", nullable = false)
+    private String eventName;
+
+    @Column(name = "slot_name", nullable = false)
+    private String slotName;
+
+    @Column(name = "organizer_email", nullable = false)
+    private String organizerEmail;
+
+    @Column(name = "attendee_email", nullable = false)
+    private String attendeeEmail;
+
+    @Column(name = "event_location_address", nullable = false)
+    private String eventLocationAddress;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     protected Booking() {
     }
 
     public Booking(User user, Slot slot, Instant bookedStartTime,
-            Instant bookedEndTime) {
+            Instant bookedEndTime, String eventName, String slotName, String organizerEmail, String attendeeEmail,String eventLocationAddress) {
         this.user = user;
         this.slot = slot;
         this.bookedStartTime = bookedStartTime;
         this.bookedEndTime = bookedEndTime;
+        this.eventName = eventName;
+        this.slotName = slotName;
+        this.organizerEmail = organizerEmail;
+        this.attendeeEmail = attendeeEmail;
+        this.eventLocationAddress = eventLocationAddress;
     }
 
 }

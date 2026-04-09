@@ -4,8 +4,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   
-  width: 95%;
-  max-width: 1200px;
+  width: 90%;
+  max-width: 900px;
 
   max-height: 90vh;          /* 🔥 limit height to screen */
   overflow-y: auto;          /* 🔥 enable scroll inside */

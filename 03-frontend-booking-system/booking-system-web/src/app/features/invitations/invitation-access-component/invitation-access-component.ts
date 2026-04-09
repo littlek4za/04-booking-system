@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InvitationService } from '../invitation-service';
 import { AuthService } from '@features/auth/auth-service';
 import { InvitationValidationResponseDto } from '../dtos/invitation-validation-response-dto';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-invitation-access-component',
@@ -11,10 +12,12 @@ import { InvitationValidationResponseDto } from '../dtos/invitation-validation-r
   templateUrl: './invitation-access-component.html',
   styleUrl: './invitation-access-component.css',
 })
-export class InvitationAccessComponent implements OnInit {
+export class InvitationAccessComponent implements OnInit, OnDestroy {
 
   tokenValidationForm!: FormGroup;
   invitationInfo: InvitationValidationResponseDto | null = null;
+
+  private destroy$ = new Subject<void>();
 
   constructor(private route: ActivatedRoute,
     private invitationService: InvitationService,
@@ -23,12 +26,16 @@ export class InvitationAccessComponent implements OnInit {
 
   ngOnInit() {
     this.initTokenValidationForm();
-
     const token = this.route.snapshot.paramMap.get('token');
 
     if (token) {
       this.processToken(token);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private initTokenValidationForm() {
@@ -41,7 +48,9 @@ export class InvitationAccessComponent implements OnInit {
   }
 
   private processToken(token: string) {
-    this.invitationService.validateInvitation(token).subscribe({
+    this.invitationService.validateInvitation(token)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (res) => {
         this.invitationInfo = res;
         if (res.valid == false) {

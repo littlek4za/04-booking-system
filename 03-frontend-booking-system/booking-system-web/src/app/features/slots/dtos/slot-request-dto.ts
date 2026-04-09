@@ -6,6 +6,7 @@ export class SlotRequestDto {
     slotDescription?: string;
     slotStartTime!: string; //ISO string
     slotEndTime!: string; //ISO string
+    maxBookingsPerIdentity! : number | null;
     maxBookPerInterval?: number;
     slotIntervalMinutes?: number;
     slotFrequencyIntervalMinutes?: number;

@@ -1,6 +1,7 @@
 package com.littlek4za.booking_system.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
@@ -43,8 +44,13 @@ public class InvitationController {
     }
 
     @GetMapping(path = "{version}/events/{eventId}/invitations", version="1")
-    public ResponseEntity<List<InvitationResponseDto>> getInvitationsByEventIdV1(@PathVariable("eventId") Long eventId) {
-        List<InvitationResponseDto> invitationResponseDtos = invitationService.getInvitationsByEventId(eventId);
+    public ResponseEntity<List<InvitationResponseDto>> getInvitationsByEventIdV1(@PathVariable("eventId") Long eventId, @RequestParam(required = false) Long slotId) {
+        List<InvitationResponseDto> invitationResponseDtos;
+        if(slotId != null){
+            invitationResponseDtos = invitationService.getInvitationsByEventIdAndSlotId(eventId,slotId);
+        } else {
+            invitationResponseDtos = invitationService.getInvitationsByEventId(eventId);
+        }
 
         return ResponseEntity.ok(invitationResponseDtos);
     }
@@ -67,7 +73,6 @@ public class InvitationController {
 
         return ResponseEntity.ok(invitationResponseDto);
     }
-    
     
 
 }

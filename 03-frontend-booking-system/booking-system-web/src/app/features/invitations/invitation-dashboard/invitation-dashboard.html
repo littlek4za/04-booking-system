@@ -1,18 +1,29 @@
-<p>invitation-dashboard works!</p>
-<button (click)="closeDashboard()">close</button>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Invitation Manager</h5>
+    <button class="btn btn-outline-secondary" (click)="closeDashboard()">
+        Close
+    </button>
+</div>
 
-<table class="table table-striped table-dark">
+<h6 class="mb-2 text-muted">
+    Event Name: {{invitationList().at(0)?.event?.eventName}}
+    <br>
+    Invitation List ({{ invitationList().length}})  
+</h6>
+<table class="table table-hover align-middle">
     <thead>
         <tr>
             <th scope="col">#</th>
             <th scope="col">Invitation Code</th>
             <th scope="col">Slots for booking</th>
             <th scope="col">Validity</th>
-            <th scope="col">Usage</th>
-            <th scope="col">Usage limit</th>
-            <th scope="col">Usage limit per user</th>
+            <th scope="col">Invitation Usage</th>
+            <th scope="col">Invitation Usage limit</th>
+            <th scope="col">Invitation Usage limit per identity</th>
+            <th scope="col">Event booking limit per identity</th>
+            <th scope="col">Slot booking limit per identity</th>
             <th scope="col">Access requirement</th>
-            <th scope="col">Slot Mode</th>
+            <th scope="col">Slot Selection Mode</th>
             <th scope="col">Action</th>
         </tr>
     </thead>
@@ -20,46 +31,74 @@
         @for (invitation of invitationList(); track invitation.id; let i = $index) {
         <tr>
             <th scope="row">{{i+1}}</th>
+            <!-- Invitation Code -->
             <td>{{invitation.accessToken}}</td>
+            <!-- Slots for booking -->
             <td>{{getSlotNames(invitation)}}</td>
+            <!-- Validity -->
             @if (invitation.expiresAt >= "9999-12-31T23:59:59Z") {
             <td>No Expiry</td>
             } @else {
             <td>{{invitation.expiresAt}}</td>
             }
+            <!-- Invitation Usage -->
             <td>{{invitation.usedCount}}</td>
+            <!-- Invitation Usage limit -->
             @if (invitation.maxUsage == null) {
-            <td>No Limit</td>
+            <td>∞</td>
             } @else {
             <td>{{invitation.maxUsage}}</td>
             }
-            @if (invitation.maxUsagePerUser == null) {
+            <!-- Invitation Usage limit per identity -->
+            @if (invitation.maxUsagePerIdentity == null) {
+            <td>∞</td>
+            } @else {
+            <td>{{invitation.maxUsagePerIdentity}}</td>
+            }
+            <!-- Event booking limit per identity -->
+            @if (invitation.event.maxBookingsPerIdentity == null) {
             <td>No Limit</td>
             } @else {
-            <td>{{invitation.maxUsagePerUser}}</td>
+            <td>{{invitation.event.maxBookingsPerIdentity}}</td>
             }
+            <!-- Slot booking limit per identity -->
+            <td>
+                @if(invitation.slotList.length === 1){
+                @for (slot of invitation.slotList; track $index) {
+                <div>{{slot.maxBookingsPerIdentity}}</div>
+                }
+                }@else {
+                @for (slot of invitation.slotList; track $index) {
+                @if (slot.maxBookingsPerIdentity !== null) {
+                <div>{{slot.slotName}} -> {{slot.maxBookingsPerIdentity}}</div>
+                }@else {
+                <div>{{slot.slotName}} -> ∞</div>
+                }
+                }
+                }
+            </td>
             @if (invitation.requiredLogin == true) {
             <td>Guest required register to book</td>
             } @else {
             <td>Anonymous Guest allowed to book</td>
             }
+
             @if (invitation.slotIncludeMode == SlotIncludeMode.ALL_AND_FUTURE) {
             <td>All slot of the event</td>
             } @else {
             <td>Selected slot</td>
             }
+
             <td>
-                <button type="button" class="btn btn-outline-info" (click)="shareInvitation(invitation.accessToken)">
+                <button type="button" class="btn btn-info" (click)="shareInvitation(invitation.accessToken)">
                     Share
                 </button>
-                <button type="button" class="btn btn-outline-danger" (click)="deleteInvitation(invitation.id)">
+                <button type="button" class="btn btn-danger" (click)="deleteInvitation(invitation.id)">
                     Delete
                 </button>
             </td>
 
         </tr>
-
-
         }
     </tbody>
 </table>

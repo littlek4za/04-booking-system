@@ -4,6 +4,9 @@
     <div class="calendar-content">
         <app-full-calendar-view 
             mode="EDIT" 
+            [eventId]="null" 
+            [eventType]="null"
+            [slotId]="null"
             [slot]="slot" 
             [invitation]="invitation"
             (close)="closeCalendar()"

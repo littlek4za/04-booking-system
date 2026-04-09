@@ -91,10 +91,13 @@ export class LeafletMapSelection implements AfterViewInit {
       icon: L.divIcon({
         className: 'fa-map-marker',
         html: `
-          <div class="fa-map-marker-image">
-            <i class="fa-solid fa-location-dot"></i>
-          </div>
-          <label class="fa-map-marker-label">Event Location</label>
+        <div class="fa-map-marker-image" style="text-align:center; color:#d9534f; font-size:1.5rem;">
+          <i class="fa-solid fa-location-dot"></i>
+        </div>
+        <label class="fa-map-marker-label" 
+               style="display:block; font-size:0.7rem; font-weight:500; color:#333; margin-top:2px; text-align:center; white-space:nowrap;">
+          Event<br>Location
+        </label>
         `,
         iconSize: [30, 45],
         iconAnchor: [15, 30],

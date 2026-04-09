@@ -8,6 +8,7 @@ export class EventWithSlotCountResponseDto {
     includePosition!: boolean;
     latitude?: number;
     longitude?: number;
+    maxBookingsPerIdentity!: number | null;
     eventType!: EventTypeModel;
     createdAt!: string;
     updatedAt!: string;

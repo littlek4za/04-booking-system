@@ -24,13 +24,13 @@ public class InvitationRequestValidator implements ConstraintValidator<ValidInvi
                     .addPropertyNode("expiresAt").addConstraintViolation();
         }
 
-        // maxUsage & maxUsagePerUser
-        if (dto.maxUsage() != null && dto.maxUsagePerUser() != null){
-            if(dto.maxUsagePerUser() > dto.maxUsage()) {
+        // maxUsage & maxUsagePerIdentity
+        if (dto.maxUsage() != null && dto.maxUsagePerIdentity() != null){
+            if(dto.maxUsagePerIdentity() > dto.maxUsage()) {
                 valid = false;
                 context.disableDefaultConstraintViolation();
-                context.buildConstraintViolationWithTemplate("maxUsagePerUser cannot exceed maxUsage")
-                        .addPropertyNode("maxUsagePerUser").addConstraintViolation();
+                context.buildConstraintViolationWithTemplate("maxUsagePerIdentity cannot exceed maxUsage")
+                        .addPropertyNode("maxUsagePerIdentity").addConstraintViolation();
             }
         }
 

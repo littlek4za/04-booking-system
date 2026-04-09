@@ -15,8 +15,10 @@ import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
 import com.littlek4za.booking_system.entities.Booking;
+import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
+import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.models.InstantRange;
@@ -67,7 +69,27 @@ public class BookingRequestValidator {
         }
     }
 
-    public void validateBookingInfo(BookingRequestDto dto, Invitation invitation, Slot slot) {
+    public void validateBookingInfo(BookingRequestDto dto, Invitation invitation, Slot slot, Event event, User user) {
+
+        Integer bookingsLimitForEvent = event.getMaxBookingsPerIdentity();
+
+        if(bookingsLimitForEvent != null){
+            Long bookingsCount = bookingRepository.countByUserAndEvent(user, event);
+
+            if(bookingsCount>=bookingsLimitForEvent){
+                throw new AppException(("Booking failed. Max booking limit per user for this event has reached, limit per user for this event: " + bookingsLimitForEvent), HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        Integer bookingsLimitForSlot = slot.getMaxBookingsPerIdentity();
+
+        if(bookingsLimitForSlot != null){
+            Long bookingsCount = bookingRepository.countByUserAndSlot(user, slot);
+
+            if(bookingsCount>=bookingsLimitForSlot){
+                throw new AppException(("Booking failed. Max booking limit per user for this slot has reached, limit per user for this slot: " + bookingsLimitForSlot), HttpStatus.BAD_REQUEST);
+            }
+        }
 
         EventType eventType = invitation.getEvent().getEventType();
 

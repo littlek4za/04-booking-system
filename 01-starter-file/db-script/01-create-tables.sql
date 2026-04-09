@@ -34,6 +34,7 @@ CREATE TABLE events (
 	include_position BOOLEAN NOT NULL DEFAULT FALSE, 
 	latitude DOUBLE PRECISION,
 	longitude DOUBLE PRECISION,
+	max_bookings_per_identity INT,
 	event_type VARCHAR(20) NOT NULL, -- 'FIXED' or 'FLEXIBLE' or 'BUSINESS'
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMPTZ NOT NULL 
@@ -46,6 +47,7 @@ CREATE TABLE slots (
 	slot_description TEXT,
 	slot_start_time TIMESTAMPTZ,
 	slot_end_time TIMESTAMPTZ,
+	max_bookings_per_identity INT,
 	max_book_per_interval INT NOT NULL DEFAULT 1,
 	slot_interval_minutes INT,
 	slot_frequency_interval_minutes INT,
@@ -68,24 +70,31 @@ CREATE TABLE invitations (
 	access_token VARCHAR(6) NOT NULL UNIQUE, -- NEW
 	include_mode VARCHAR(20) NOT NULL, -- 'ALL_AND_FUTURE' or 'ALL_CURRENT' or 'SELECTED' -- NEW
 	required_login BOOLEAN NOT NULL DEFAULT TRUE,
-	max_usage_per_user INT, -- NULL means UNLIMITED USER -- NEW
+	max_usage_per_identity INT, -- NULL means UNLIMITED USER -- NEW
 	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() -- NEW
 );
 
 CREATE TABLE bookings (
 	id BIGSERIAL PRIMARY KEY,
-	user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
 	guest_first_name VARCHAR(255),
 	guest_last_name VARCHAR(255),
-	slot_id BIGINT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
-	invitation_id BIGINT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE,
+	slot_id BIGINT REFERENCES slots(id) ON DELETE SET NULL,
+	invitation_id BIGINT REFERENCES invitations(id) ON DELETE SET NULL,
 	booked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	booked_start_time TIMESTAMPTZ NOT NULL,
 	booked_end_time TIMESTAMPTZ NOT NULL,
 	booking_token VARCHAR(6) NOT NULL UNIQUE, 
 	is_deleted BOOLEAN NOT NULL DEFAULT false,
 	deleted_at TIMESTAMPTZ,
-	deleted_by VARCHAR(20)
+	deleted_by VARCHAR(20),
+	event_name TEXT NOT NULL,
+	slot_name TEXT NOT NULL,
+	organizer_email VARCHAR(255) NOT NULL,
+	attendee_email VARCHAR(255) NOT NULL,
+	event_location_address TEXT NOT NULL,
+	latitude DOUBLE PRECISION,
+	longitude DOUBLE PRECISION
 );
 
 CREATE TABLE invitation_slots (

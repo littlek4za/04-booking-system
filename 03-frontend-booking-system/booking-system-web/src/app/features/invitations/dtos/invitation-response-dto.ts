@@ -13,7 +13,7 @@ export class InvitationResponseDto {
     accessToken!: string;
     slotIncludeMode!: SlotIncludeMode;
     requiredLogin!: boolean;
-    maxUsagePerUser?: number | null;
+    maxUsagePerIdentity?: number | null;
     createdAt!: string;
     slotList! : SlotResponseDto[];
 

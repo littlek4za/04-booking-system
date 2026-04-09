@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
+import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.models.EventType;
 
@@ -172,5 +173,23 @@ public class SlotValidator {
                     HttpStatus.BAD_REQUEST);
         }
     }
+    
+    public void validateForUpdate(EventType eventType, SlotRequestDto dto, Slot slot, Long bookingsCount) {
 
+        if (EventType.FIXED.equals(eventType) && bookingsCount >= 1) {
+            validateFixedSlotForUpdate(dto,slot);
+        } 
+    }
+
+    private void validateFixedSlotForUpdate(SlotRequestDto dto, Slot slot) {
+        if(!dto.slotStartTime().equals(slot.getSlotStartTime())){
+            throw new AppException("Cannot update slotStartTime for fixed type event's if bookingsCount is larger than 0",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        if(!dto.slotEndTime().equals(slot.getSlotEndTime())){
+            throw new AppException("Cannot update slotEndTime for fixed type event's if bookingsCount is larger than 0",
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
 }

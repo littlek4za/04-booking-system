@@ -56,9 +56,9 @@ public class InvitationUsage {
         }
     }
 
-    public void incrementUsage(Integer maxUsagePerUser) {
-        if (maxUsagePerUser != null && this.usageCount >= maxUsagePerUser) {
-            throw new IllegalStateException("User has reached the max usage for this invitation");
+    public void incrementUsage(Integer maxUsagePerIdentity) {
+        if (maxUsagePerIdentity != null && this.usageCount >= maxUsagePerIdentity) {
+            throw new IllegalStateException("User/Email has reached the max usage for this invitation");
         }
         this.usageCount++;
     }

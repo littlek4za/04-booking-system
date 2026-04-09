@@ -1,83 +1,170 @@
-<p>add-event-wizard works!</p>
-<button (click)="closeWizard()">close</button>
-<form class="row g-3 needs-validation" [formGroup]="eventForm" (ngSubmit)="onSubmit()">
-  <div class="col-md-4">
-    <label class="form-label">Event Name</label>
-    <input type="text" class="form-control" formControlName="eventName">
-    @if (eventForm.controls['eventName'].invalid && (eventForm.controls['eventName'].touched ||
-    eventForm.controls['eventName'].dirty)){
-    <div class="text-danger">
-      Event Name must be between 1 and 350 characters
-    </div>
-    }
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Event Description</label>
-    <input type="text" class="form-control" formControlName="eventDescription">
-    @if (eventForm.controls['eventDescription'].invalid && (eventForm.controls['eventDescription'].touched ||
-    eventForm.controls['eventDescription'].dirty)){
-    <div class="text-danger">
-      Event Description must not exceed 2500 characters
-    </div>
-    }
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Event Location Address</label>
-    <input type="text" class="form-control" formControlName="eventLocationAddress">
-    @if (eventForm.controls['eventLocationAddress'].invalid && (eventForm.controls['eventLocationAddress'].touched ||
-    eventForm.controls['eventLocationAddress'].dirty)){
-    <div class="text-danger">
-      Event Location Address must be between 1 and 1000 characters
-    </div>
-    }
-  </div>
-  <div class="col-12">
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" value="" formControlName="includePosition">
-      <label class="form-check-label">
-        Include Map Location
-      </label>
-    </div>
-  </div>
-  @if (eventForm.get('includePosition')?.value) {
+<div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <app-leaflet-map-selection [inputLatLng]="userLatLng" (selectedLocationEmit)="selectLocation($event)" (clearLocationEmit)="clearLocation()"></app-leaflet-map-selection>
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Latitude</label>
-    <input type="text" class="form-control" formControlName="latitude">
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Longitude</label>
-    <input type="text" class="form-control" formControlName="longitude">
-  </div>
-  }
-  @if (eventForm.hasError('positionRequired') &&
-  (eventForm.controls['longitude'].touched|| eventForm.controls['longitude'].touched)){
-  <div class="text-danger">
-    Please select location.
-  </div>
-  }
-  <div class="col-md-4">
-    <label class="form-label">Event Type</label>
-    <select formControlName="eventType">
-      <option value="" disabled>Select slot type</option>
-      @for (type of eventTypeList; track $index ) {
-      <option [value]="type">
-        {{ type }}
-      </option>
-      }
-    </select>
-    @if (eventForm.controls['eventType'].invalid && (eventForm.controls['eventType'].touched ||
-    eventForm.controls['eventType'].dirty)){
-    <div class="text-danger">
-      Require selection
-    </div>
+    @if (mode === 'CREATE') {
+      <h5 class="mb-0">Create Event</h5>
+    } @else {
+      <h5 class="mb-0">Edit Event</h5>
     }
   </div>
 
-  <div class="col-12">
-    <button class="btn btn-primary" type="submit">Submit form</button>
-  </div>
+  <button class="btn btn-outline-secondary" (click)="closeWizard()">
+    Close
+  </button>
+</div>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form class="row g-3" [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+      <div class="col-12">
+        <h6 class="border-bottom pb-2">Event Details</h6>
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Event Name</label>
+        <input type="text" class="form-control form-control-sm" formControlName="eventName">
+        @if (eventForm.controls['eventName'].invalid && (eventForm.controls['eventName'].touched ||
+        eventForm.controls['eventName'].dirty)){
+        <div class="text-danger">
+          Event Name must be between 1 and 350 characters
+        </div>
+        }
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Event Description</label>
+        <input type="text" class="form-control form-control-sm" formControlName="eventDescription">
+        @if (eventForm.controls['eventDescription'].invalid && (eventForm.controls['eventDescription'].touched ||
+        eventForm.controls['eventDescription'].dirty)){
+        <div class="text-danger">
+          Event Description must not exceed 2500 characters
+        </div>
+        }
+      </div>
 
-</form>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Event Location Address</label>
+        <input type="text" class="form-control form-control-sm" formControlName="eventLocationAddress">
+        @if (eventForm.controls['eventLocationAddress'].invalid && (eventForm.controls['eventLocationAddress'].touched
+        ||
+        eventForm.controls['eventLocationAddress'].dirty)){
+        <div class="text-danger">
+          Event Location Address must be between 1 and 1000 characters
+        </div>
+        }
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4 mb-2">
+          <label class="form-label">Location Option</label>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" formControlName="includePosition" id="includePosition">
+            <label class="form-check-label" for="includePosition">
+              Include map location
+            </label>
+          </div>
+
+          <small class="text-muted d-block mt-2">
+            Allow users to view the event location on a map
+          </small>
+        </div>
+      </div>
+
+
+      @if (eventForm.get('includePosition')?.value) {
+      <div class="col-12 mb-2">
+        <app-leaflet-map-selection [inputLatLng]="userLatLng" (selectedLocationEmit)="selectLocation($event)"
+          (clearLocationEmit)="clearLocation()"></app-leaflet-map-selection>
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Latitude</label>
+        <input type="text" class="form-control form-control-sm" formControlName="latitude">
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Longitude</label>
+        <input type="text" class="form-control form-control-sm" formControlName="longitude">
+      </div>
+      }
+      @if (eventForm.hasError('positionRequired') &&
+      (eventForm.controls['latitude'].touched|| eventForm.controls['longitude'].touched)){
+      <div class="text-danger">
+        Please select location.
+      </div>
+      }
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Event Type</label>
+        <select class="form-select form-select-sm" formControlName="eventType">
+          <option value="" disabled>Select slot type</option>
+          <!-- @for (type of eventTypeList; track $index ) {
+          <option [value]="type">
+            {{ type }}
+          </option>
+          } -->
+          <option value="FIXED">Fixed (Fix time slot)</option>
+          <option value="FLEXIBLE">Flexible (Flexible time slot)</option>
+          <option value="BUSINESS">Business (Recurring schedule)</option>
+        </select>
+        <small class="text-muted d-block mt-2">
+          @if (eventForm.get('eventType')?.value === "FIXED") {
+          Predefined time slots. Users select from available slots set by the organizer.
+          } @else if (eventForm.get('eventType')?.value === "FLEXIBLE") {
+          Users choose their own start time within a range, based on duration and interval settings.
+          } @else if (eventForm.get('eventType')?.value === "BUSINESS") {
+          Recurring weekly schedule based on business operating hours.
+          } @else {
+          Choose how your event scheduling works.
+          }
+        </small>
+
+        @if (eventForm.controls['eventType'].invalid && (eventForm.controls['eventType'].touched ||
+        eventForm.controls['eventType'].dirty)){
+        <div class="text-danger">
+          Please select an event type
+        </div>
+        }
+      </div>
+
+      <div class="col-12">
+        <h6 class="border-bottom pb-2 mt-3">Booking Rules</h6>
+      </div>
+
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Limit bookings per Identity for this event</label>
+        <select class="form-select" formControlName="noMaxBookingsPerIdentity">
+          <option [ngValue]="false">
+            With Limit
+          </option>
+          <option [ngValue]="true">
+            No limit
+          </option>
+        </select>
+        @if (hasMaxBookingsPerIdentity) {
+        <input type="number" class="form-control form-control-sm" min="1" placeholder="Enter limit"
+          formControlName="maxBookingsPerIdentity" />
+        @if (eventForm.get('maxBookingsPerIdentity')?.hasError('required') &&
+        (eventForm.get('maxBookingsPerIdentity')?.touched ||
+        eventForm.get('maxBookingsPerIdentity')?.dirty)){
+        <div class="text-danger">
+          Please enter the maximum number of bookings allowed
+        </div>
+        }
+        @if (eventForm.get('maxBookingsPerIdentity')?.hasError('min') &&
+        (eventForm.get('maxBookingsPerIdentity')?.touched
+        ||
+        eventForm.get('maxBookingsPerIdentity')?.dirty)){
+        <div class="text-danger">
+          Minimum allowed is 1 booking
+        </div>
+        }
+        }
+      </div>
+
+
+      <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeWizard()">
+          Cancel
+        </button>
+
+        <button class="btn btn-primary" type="submit">
+          Save Event
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

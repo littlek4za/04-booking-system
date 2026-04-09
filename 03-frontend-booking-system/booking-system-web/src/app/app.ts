@@ -11,8 +11,16 @@ import { AsyncPipe } from '@angular/common';
 })
 export class App {
   protected readonly title = signal('booking-system-web');
+  isNavbarOpen = signal(false);
 
   constructor(public authService: AuthService) { }
 
-  
+  toggleNavbar() {
+    this.isNavbarOpen.update(value => !value);
+  }
+
+  closeNavbar() {
+    this.isNavbarOpen.set(false);
+  }
+
 }
