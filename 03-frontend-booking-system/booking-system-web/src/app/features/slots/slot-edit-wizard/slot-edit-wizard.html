@@ -180,7 +180,7 @@
             }
 
             @if (eventType == EventType.FIXED) {
-            <div class="col-md-4 mb-2">
+            <div class="col-12 col-md-6 mb-2">
                 <mat-form-field appearance="outline" class="w-100">
                     <mat-label>Select Start Date</mat-label>
 
@@ -192,18 +192,22 @@
                     <mat-datepicker #startPicker></mat-datepicker>
                 </mat-form-field>
             </div>
+            <div class="col-12 col-md-6 mb-2">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Start Time</mat-label>
 
-            <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Start Time</mat-label>
+                    <mat-select formControlName="startTime">
+                        @for (t of starttimeOptionForFixedEvent; track $index) {
+                        <mat-option [value]="t">
+                            {{ t }}
+                        </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
 
-                <mat-select formControlName="startTime">
-                    <mat-option *ngFor="let t of timeOption" [value]="t">
-                        {{ t }}
-                    </mat-option>
-                </mat-select>
-            </mat-form-field>
 
-            <div class="col-md-4 mb-2">
+            <div class="col-12 col-md-6 mb-2">
                 <mat-form-field appearance="outline" class="w-100">
                     <mat-label>Select End Date</mat-label>
 
@@ -216,29 +220,30 @@
                     <mat-datepicker #endPicker></mat-datepicker>
                 </mat-form-field>
             </div>
+            <div class="col-12 col-md-6 mb-2">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>End Time</mat-label>
 
-            <mat-form-field appearance="outline" class="w-100">
-                <mat-label>End Time</mat-label>
+                    <mat-select formControlName="endTime">
+                        @for (t of endTimeOptionsForFixedEvent; track $index) {
+                        <mat-option [value]="t.value" [disabled]="t.disabled">
+                            {{ t.value }}
+                        </mat-option>
+                        }
+                    </mat-select>
 
-                <mat-select formControlName="endTime">
-                    @for (t of endTimeOptionsWithState; track $index) {
-                    <mat-option [value]="t.value" [disabled]="t.disabled">
-                        {{ t.value }}
-                    </mat-option>
+                    @if (eventType == EventType.FIXED &&
+                    (!slotForm.get('startDate')?.value ||
+                    !slotForm.get('startTime')?.value ||
+                    !slotForm.get('endDate')?.value) &&
+                    slotForm.controls['endTime'].touched) {
+                    <mat-hint class="text-danger">
+                        Please select Start Date, Start Time and End Date first.
+                    </mat-hint>
                     }
-                </mat-select>
 
-                @if (eventType == EventType.FIXED &&
-                (!slotForm.get('startDate')?.value ||
-                !slotForm.get('startTime')?.value ||
-                !slotForm.get('endDate')?.value) &&
-                slotForm.controls['endTime'].touched) {
-                <mat-hint class="text-danger">
-                    Please select Start Date, Start Time and End Date first.
-                </mat-hint>
-                }
-
-            </mat-form-field>
+                </mat-form-field>
+            </div>
 
             @if(slotForm.hasError('endBeforeStart') && (slotForm.controls['endDate'].touched ||
             slotForm.controls['endTime'].dirty)){
@@ -256,53 +261,152 @@
             }
 
             @if (eventType == EventType.FLEXIBLE){
-            <div class="col-md-4 mb-2">
+            <div class="col-12 mb-2">
                 <div [formGroup]="flexibleDaysHoursForm">
                     <div formArrayName="intervals">
-                        @for (interval of getTimeIntervals().controls; track interval; let i = $index) {
-                        <div [formGroup]="getTimeIntervalGroup(i)">
-                            <label class="form-label">Start Time</label>
-                            <input type="datetime-local" formControlName="open" step="300" />
-                            <label class="form-label">End Time</label>
-                            <input type="datetime-local" formControlName="close" step="300" />
-                            <button type="button" (click)="removeTimeInterval(i)">Delete</button>
-                        </div>
-                        @if (getTimeIntervalGroup(i).hasError('endBeforeStart') &&
-                        (getTimeIntervalGroup(i).get('open')?.touched ||
-                        getTimeIntervalGroup(i).get('open')?.dirty) &&
-                        (getTimeIntervalGroup(i).get('close')?.touched ||
-                        getTimeIntervalGroup(i).get('close')?.dirty)) {
-                        <div class="text-danger">
-                            End time must be later than start time
+                        @for (interval of getFlexibleIntervals().controls; track interval; let i = $index) {
+                        <div [formGroup]="getFlexibleInterval(i)" class="border rounded p-3 mb-3">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="mb-0">Event Time - Interval {{ i + 1 }}</h6>
+                                </div>
+                                <!-- start time input -->
+                                <!-- original -->
+                                <!-- <input type="datetime-local" formControlName="open" step="300" /> -->
+                                <!-- new testing -->
+                                <div class="col-12 col-md-6">
+                                    <mat-form-field appearance="outline" class="w-100">
+                                        <mat-label>Select Start Date</mat-label>
+
+                                        <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+
+                                        <mat-datepicker-toggle matSuffix [for]="startPicker">
+                                        </mat-datepicker-toggle>
+
+                                        <mat-datepicker #startPicker></mat-datepicker>
+                                    </mat-form-field>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <mat-form-field appearance="outline" class="w-100">
+                                        <mat-label>Start Time</mat-label>
+                                        <mat-select formControlName="startTime">
+                                            @for (t of startTimeOptionForFlexibleEvent; track $index) {
+                                            <mat-option [value]="t">
+                                                {{ t }}
+                                            </mat-option>
+                                            }
+                                        </mat-select>
+                                    </mat-form-field>
+                                </div>
+
+                                <!-- end time input -->
+                                <!-- original -->
+                                <!-- <input type="datetime-local" formControlName="close" step="300" /> -->
+
+                                <!-- new testing -->
+                                <div class="col-12 col-md-6">
+                                    <mat-form-field appearance="outline" class="w-100">
+                                        <mat-label>Select End Date</mat-label>
+
+                                        <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+
+                                        <mat-datepicker-toggle matSuffix [for]="endPicker">
+                                        </mat-datepicker-toggle>
+
+                                        <mat-datepicker #endPicker></mat-datepicker>
+                                    </mat-form-field>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <mat-form-field appearance="outline" class="w-100">
+                                        <mat-label>End Time</mat-label>
+
+                                        <mat-select formControlName="endTime">
+                                            @for (t of interval.get('endTimeOptions')?.value; track $index) {
+                                            <mat-option [value]="t.value" [disabled]="t.disabled">
+                                                {{ t.value }}
+                                            </mat-option>
+                                            }
+                                        </mat-select>
+
+                                        @if (eventType == EventType.FLEXIBLE &&
+                                        (!getFlexibleInterval(i).get('startDate')?.value ||
+                                        !getFlexibleInterval(i).get('startTime')?.value ||
+                                        !getFlexibleInterval(i).get('endDate')?.value) &&
+                                        getFlexibleInterval(i).controls['endTime'].touched) {
+                                        <mat-hint class="text-danger">
+                                            Please select Start Date, Start Time and End Date first.
+                                        </mat-hint>
+                                        }
+
+                                    </mat-form-field>
+                                </div>
+
+                            </div>
+
+                            @if (getFlexibleInterval(i).hasError('endBeforeStart') &&
+                            (
+                            (getFlexibleInterval(i).get('startTime')?.touched ||
+                            getFlexibleInterval(i).get('startTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('startDate')?.touched ||
+                            getFlexibleInterval(i).get('startDate')?.dirty) ||
+                            (getFlexibleInterval(i).get('endTime')?.touched ||
+                            getFlexibleInterval(i).get('endTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('endDate')?.touched ||
+                            getFlexibleInterval(i).get('endDate')?.dirty)
+                            )) {
+                            <div class="text-danger mt-2">
+                                End time must be later than start time
+                            </div>
+                            }
+                            @if (getFlexibleInterval(i).hasError('rangeTooShortForInterval') &&
+                            (
+                            (getFlexibleInterval(i).get('startTime')?.touched ||
+                            getFlexibleInterval(i).get('startTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('startDate')?.touched ||
+                            getFlexibleInterval(i).get('startDate')?.dirty) ||
+                            (getFlexibleInterval(i).get('endTime')?.touched ||
+                            getFlexibleInterval(i).get('endTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('endDate')?.touched ||
+                            getFlexibleInterval(i).get('endDate')?.dirty)
+                            )
+                            ) {
+                            <div class="text-danger mt-2">
+                                End time must be at least {{ slotForm.value.slotIntervalMinutes }} minutes after start
+                                time
+                            </div>
+                            }
+
+                            @if ((
+                            getFlexibleInterval(i).get('startTime')?.hasError('required') ||
+                            getFlexibleInterval(i).get('startDate')?.hasError('required') ||
+                            getFlexibleInterval(i).get('endTime')?.hasError('required') ||
+                            getFlexibleInterval(i).get('endDate')?.hasError('required')
+                            ) && (
+                            (getFlexibleInterval(i).get('startTime')?.touched ||
+                            getFlexibleInterval(i).get('startTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('startDate')?.touched ||
+                            getFlexibleInterval(i).get('startDate')?.dirty) ||
+                            (getFlexibleInterval(i).get('endTime')?.touched ||
+                            getFlexibleInterval(i).get('endTime')?.dirty) ||
+                            (getFlexibleInterval(i).get('endDate')?.touched ||
+                            getFlexibleInterval(i).get('endDate')?.dirty)
+                            ))
+                            {
+                            <div class="text-danger mt-2">
+                                Start (Date/Time) and End (Date/Time) is required
+                            </div>
+                            }
+                            <div class="d-flex justify-content-start mt-3">
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                    (click)="removeFlexibleInterval(i)"
+                                    [disabled]="getFlexibleIntervals().length === 1">Delete</button>
+                            </div>
+
                         </div>
                         }
-                        @if (getTimeIntervalGroup(i).hasError('rangeTooShortForInterval') &&
-                        (getTimeIntervalGroup(i).get('open')?.touched ||
-                        getTimeIntervalGroup(i).get('open')?.dirty) &&
-                        (getTimeIntervalGroup(i).get('close')?.touched ||
-                        getTimeIntervalGroup(i).get('close')?.dirty)) {
-                        <div class="text-danger">
-                            End time must be at least {{ slotForm.value.slotIntervalMinutes }} minutes after start time
-                        </div>
-                        }
-                        @if ((
-                        getTimeIntervalGroup(i).get('open')?.hasError('required') ||
-                        getTimeIntervalGroup(i).get('close')?.hasError('required')
-                        ) &&
-                        (
-                        submitted ||
-                        getTimeIntervalGroup(i).get('open')?.touched ||
-                        getTimeIntervalGroup(i).get('open')?.dirty ||
-                        getTimeIntervalGroup(i).get('close')?.touched ||
-                        getTimeIntervalGroup(i).get('close')?.dirty
-                        ))
-                        {
-                        <div class="text-danger">
-                            Start Time and End Time is required
-                        </div>
-                        }
-                        }
-                        <button type="button" (click)="addTimeInterval()">+ Add Interval</button>
+
                         @if(flexibleDaysHoursForm.hasError('timeOverlapError')&&
                         (flexibleDaysHoursForm.touched ||
                         flexibleDaysHoursForm.dirty)){
@@ -310,17 +414,21 @@
                             Start Time and End Time of both interval cannot overlap.
                         </div>
                         }
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addFlexibleInterval()">+
+                            Add
+                            Interval</button>
                     </div>
                 </div>
             </div>
             }
 
             @if (eventType == EventType.BUSINESS){
-            <div class="col-md-4 mb-2">
+            <div class="col-12 mb-2">
                 <div [formGroup]="businessDaysHoursForm">
                     <div formArrayName="days">
                         <div class="row mt-2">
-                            @for (day of getDaysArray().controls; track $index; let i = $index) {
+                            @for (day of getBusinessDays().controls; track $index; let i = $index) {
                             <div [formGroupName]="i">
                                 <label>
                                     <input type="checkbox" formControlName="enabled" />
@@ -328,49 +436,78 @@
                                 </label>
                                 <div [hidden]="!day.get('enabled')?.value">
                                     <div formArrayName="intervals">
-                                        @for (interval of getIntervalsArray(i).controls; track $index; let j = $index) {
+                                        @for (interval of getBusinessDayIntervals(i).controls; track $index; let j =
+                                        $index) {
                                         <div [formGroupName]="j">
-                                            <label class="form-label">Start Time</label>
+                                            <!-- new -->
+                                            <div class="col-12 col-md-6">
+                                                <mat-form-field appearance="outline" class="w-100">
+                                                    <mat-label>Start Time</mat-label>
+                                                    <mat-select formControlName="open">
+                                                        @for (t of startTimeOptionForBusinessEvent; track $index) {
+                                                        <mat-option [value]="t">
+                                                            {{ t }}
+                                                        </mat-option>
+                                                        }
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <mat-form-field appearance="outline" class="w-100">
+                                                    <mat-label>End Time</mat-label>
+
+                                                    <mat-select formControlName="close">
+                                                        @for (t of interval.get('closeTimeOptions')?.value; track $index)
+                                                        {
+                                                        <mat-option [value]="t.value" [disabled]="t.disabled">
+                                                            {{ t.value }}
+                                                        </mat-option>
+                                                        }
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </div>
+                                            <!-- old -->
+                                            <!-- <label class="form-label">Start Time</label>
                                             <input type="time" formControlName="open" />
                                             <label class="form-label">End Time</label>
-                                            <input type="time" formControlName="close" />
-                                            <button type="button" (click)="removeIntervalGroup(i, j)">Delete</button>
+                                            <input type="time" formControlName="close" /> -->
+                                            <button type="button" (click)="removeBusinessinterval(i, j)">Delete</button>
                                         </div>
-                                        @if (getIntervalGroup(i,j).hasError('endBeforeStart') &&
-                                        (getIntervalGroupControl(i,j,'open')?.touched ||
-                                        getIntervalGroupControl(i,j,'open')?.dirty) &&
-                                        (getIntervalGroupControl(i,j,'close')?.touched ||
-                                        getIntervalGroupControl(i,j,'close')?.dirty)) {
+                                        @if (getBusinessInterval(i,j).hasError('endBeforeStart') &&
+                                        (getBusinessIntervalControl(i,j,'open')?.touched ||
+                                        getBusinessIntervalControl(i,j,'open')?.dirty) &&
+                                        (getBusinessIntervalControl(i,j,'close')?.touched ||
+                                        getBusinessIntervalControl(i,j,'close')?.dirty)) {
                                         <div class="text-danger">
                                             End time must be later than start time
                                         </div>
                                         }
-                                        @if (getIntervalGroup(i,j).hasError('rangeTooShortForInterval') &&
-                                        (getIntervalGroupControl(i,j,'open')?.touched ||
-                                        getIntervalGroupControl(i,j,'open')?.dirty) &&
-                                        (getIntervalGroupControl(i,j,'close')?.touched ||
-                                        getIntervalGroupControl(i,j,'close')?.dirty)) {
+                                        @if (getBusinessInterval(i,j).hasError('rangeTooShortForInterval') &&
+                                        (getBusinessIntervalControl(i,j,'open')?.touched ||
+                                        getBusinessIntervalControl(i,j,'open')?.dirty) &&
+                                        (getBusinessIntervalControl(i,j,'close')?.touched ||
+                                        getBusinessIntervalControl(i,j,'close')?.dirty)) {
                                         <div class="text-danger">
                                             Interval is too short for the minimum slot interval
                                         </div>
                                         }
-                                        @if ((getIntervalGroupControl(i,j,'open')?.hasError('required') &&
-                                        (getIntervalGroupControl(i,j,'open')?.touched ||
-                                        getIntervalGroupControl(i,j,'open')?.dirty)) ||
-                                        (getIntervalGroupControl(i,j,'close')?.hasError('required') &&
-                                        (getIntervalGroupControl(i,j,'close')?.touched ||
-                                        getIntervalGroupControl(i,j,'close')?.dirty))) {
+                                        @if ((getBusinessIntervalControl(i,j,'open')?.hasError('required') &&
+                                        (getBusinessIntervalControl(i,j,'open')?.touched ||
+                                        getBusinessIntervalControl(i,j,'open')?.dirty)) ||
+                                        (getBusinessIntervalControl(i,j,'close')?.hasError('required') &&
+                                        (getBusinessIntervalControl(i,j,'close')?.touched ||
+                                        getBusinessIntervalControl(i,j,'close')?.dirty))) {
                                         <div class="text-danger">
                                             Start Time and End Time is required
                                         </div>
                                         }
                                         }
-                                        <button type="button" (click)="addIntervalGroup(i)">+ Add Interval</button>
+                                        <button type="button" (click)="addBusinessInterval(i)">+ Add Interval</button>
                                     </div>
                                 </div>
-                                @if(getDaysArray().at(i).hasError('timeOverlapError')&&
-                                (getDaysArray().at(i).touched ||
-                                getDaysArray().at(i).dirty)){
+                                @if(getBusinessDays().at(i).hasError('timeOverlapError')&&
+                                (getBusinessDays().at(i).touched ||
+                                getBusinessDays().at(i).dirty)){
                                 <div class="text-danger">
                                     Start Time and End Time of both interval cannot overlap.
                                 </div>
@@ -454,8 +591,8 @@
             </div>
             @if (showUpdateWarning) {
             <div class="alert alert-danger mt-2">
-                Updating date or time only applies to future bookings. Existing bookings will keep their original
-                schedule.
+                Updating the date or time only applies to future bookings. Existing bookings will keep their original
+                schedule. Please review and confirm before proceeding.
             </div>
             }
 

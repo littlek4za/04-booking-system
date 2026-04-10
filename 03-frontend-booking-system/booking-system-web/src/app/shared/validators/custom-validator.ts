@@ -68,7 +68,7 @@ function combineDateAndTime(startDate: Date, startTime: string) {
     const result = new Date(startDate);
     result.setHours(hours, minutes, 0, 0);
 
-    return result
+    return result;
 }
 
 export function divisibleBy5Validator(abstractControl: AbstractControl) {
@@ -79,24 +79,57 @@ export function divisibleBy5Validator(abstractControl: AbstractControl) {
     return value % 5 === 0 ? null : { notDivisibleBy5: true };
 }
 
-export function timeRangeValidator(getSlotIntervalMinutes?: () => number | null) {
+export function timeRangeValidatorForFlexible (getSlotIntervalMinutes?: () => number | null) {
     return (abstractControl: AbstractControl): ValidationErrors | null => {
-        const openTime = abstractControl.get('open')?.value;
-        const closeTime = abstractControl.get('close')?.value;
 
-        if (!openTime || !closeTime) {
+        const startDate = abstractControl.get('startDate')?.value;
+        const startTime = abstractControl.get('startTime')?.value;
+        const endDate = abstractControl.get('endDate')?.value;
+        const endTime = abstractControl.get('endTime')?.value;
+
+        if (!startDate || !startTime || !endDate || !endTime) {
             return null;
         }
-        const openMinutes = timeToMinutes(openTime);
-        const closeMinutes = timeToMinutes(closeTime);
 
-        if (openMinutes >= closeMinutes) {
+        const combineStartTime = combineDateAndTime(startDate, startTime);
+        const combineEndTime = combineDateAndTime(endDate, endTime);
+        const startMinutes = timeToMinutes(combineStartTime.toISOString());
+        const endMinutes = timeToMinutes(combineEndTime.toISOString());
+
+        if (startMinutes >= endMinutes) {
             return { endBeforeStart: true };
         }
 
-        if (getSlotIntervalMinutes) {
-            const minInterval = getSlotIntervalMinutes();
-            if (minInterval && closeMinutes - openMinutes < minInterval) {
+        if (getSlotIntervalMinutes != null) {
+            const minInterval = Number(getSlotIntervalMinutes?.());
+            if (minInterval > 0 && endMinutes - startMinutes < minInterval) {
+                return { rangeTooShortForInterval: true };
+            }
+        }
+        return null;
+    }
+}
+
+export function timeRangeValidatorForBusiness (getSlotIntervalMinutes?: () => number | null) {
+    return (abstractControl: AbstractControl): ValidationErrors | null => {
+
+        const open = abstractControl.get('open')?.value;
+        const close = abstractControl.get('close')?.value;
+
+        if (!open  || !close) {
+            return null;
+        }
+
+        const startMinutes = timeToMinutes(open);
+        const endMinutes = timeToMinutes(close);
+
+        if (startMinutes >= endMinutes) {
+            return { endBeforeStart: true };
+        }
+
+        if (getSlotIntervalMinutes != null) {
+            const minInterval = Number(getSlotIntervalMinutes?.());
+            if (minInterval > 0 && endMinutes - startMinutes < minInterval) {
                 return { rangeTooShortForInterval: true };
             }
         }
@@ -121,13 +154,21 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
 
     const ranges = intervalsArray.controls
         .map(ctrl => {
-            const open = ctrl.get('open')?.value;
-            const close = ctrl.get('close')?.value;
-            if (!open || !close) return null;
+            const startDate = ctrl.get('startDate')?.value;
+            const startTime = ctrl.get('startTime')?.value;
+            const endDate = ctrl.get('endDate')?.value;
+            const endTime = ctrl.get('endTime')?.value;
+
+            if (!startDate || !startTime || !endDate || !endTime) return null;
+
+            const combineStartTime = combineDateAndTime(startDate, startTime);
+            const combineEndTime = combineDateAndTime(endDate, endTime);
+            const startMinutes = timeToMinutes(combineStartTime.toISOString());
+            const endMinutes = timeToMinutes(combineEndTime.toISOString());
 
             return {
-                start: timeToMinutes(open),
-                end: timeToMinutes(close)
+                start: startMinutes,
+                end: endMinutes
             };
         })
         .filter(Boolean) as { start: number; end: number }[];
@@ -143,6 +184,7 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
 
     return null;
 }
+
 function timeToMinutes(value: string) {
 
     if (value.includes('T')) {
