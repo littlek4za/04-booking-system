@@ -7,7 +7,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { SlotService } from '@features/slots/slot-service';
 import { logControls, logFormErrors } from '@shared/utils/logging-utils';
 import { InvitationRequestDto } from '../dtos/invitation-request-dto';
-import { maxUsagePerIdentityExceedMaxUsage} from '@shared/validators/custom-validator';
+import { maxUsagePerIdentityExceedMaxUsage } from '@shared/validators/custom-validator';
 import { InvitationService } from '../invitation-service';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 
@@ -165,7 +165,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     this.invitationForm.get('maxUsage')?.updateValueAndValidity();
   }
 
-  get hasMaxUsagePerIdentity():boolean {
+  get hasMaxUsagePerIdentity(): boolean {
     return this.invitationForm.getRawValue().noMaxUsagePerIdentity === false;
   }
 
@@ -227,12 +227,12 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     invitationRequestDto.maxUsagePerIdentity = this.mapNullToUndefined(this.invitationForm.get('maxUsagePerIdentity')?.value);
     invitationRequestDto.requiredLogin = this.invitationForm.get('requiredLogin')?.value;
     invitationRequestDto.slotIdList = this.invitationForm.get('selectedSlotIds')?.value;
-    if(this.mode==='CREATE' && this.eventId != null && this.eventType != null && this.slotId != null){
+    if (this.mode === 'CREATE' && this.eventId != null && this.eventType != null && this.slotId != null) {
       invitationRequestDto.slotIncludeMode = this.invitationForm.getRawValue().slotIncludeMode;
     } else {
       invitationRequestDto.slotIncludeMode = this.invitationForm.get('slotIncludeMode')?.value;
     }
-    
+
 
     // update date with 23:59
     const dateStr = this.invitationForm.value.expiresAt;
@@ -261,5 +261,23 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   private mapNullToUndefined<T>(value: T | null): T | undefined {
     return value === null ? undefined : value;
+  }
+
+  getSlotIncludeRemark(): string {
+    const value = this.invitationForm.get('slotIncludeMode')?.value;
+
+    switch (value) {
+      case this.includeMode.ALL_AND_FUTURE:
+        return 'All existing slots will be included, along with any new slots created in the future.';
+
+      case this.includeMode.ALL_CURRENT:
+        return 'Only currently available slots will be included. Future slots will not be included.';
+
+      case this.includeMode.SELECTED:
+        return '';
+
+      default:
+        return '';
+    }
   }
 }

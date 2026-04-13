@@ -5,7 +5,6 @@ import { Clipboard } from '@angular/cdk/clipboard'
 import { SlotIncludeMode } from '../dtos/slot-include-mode';
 import { InvitationResponseDto } from '../dtos/invitation-response-dto';
 import { Subject, takeUntil } from 'rxjs';
-import { InvitationRequestDto } from '../dtos/invitation-request-dto';
 
 @Component({
   selector: 'app-invitation-dashboard',
@@ -20,6 +19,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
   // IO
   @Input() eventId!: number;
   @Input() slotId!: number;
+  @Input() eventName!: string | null;
   @Output() close = new EventEmitter<void>();
   invitationUrl = `http://localhost:4300/invitation`
 

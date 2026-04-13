@@ -61,7 +61,7 @@
                         <span class="badge bg-light text-dark">
                             {{slot.bookingsCount}} {{slot.bookingsCount <= 1 ? "booking" : "bookings" }}</span>
                                 <button type="button" class="btn btn-sm btn-outline-dark"
-                                    (click)="openBookingManagerDashboard(slot.id)">
+                                    (click)="openBookingManagerDashboard(slot.id, slot.slotName)">
                                     Manage {{slot.bookingsCount <= 1 ? "Booking" : "Bookings" }} </button>
                     </div>
                 </td>
@@ -115,7 +115,7 @@
 @if (showInvitationDashboard === true && slotId != null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId"
+    <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId" [eventName]="eventName"
         (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }
@@ -131,7 +131,7 @@
 @if(showBookingManagerDashboard === true && slotId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-booking-manager-dashboard [slotId]="slotId"
+    <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName"
         (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
 </div>
 }

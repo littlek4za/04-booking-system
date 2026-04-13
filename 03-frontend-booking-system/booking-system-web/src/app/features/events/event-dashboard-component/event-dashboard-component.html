@@ -61,7 +61,8 @@
               (click)="openInvitationWizard(event.id, event.eventType)">
               Create Invitation
             </button>
-            <button type="button" class="btn btn-sm btn-outline-dark" (click)="openInvitationDashboard(event.id)">
+            <button type="button" class="btn btn-sm btn-outline-dark"
+              (click)="openInvitationDashboard(event.id,event.eventName)">
               View Invitation
             </button>
           </div>
@@ -136,7 +137,7 @@
           Manage Slot
         </a>
 
-        <button class="btn btn-sm btn-outline-primary" (click)="openInvitationDashboard(event.id)">
+        <button class="btn btn-sm btn-outline-primary" (click)="openInvitationDashboard(event.id, event.eventName)">
           View Invitation
         </button>
 
@@ -187,6 +188,7 @@
 @if (showInvitationDashboard === true && updateEventId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-invitation-dashboard [eventId]="updateEventId!" (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+  <app-invitation-dashboard [eventId]="updateEventId" [eventName]="updateEventName"
+    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }

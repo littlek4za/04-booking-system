@@ -45,8 +45,8 @@
                     <input class="form-check-input" type="checkbox" (change)="onSlotToggle(slot.id, $event)">
                     <label class="form-check-label">{{slot.slotName}}</label>
                 </div>
-
                 }
+
                 @if (invitationForm.get('selectedSlotIds')?.hasError('required') &&
                 (invitationForm.get('selectedSlotIds')?.touched ||
                 invitationForm.get('selectedSlotIds')?.dirty)){
@@ -55,6 +55,12 @@
                 </div>
                 }
                 }
+                }
+                @if(invitationForm.get('slotIncludeMode')?.value === includeMode.ALL_AND_FUTURE ||
+                invitationForm.get('slotIncludeMode')?.value === includeMode.ALL_CURRENT){
+                <div class="form-text text-muted">
+                    {{ getSlotIncludeRemark() }}
+                </div>
                 }
             </div>
             <div class="col-12">

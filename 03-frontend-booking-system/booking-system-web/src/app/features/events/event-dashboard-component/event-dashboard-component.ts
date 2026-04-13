@@ -30,6 +30,7 @@ export class EventDashboardComponent {
   
   // field value
   updateEventId: number | null = null;
+  updateEventName: string | null = null;
   eventId: number | null = null;
   eventType: EventTypeModel | null = null;
 
@@ -96,8 +97,9 @@ export class EventDashboardComponent {
     this.showEventWizard = false;
   }
 
-  openInvitationDashboard(eventId: number){
+  openInvitationDashboard(eventId: number, eventName: string){
     this.updateEventId = eventId;
+    this.updateEventName = eventName;
     this.showInvitationDashboard = true;
   }
 

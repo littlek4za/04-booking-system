@@ -17,6 +17,8 @@ export class BookingManagerDashboard implements OnChanges {
   bookingListBySlotId = toSignal(this.bookingService.bookingListBySlotId$, { initialValue: [] as BookingResponseDto[] });
 
   @Input() slotId!: number;
+  @Input() slotName!: string | null;
+  @Input() eventName!: string | null;
   @Output() close = new EventEmitter<void>();
 
   statusClassMap: Record<string, string> = {

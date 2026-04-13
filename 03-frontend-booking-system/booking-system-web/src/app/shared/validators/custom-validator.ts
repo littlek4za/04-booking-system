@@ -137,7 +137,7 @@ export function timeRangeValidatorForBusiness (getSlotIntervalMinutes?: () => nu
     }
 }
 
-export function timeOverlapValidator(abstractControl: AbstractControl): ValidationErrors | null {
+export function timeOverlapValidatorForFlexible(abstractControl: AbstractControl): ValidationErrors | null {
     const intervalsArray = abstractControl.get('intervals') as FormArray;
 
     if (!intervalsArray || intervalsArray.length < 2) {
@@ -145,7 +145,7 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
     }
 
     const hasTimeRangeInvalid = intervalsArray.controls.some(control =>
-        control.hasError('timeRangeInvalid')
+        control.hasError('endBeforeStart') || control.hasError('rangeTooShortForInterval')
     );
 
     if (hasTimeRangeInvalid) {
@@ -169,6 +169,50 @@ export function timeOverlapValidator(abstractControl: AbstractControl): Validati
             return {
                 start: startMinutes,
                 end: endMinutes
+            };
+        })
+        .filter(Boolean) as { start: number; end: number }[];
+
+    // Sort by start time
+    ranges.sort((a, b) => a.start - b.start);
+
+    for (let i = 0; i < ranges.length - 1; i++) {
+        if (ranges[i].end > ranges[i + 1].start) {
+            return { timeOverlapError: true };
+        }
+    }
+
+    return null;
+}
+
+export function timeOverlapValidatorForBusiness(abstractControl: AbstractControl): ValidationErrors | null {
+    const intervals = abstractControl.get('intervals') as FormArray;
+
+    if (!intervals || intervals.length < 2) {
+        return null;
+    }
+
+    const hasTimeRangeInvalid = intervals.controls.some(control =>
+        control.hasError('endBeforeStart') || control.hasError('rangeTooShortForInterval')
+    );
+
+    if (hasTimeRangeInvalid) {
+        return null;
+    }
+
+    const ranges = intervals.controls
+        .map(ctrl => {
+            const open = ctrl.get('open')?.value;
+            const close = ctrl.get('close')?.value;
+
+            if (!open || !close) return null;
+
+            const openMinutes = timeToMinutes(open);
+            const closeMinutes = timeToMinutes(close);
+
+            return {
+                start: openMinutes,
+                end: closeMinutes
             };
         })
         .filter(Boolean) as { start: number; end: number }[];

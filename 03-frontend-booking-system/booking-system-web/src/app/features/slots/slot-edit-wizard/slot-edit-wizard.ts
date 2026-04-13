@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
 import { SlotRequestDto } from '../dtos/slot-request-dto';
-import { dateTimeRangeValidator, divisibleBy5Validator, timeOverlapValidator, timeRangeValidatorForBusiness, timeRangeValidatorForFlexible } from '@shared/validators/custom-validator';
+import { dateTimeRangeValidator, divisibleBy5Validator, timeOverlapValidatorForBusiness, timeOverlapValidatorForFlexible, timeRangeValidatorForBusiness, timeRangeValidatorForFlexible } from '@shared/validators/custom-validator';
 import { CommonModule } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
 import { merge, Subject, takeUntil } from 'rxjs';
@@ -212,7 +212,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private initFlexibleDaysHoursForm() {
     this.flexibleDaysHoursForm = this.formBuilder.group({
       intervals: this.formBuilder.array([])
-    }, { validators: timeOverlapValidator }
+    }, { validators: timeOverlapValidatorForFlexible }
     );
 
     if (this.mode === 'CREATE') {
@@ -310,22 +310,22 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       days: this.formBuilder.array([])
     });
 
-    const daysArray = this.businessDaysHoursForm.get('days') as FormArray;
+    const days = this.businessDaysHoursForm.get('days') as FormArray;
 
     for (let i = 0; i < 7; i++) {
-      daysArray.push(
+      days.push(
         this.formBuilder.group({
           day: [i],
           enabled: [true],
           intervals: this.formBuilder.array([])
-        }, { validators: timeOverlapValidator })
+        }, { validators: timeOverlapValidatorForBusiness })
       );
-      const intervalsArray = daysArray.at(i).get('intervals') as FormArray;
-      const enabledCtrl = daysArray.at(i).get('enabled');
+      const intervals = days.at(i).get('intervals') as FormArray;
+      const enabledCtrl = days.at(i).get('enabled');
       if (this.mode === 'CREATE') {
         this.addBusinessInterval(i);
       }
-      this.setupBusinessDayEnabledWatcher(enabledCtrl, intervalsArray, i);
+      this.setupBusinessDayEnabledWatcher(enabledCtrl, intervals, i);
     }
   }
 
@@ -712,24 +712,25 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   private prefillBusinessDaysHoursForm(slot: SlotResponseDto) {
-    const daysArray = this.getBusinessDays();
+    const days = this.getBusinessDays();
 
-    for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
-      const dayGroup = daysArray.at(dayIndex);
-      const intervalsArray = dayGroup.get('intervals') as FormArray;
-      intervalsArray.clear();
+    for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+      const day = days.at(dayIndex);
+      const intervals = day.get('intervals') as FormArray;
+      intervals.clear();
 
-      const slotDayIntervals = slot.businessDaysHours?.[dayIndex] ?? [];
+      const inputIntervals = slot.businessDaysHours?.[dayIndex] ?? [];
 
-      if (slotDayIntervals.length > 0) {
-        dayGroup.get('enabled')?.setValue(true, { emitEvent: false });
+      if (inputIntervals.length > 0) {
+        day.get('enabled')?.setValue(true, { emitEvent: false });
 
-        slotDayIntervals.forEach(item => {
-          intervalsArray.push(
+        inputIntervals.forEach(item => {
+          const group =
             this.formBuilder.group(
               {
-                open: [item.open, Validators.required],
-                close: [item.close, Validators.required]
+                open: ['', Validators.required],
+                close: ['', Validators.required],
+                closeTimeOptions: [[]]
               },
               {
                 validators: timeRangeValidatorForBusiness(
@@ -737,14 +738,23 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
                 )
               }
             )
-          );
+          intervals.push(group);
+
+          this.watcherForBusinessInterval(group);
+
+          group.patchValue({
+            open: item.open,
+            close: item.close
+          },{emitEvent: true});
+
+          group.markAllAsTouched();
         });
 
-        intervalsArray.enable({ emitEvent: false });
+        intervals.enable({ emitEvent: false });
 
       } else {
-        dayGroup.get('enabled')?.setValue(false, { emitEvent: false });
-        intervalsArray.disable({ emitEvent: false });
+        day.get('enabled')?.setValue(false, { emitEvent: false });
+        intervals.disable({ emitEvent: false });
       }
     }
 
@@ -924,7 +934,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
     if (this.eventType == EventTypeModel.BUSINESS) {
       this.businessDaysHoursForm.markAllAsTouched();
-      this.getFlexibleIntervals().controls.forEach(group => {
+      this.getBusinessDays().controls.forEach(group => {
         group.updateValueAndValidity();
       });
       if (this.businessDaysHoursForm.invalid) {

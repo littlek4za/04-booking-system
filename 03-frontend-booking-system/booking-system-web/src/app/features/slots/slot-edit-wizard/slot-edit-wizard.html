@@ -457,7 +457,8 @@
                                                     <mat-label>End Time</mat-label>
 
                                                     <mat-select formControlName="close">
-                                                        @for (t of interval.get('closeTimeOptions')?.value; track $index)
+                                                        @for (t of interval.get('closeTimeOptions')?.value; track
+                                                        $index)
                                                         {
                                                         <mat-option [value]="t.value" [disabled]="t.disabled">
                                                             {{ t.value }}
@@ -488,7 +489,8 @@
                                         (getBusinessIntervalControl(i,j,'close')?.touched ||
                                         getBusinessIntervalControl(i,j,'close')?.dirty)) {
                                         <div class="text-danger">
-                                            Interval is too short for the minimum slot interval
+                                            End time must be at least {{ slotForm.value.slotIntervalMinutes }} minutes
+                                            after start time
                                         </div>
                                         }
                                         @if ((getBusinessIntervalControl(i,j,'open')?.hasError('required') &&

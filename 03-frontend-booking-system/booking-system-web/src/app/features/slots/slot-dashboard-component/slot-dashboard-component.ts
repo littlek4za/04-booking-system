@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SlotService } from '../slot-service';
@@ -38,6 +38,10 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   showInvitationWizard: boolean = false;
   showInvitationDashboard: boolean = false;
 
+  // IO for component
+  slotName: string | null = null;
+  eventName: string|null = null;
+
   // for destroy usage
   private destroy$ = new Subject<void>();
 
@@ -56,29 +60,30 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   private refreshSlotListWithEventId() {
     this.route.paramMap
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(
-      paramMap => {
-        this.eventId = +paramMap.get('id')!;
-        if (this.eventId) {
-          this.slotService.triggerRefresh(this.eventId);
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
+        paramMap => {
+          this.eventId = +paramMap.get('id')!;
+          if (this.eventId) {
+            this.slotService.triggerRefresh(this.eventId);
+          }
         }
-      }
-    );
+      );
   }
 
   private subscribeEventType() {
     this.eventService.getEventById(this.eventId)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (res) => {
-        console.log('GET Event Succesful', res);
-        this.eventType = res.eventType;
-      },
-      error: (err) => {
-        console.log('GET Event Failed');
-      }
-    });
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log('GET Event Succesful', res);
+          this.eventType = res.eventType;
+          this.eventName = res.eventName;
+        },
+        error: (err) => {
+          console.log('GET Event Failed');
+        }
+      });
   }
 
   confirmDeleteSlot(slotId: number) {
@@ -89,16 +94,16 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   private deleteSlotById(slotId: number) {
     this.slotService.deleteSlotByIdAndEvent(this.eventId, slotId)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (res) => {
-        console.log('Delete Slot Succesfully');
-        this.slotService.triggerRefresh(this.eventId);
-      },
-      error: (err) => {
-        console.error('Delete Slot Failed');
-      }
-    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          console.log('Delete Slot Succesfully');
+          this.slotService.triggerRefresh(this.eventId);
+        },
+        error: (err) => {
+          console.error('Delete Slot Failed');
+        }
+      })
   }
 
   //Slot Wizard
@@ -138,9 +143,10 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
     this.openCalendarView = false;
   }
 
-  openBookingManagerDashboard(slotId: number) {
-    this.showBookingManagerDashboard = true;
+  openBookingManagerDashboard(slotId: number, slotName: string) {
+    this.slotName = slotName;
     this.slotId = slotId;
+    this.showBookingManagerDashboard = true;
   }
 
   closeBookingManagerDashboard() {
@@ -153,6 +159,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   openInvitationWizard(slotId: number) {
     this.slotId = slotId;
+
     this.showInvitationWizard = true;
   }
 
