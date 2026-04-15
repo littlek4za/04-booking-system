@@ -3,12 +3,14 @@ import { Injectable } from '@angular/core';
 import { BookingRequestDto } from './dtos/booking-request-dto';
 import { BehaviorSubject, catchError, filter, Observable, of, switchMap, tap } from 'rxjs';
 import { BookingResponseDto } from './dtos/booking-response-dto';
+import { GuestBookingRequestDto } from './dtos/guest-booking-request-dto';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
 
+  private url = "http://localhost:8080/api/v1/";
   private slotsUrl = "http://localhost:8080/api/v1/slots";
   private eventsUrl = "http://localhost:8080/api/v1/events";
 
@@ -64,5 +66,15 @@ export class BookingService {
   softDeleteForBooking(slotId:number, bookingId: number): Observable<BookingResponseDto>{
     const bookingsUrl = `${this.slotsUrl}/${slotId}/bookings/${bookingId}/delete`;
     return this.httpClient.patch<BookingResponseDto>(bookingsUrl,{});
+  }
+
+  getBookingByToken(bookingToken: string): Observable<BookingResponseDto>{
+    const bookingsUrl = `${this.url}/bookings/${bookingToken}`;
+    return this.httpClient.get<BookingResponseDto>(bookingsUrl);
+  }
+
+  retrieveGuestBooking(guestBookingRequestDto: GuestBookingRequestDto): Observable<BookingResponseDto>{
+    const bookingsUrl = `${this.url}/bookings/guest/access`;
+    return this.httpClient.post<BookingResponseDto>(bookingsUrl,guestBookingRequestDto);
   }
 }

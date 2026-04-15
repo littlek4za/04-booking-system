@@ -3,8 +3,12 @@ package com.littlek4za.booking_system.entities;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.littlek4za.booking_system.models.RoleName;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,8 +27,9 @@ public class Role {
     @Column(name = "id")
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role_name", unique = true)
-    private String roleName;
+    private RoleName roleName;
 
     @ManyToMany(mappedBy = "roleSet", fetch = FetchType.LAZY)
     private Set<User> userSet = new HashSet<>();
@@ -32,7 +37,7 @@ public class Role {
     protected Role() {
     }
 
-    public Role(String roleName) {
+    public Role(RoleName roleName) {
         this.roleName = roleName;
     }
 

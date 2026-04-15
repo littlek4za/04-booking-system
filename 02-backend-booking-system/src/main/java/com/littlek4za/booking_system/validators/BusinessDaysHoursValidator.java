@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.models.TimeRange;
 
@@ -24,13 +25,15 @@ public class BusinessDaysHoursValidator {
         if (eventType != EventType.BUSINESS) {
             throw new AppException(
                     "Invalid event type for business type validation",
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.EVENT_TYPE_INVALID);
         }
 
         if (businessDaysHours == null || businessDaysHours.isEmpty()) {
             throw new AppException(
                     "Business days hours cannot be empty",
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_CONFIGURATION_INVALID);
         }
 
         for (Map.Entry<Integer, List<TimeRange>> entry : businessDaysHours.entrySet()) {
@@ -42,7 +45,7 @@ public class BusinessDaysHoursValidator {
 
     private void validateDay(Integer day) {
         if (day == null || day < 0 || day > 6) {
-            throw new AppException("Invalid day of week, must be within (0-6): " + day, HttpStatus.BAD_REQUEST);
+            throw new AppException("Invalid day of week, must be within (0-6): " + day, HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
         }
     }
 
@@ -57,11 +60,11 @@ public class BusinessDaysHoursValidator {
             LocalTime close = parseTime(range.getClose());
 
             if (open == null || close == null) {
-                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST);
+                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
 
             if (!open.isBefore(close)) {
-                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST);
+                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
             times.add(new LocalTime[] { open, close });
         }
@@ -72,7 +75,7 @@ public class BusinessDaysHoursValidator {
         // overlap check
         for (int i = 1; i < times.size(); i++) {
             if (times.get(i)[0].isBefore(times.get(i - 1)[1])) {
-                throw new AppException("Overlapping business hours detected", HttpStatus.BAD_REQUEST);
+                throw new AppException("Overlapping business hours detected", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
         }
     }
@@ -82,7 +85,7 @@ public class BusinessDaysHoursValidator {
             return LocalTime.parse(value, TIME_FORMAT);
         } catch (Exception e) {
             throw new AppException(
-                    "Invalid time format: " + value, HttpStatus.BAD_REQUEST);
+                    "Invalid time format: " + value, HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
         }
     }
 }

@@ -14,6 +14,7 @@ import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
@@ -49,7 +50,7 @@ public class EventServiceImpl implements EventService {
         @Transactional
         public EventResponseDto createEvent(EventRequestDto eRequestDto) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
 
                 Event newEvent = new Event(
@@ -74,7 +75,7 @@ public class EventServiceImpl implements EventService {
         public List<EventWithSlotCountReponseDto> getEvents() {
 
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
                 List<Event> eventList = eventRepository.findByUser(user);
                 List<EventSlotCount> slotCountList = slotRepository.countSlotForEvents(eventList);
@@ -90,10 +91,9 @@ public class EventServiceImpl implements EventService {
         @Override
         public EventWithSlotCountReponseDto getEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
 
                 return dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
@@ -104,15 +104,14 @@ public class EventServiceImpl implements EventService {
         public EventResponseDto putEventById(Long eventId,
                         EventRequestDto eRequestDto) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
                 if (slotCount > 0 && !event.getEventType().equals(eventTypeEnum)) {
                         throw new AppException("Event type cannot be changed once slots exist",
-                                        HttpStatus.BAD_REQUEST);
+                                        HttpStatus.BAD_REQUEST, ErrorCode.EVENT_TYPE_CHANGE_NOT_ALLOWED);
                 }
 
                 event.setEventName(eRequestDto.eventName());
@@ -134,7 +133,7 @@ public class EventServiceImpl implements EventService {
         @Transactional
         public Long deleteEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
                 List<Invitation> invitationList = invitationRepository.findByEventIdWithSlotSet(eventId);
 
@@ -147,8 +146,7 @@ public class EventServiceImpl implements EventService {
                 int deleted = eventRepository.deleteByIdAndUserId(eventId, user.getId());
 
                 if(deleted == 0) {
-                        throw new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND);
+                        throw new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND);
                 }
 
                 return eventId;
@@ -159,7 +157,7 @@ public class EventServiceImpl implements EventService {
                 try {
                         eventTypeEnum = EventType.valueOf(slotName);
                 } catch (IllegalArgumentException | NullPointerException ex) {
-                        throw new AppException("Invalid event type", HttpStatus.BAD_REQUEST);
+                        throw new AppException("Event type invalid", HttpStatus.BAD_REQUEST, ErrorCode.EVENT_TYPE_INVALID);
                 }
                 return eventTypeEnum;
         }

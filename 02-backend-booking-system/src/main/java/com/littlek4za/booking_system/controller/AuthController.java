@@ -1,5 +1,6 @@
 package com.littlek4za.booking_system.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.littlek4za.booking_system.dtos.LoginRequestDto;
 import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SignUpRequestDto;
+import com.littlek4za.booking_system.dtos.UserAccessTokenDto;
+import com.littlek4za.booking_system.dtos.UserDto;
 import com.littlek4za.booking_system.security.UserAuthProvider;
 import com.littlek4za.booking_system.services.UserService;
 
@@ -28,16 +31,17 @@ public class AuthController {
 
     @PostMapping(path = "{version}/login", version = "1")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
-        LoginResponseDto loginResponseDto = userService.login(loginRequestDto);
-        loginResponseDto.setToken(userAuthProvider.createToken(loginResponseDto));
+        UserDto userDto = userService.login(loginRequestDto);
+        String token = userAuthProvider.createToken(userDto);
+        UserAccessTokenDto userAccessTokenDto = userAuthProvider.toUserAccessTokenDto(token);
+        LoginResponseDto loginResponseDto = new LoginResponseDto(userDto, userAccessTokenDto);
         return ResponseEntity.ok(loginResponseDto);
     }
 
     @PostMapping(path = "{version}/register", version ="1")
     public ResponseEntity<LoginResponseDto> register(@Valid @RequestBody SignUpRequestDto signUpRequestDto){
-        LoginResponseDto loginResponseDto = userService.register(signUpRequestDto);
-        return ResponseEntity.ok(loginResponseDto);
-        
+        userService.register(signUpRequestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
 }

@@ -17,8 +17,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.littlek4za.booking_system.dtos.ErrorResponseDto;
+import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
 import com.littlek4za.booking_system.exception.filter.ExceptionHandlerFilter;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register", "/api/v1/slots/*/bookings").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate","/api/v1/invitations/*","/api/v1/slots/*/bookings","/api/v1/slots/*/bookings/count").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/v1/guest/**").permitAll() // guest access is validated manually in service layer
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
@@ -54,7 +56,8 @@ public class SecurityConfig {
                             response.setContentType("application/json");
                             ErrorResponseDto errorResponseDto = ErrorResponseDto.create(
                                 HttpStatus.UNAUTHORIZED, 
-                                "Token missing or invalid", 
+                                "Token missing or invalid",
+                                ErrorCode.UNAUTHORIZED, 
                                 request.getServletPath(),
                                 null);
                             response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));

@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,7 +20,7 @@ public class SecurityUtil {
                 .getContext()
                 .getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthUserPrincipal principal)) {
-            throw new AppException("Unauthenticated", HttpStatus.UNAUTHORIZED);
+            throw new AppException("Authentication required", HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
         }
 
         return principal;

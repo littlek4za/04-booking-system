@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
-
 @RestController
 @RequestMapping("/api")
 public class BookingController {
@@ -32,34 +30,44 @@ public class BookingController {
     }
 
     @PostMapping(path = "{version}/slots/{slotId}/bookings", version = "1")
-    public ResponseEntity<BookingResponseDto> createBookingV1(@Valid @RequestBody BookingRequestDto bookingRequestDto, @PathVariable("slotId") Long slotId) {
+    public ResponseEntity<BookingResponseDto> createBookingV1(@Valid @RequestBody BookingRequestDto bookingRequestDto,
+            @PathVariable("slotId") Long slotId) {
         BookingResponseDto bookingResponseDto = bookingService.createBooking(bookingRequestDto, slotId);
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingResponseDto);
     }
 
     @GetMapping(path = "{version}/slots/{slotId}/bookings", version = "1")
-    public ResponseEntity<List<BookingResponseDto>> getBookingsBySlotV1(@PathVariable ("slotId") Long slotId) {
+    public ResponseEntity<List<BookingResponseDto>> getBookingsBySlotV1(@PathVariable("slotId") Long slotId) {
         List<BookingResponseDto> bookingResponseDto = bookingService.getBookingsBySlotId(slotId);
         return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
     }
 
     @GetMapping(path = "{version}/events/{eventId}/bookings", version = "1")
-    public ResponseEntity<List<BookingResponseDto>> getBookingsByEventIdV1(@PathVariable ("eventId") Long eventId) {
+    public ResponseEntity<List<BookingResponseDto>> getBookingsByEventIdV1(@PathVariable("eventId") Long eventId) {
         List<BookingResponseDto> bookingResponseDto = bookingService.getBookingsByEventId(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
     }
-    
-    @GetMapping(path = "{version}/slots/{slotId}/bookings/count", version = "1") 
-    public ResponseEntity<Integer> countBySlotIdV1(@PathVariable ("slotId") Long slotId) {
+
+    @GetMapping(path = "{version}/slots/{slotId}/bookings/count", version = "1")
+    public ResponseEntity<Integer> countBySlotIdV1(@PathVariable("slotId") Long slotId) {
         Integer count = bookingService.getCountBySlotId(slotId);
         return ResponseEntity.status(HttpStatus.OK).body(count);
     }
 
     @PatchMapping(path = "{version}/slots/{slotId}/bookings/{bookingId}/delete", version = "1")
-    public ResponseEntity<BookingResponseDto> softDeleteBookingV1(@PathVariable ("slotId") Long slotId, @PathVariable ("bookingId") Long bookingId){
-        BookingResponseDto bookingResponseDto = bookingService.softDeleteBooking(slotId,bookingId);
+    public ResponseEntity<BookingResponseDto> softDeleteBookingV1(@PathVariable("slotId") Long slotId,
+            @PathVariable("bookingId") Long bookingId) {
+        BookingResponseDto bookingResponseDto = bookingService.softDeleteBooking(slotId, bookingId);
         return ResponseEntity.status(HttpStatus.OK).body(bookingResponseDto);
     }
-    
+
+    @GetMapping(path = "{version}/bookings/{bookingToken}", version = "1")
+    public ResponseEntity<BookingResponseDto> getBookingByBookingTokenV1(
+            @PathVariable("bookingToken") String bookingToken) {
+        BookingResponseDto bookingResponseDto = bookingService.getBookingByToken(bookingToken);
+
+        return ResponseEntity.ok(bookingResponseDto);
+    }
+
 
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
@@ -12,9 +13,9 @@ import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
 import com.littlek4za.booking_system.dtos.InvitationResponseDto;
-import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
+import com.littlek4za.booking_system.dtos.UserDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
@@ -26,19 +27,10 @@ import com.littlek4za.booking_system.models.SlotIncludeMode;
 @Component
 public class DtoMapperImpl implements DtoMapper {
 
-        @Override
-        public LoginResponseDto toLoginResponseDto(User user) {
-                return LoginResponseDto.builder()
-                                .email(user.getEmail())
-                                .firstName(user.getFirstName())
-                                .lastName(user.getLastName())
-                                .roleSet(user.getRoleSet()
-                                                .stream()
-                                                .map(role -> role.getRoleName())
-                                                .collect(Collectors.toSet()))
-                                .username(user.getUsername())
-                                .build();
-        }
+        @Value("${security.jwt.token.secret-key:dev-secret-key}")
+        private String secretKey;
+        @Value("${security.jwt.issuer:booking-system}")
+        private String issuerString;
 
         @Override
         public EventWithSlotCountReponseDto toEventWithSlotCountResponseDto(Event event, Long slotCount) {
@@ -61,9 +53,9 @@ public class DtoMapperImpl implements DtoMapper {
         public SlotResponseDto toSlotResponseDto(Slot slot) {
                 return toSlotResponseDto(slot, null);
         }
-        
+
         @Override
-        public SlotResponseDto toSlotResponseDto(Slot slot,Long bookingsCount) {
+        public SlotResponseDto toSlotResponseDto(Slot slot, Long bookingsCount) {
                 return new SlotResponseDto(
                                 slot.getEvent().getId(),
                                 slot.getId(),
@@ -81,8 +73,7 @@ public class DtoMapperImpl implements DtoMapper {
                                 slot.getFlexibleDaysHours(),
                                 slot.getCreatedAt(),
                                 slot.getUpdatedAt(),
-                                bookingsCount
-                                );
+                                bookingsCount);
         }
 
         @Override
@@ -199,6 +190,21 @@ public class DtoMapperImpl implements DtoMapper {
                         return BookingStatus.ONGOING;
                 }
                 return BookingStatus.EXPIRED;
+        }
+
+        @Override
+        public UserDto toUserDto(User user) {
+                return new UserDto(
+                        user.getId(), 
+                        user.getUsername(), 
+                        user.getEmail(), 
+                        user.getFirstName(), 
+                        user.getLastName(), 
+                        user.getRoleSet()
+                        .stream()
+                        .map(role -> role.getRoleName())
+                        .collect(Collectors.toSet())
+                );
         }
 
 }

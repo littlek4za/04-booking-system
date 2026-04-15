@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.models.InstantRange;
 
@@ -20,13 +21,13 @@ public class FlexiblaDaysHoursValidator {
         if (eventType != EventType.FLEXIBLE) {
             throw new AppException(
                     "Invalid event type for flexible type validation",
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST, ErrorCode.EVENT_TYPE_INVALID);
         }
 
         if (flexibleDaysHours == null || flexibleDaysHours.isEmpty()) {
             throw new AppException(
-                    "Business days hours cannot be empty",
-                    HttpStatus.BAD_REQUEST);
+                    "Flexible days hours cannot be empty",
+                    HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
         }
 
         validateRanges(flexibleDaysHours);
@@ -43,11 +44,11 @@ public class FlexiblaDaysHoursValidator {
             Instant close = range.getClose();
 
             if (open == null || close == null) {
-                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST);
+                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
 
             if (!open.isBefore(close)) {
-                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST);
+                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
 
             times.add(new Instant[]{open, close});
@@ -63,7 +64,7 @@ public class FlexiblaDaysHoursValidator {
         if (currentOpen.isBefore(previousClose)) {
             throw new AppException(
                 "Overlapping time ranges detected",
-                HttpStatus.BAD_REQUEST
+                HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID
             );
         }
     }

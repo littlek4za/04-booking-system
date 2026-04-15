@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.littlek4za.booking_system.dtos.ErrorResponseDto;
-import com.littlek4za.booking_system.dtos.FieldErrorDto;
+import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
+import com.littlek4za.booking_system.exception.dto.FieldErrorDto;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class RestExceptionHandler {
                                 .body(ErrorResponseDto.create(
                                                 ex.getHttpStatus(),
                                                 ex.getMessage(),
+                                                ex.getCode(),
                                                 request.getRequestURI(),
                                                 null));
         }
@@ -64,6 +66,7 @@ public class RestExceptionHandler {
                                 .body(ErrorResponseDto.create(
                                                 HttpStatus.BAD_REQUEST,
                                                 "Validation Error",
+                                                ErrorCode.FIELD_VALIDATION_FAILED,
                                                 request.getRequestURI(),
                                                 fieldErrorList));
         }
@@ -82,6 +85,7 @@ public class RestExceptionHandler {
                                 .body(ErrorResponseDto.create(
                                                 HttpStatus.BAD_REQUEST,
                                                 ex.getMessage(),
+                                                ErrorCode.INVALID_STATE,
                                                 request.getRequestURI(),
                                                 null));
         }

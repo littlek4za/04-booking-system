@@ -15,6 +15,7 @@ import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.repos.EventRepository;
@@ -57,10 +58,9 @@ public class SlotServiceImpl implements SlotService {
         public List<SlotResponseDto> getSlotsByEventId(Long eventId) {
 
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 Map<Long, Long> bookingsCountMap = this.bookingRepository.countBookingsByEventGrouped(eventId)
                                                         .stream()
                                                         .collect(Collectors.toMap(
@@ -82,10 +82,9 @@ public class SlotServiceImpl implements SlotService {
         public SlotResponseDto createSlotByEvent(Long eventId, SlotRequestDto slotRequestDto) {
 
                 User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with this Id and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
                 slotValidator.validate(event.getEventType(), slotRequestDto);
 
@@ -106,14 +105,12 @@ public class SlotServiceImpl implements SlotService {
         @Transactional
         public Long deleteSlotByEventAndSlot(Long eventId, Long slotId) {
                 User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 // handle invitation deletion                                
                 Slot slot = slotRepository.findByIdAndEventIdWithInvitationSet(slotId, event.getId())
-                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Slot not found with slotId and eventId", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
                 for(Invitation invitation : slot.getInvitationSet()){
                         if(invitation.getSlotIncludeMode() == SlotIncludeMode.SELECTED){
                                 if(invitation.getSlotSet().size() == 1) {
@@ -128,8 +125,7 @@ public class SlotServiceImpl implements SlotService {
                 int deleted = this.slotRepository.deleteByIdAndEventId(slotId, event.getId());
 
                 if (deleted == 0) {
-                        throw new AppException("No slot found with slotId and Event",
-                                        HttpStatus.NOT_FOUND);
+                        throw new AppException("Slot not found with slotId and eventId", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
                 }
 
                 return slotId;
@@ -138,13 +134,11 @@ public class SlotServiceImpl implements SlotService {
         @Override
         public SlotResponseDto getSlotByIdAndEventId(Long eventId, Long slotId) {
                 User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 Slot slot = slotRepository.findByIdAndEventId(slotId, event.getId())
-                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Slot not found with slotId and eventId", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
                 
                 Long bookingsCount = bookingRepository.countBySlotId(slotId);
 
@@ -154,14 +148,12 @@ public class SlotServiceImpl implements SlotService {
         @Override
         public SlotResponseDto putSlotByIdAndEventId(Long slotId, Long eventId, SlotRequestDto slotRequestDto) {
                 User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                                .orElseThrow(() -> new AppException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("No event found with eventId and User",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
                 Slot existingSlot = slotRepository.findByIdAndEventId(slotId, event.getId())
-                                .orElseThrow(() -> new AppException("No slot found with slotId and eventId",
-                                                HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Slot not found with slotId and eventId", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
 
                 slotValidator.validate(event.getEventType(), slotRequestDto);
 

@@ -7,9 +7,9 @@ import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
 import com.littlek4za.booking_system.dtos.InvitationResponseDto;
-import com.littlek4za.booking_system.dtos.LoginResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
+import com.littlek4za.booking_system.dtos.UserDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
@@ -17,8 +17,6 @@ import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 
 public interface DtoMapper {
-
-    LoginResponseDto toLoginResponseDto(User user);
 
     EventWithSlotCountReponseDto toEventWithSlotCountResponseDto(Event event, Long slotCount);
 
@@ -35,5 +33,7 @@ public interface DtoMapper {
     InvitationResponseDto toInvitationResponseDto(Invitation invitation, Set<Slot> slotList);
 
     BookingResponseDto toBookingResponseDto(Booking savedBooking);
+
+    UserDto toUserDto(User user);
 
 }

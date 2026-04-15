@@ -103,5 +103,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             """)  
     Long countByUserAndEvent(@Param("user") User user, @Param("event") Event event);
 
+    @Query("""
+                SELECT b
+                FROM Booking b
+                LEFT JOIN FETCH b.user
+                LEFT JOIN FETCH b.slot
+                WHERE b.user.id = :userId
+                AND b.bookingToken = :bookingToken
+                AND b.isDeleted = false
+            """) 
+    Optional<Booking> findByBookingTokenAndUserIdWithUserAndSlot(@Param("bookingToken") String bookingToken,@Param("userId") Long userId);
+
+    @Query("""
+                SELECT b
+                FROM Booking b
+                LEFT JOIN FETCH b.user
+                WHERE b.bookingToken = :bookingToken
+                AND b.isDeleted = false
+            """) 
+    Optional<Booking> findByBookingToken(@Param("bookingToken") String bookingToken);
+
 
 }

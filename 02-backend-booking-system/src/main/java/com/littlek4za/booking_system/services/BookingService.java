@@ -5,6 +5,7 @@ import java.util.List;
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
 
+
 public interface BookingService {
 
     BookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId);
@@ -16,5 +17,7 @@ public interface BookingService {
     List<BookingResponseDto> getBookingsByEventId(Long eventId);
 
     BookingResponseDto softDeleteBooking(Long slotId, Long bookingId);
+
+    BookingResponseDto getBookingByToken(String bookingToken);
 
 }

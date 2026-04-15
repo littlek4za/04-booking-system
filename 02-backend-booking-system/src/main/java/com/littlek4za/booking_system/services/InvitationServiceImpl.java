@@ -17,6 +17,7 @@ import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 import com.littlek4za.booking_system.models.ValidationResult;
 import com.littlek4za.booking_system.repos.EventRepository;
@@ -54,9 +55,9 @@ public class InvitationServiceImpl implements InvitationService {
     public InvitationResponseDto createInvitation(InvitationRequestDto invitationRequestDto, Long eventId) {
 
         User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
         Invitation newInvitation;
         Set<Slot> slotSet;
@@ -64,12 +65,12 @@ public class InvitationServiceImpl implements InvitationService {
 
             slotSet = slotRepository.findByIdInAndEventId(invitationRequestDto.slotIdList(), eventId);
             if (slotSet.size() != invitationRequestDto.slotIdList().size()) {
-                throw new AppException("Some slots do not belong to this event", HttpStatus.NOT_FOUND);
+                throw new AppException("Some slots do not belong to this event", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_EVENT_MISMATCH);
             }
 
             if (slotSet.isEmpty()) {
-                throw new AppException("No Slot found, Please create slot before create invitation",
-                        HttpStatus.NOT_FOUND);
+                throw new AppException("Slots not found with slotIdList and eventId",
+                        HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
             }
             newInvitation = dtoMapper.toInvitation(invitationRequestDto, event, user);
             newInvitation.setSlotSet(slotSet);
@@ -79,8 +80,8 @@ public class InvitationServiceImpl implements InvitationService {
             slotSet = slotRepository.findByEvent(event);
 
             if (slotSet.isEmpty()) {
-                throw new AppException("No Slot found, Please create slot before create invitation",
-                        HttpStatus.NOT_FOUND);
+                throw new AppException("Slot not found with event, Please create slot before create invitation",
+                        HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
             }
 
             newInvitation = dtoMapper.toInvitation(invitationRequestDto, event, user);
@@ -93,13 +94,13 @@ public class InvitationServiceImpl implements InvitationService {
 
             if (slotSet.isEmpty()) {
                 throw new AppException("No Slot found, Please create slot before create invitation",
-                        HttpStatus.NOT_FOUND);
+                        HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
             }
 
             newInvitation = dtoMapper.toInvitation(invitationRequestDto, event, user);
 
         } else {
-            throw new AppException("Invalid slotIncludeMode", HttpStatus.BAD_REQUEST);
+            throw new AppException("Slot include mode invalid", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_INCLUDE_MODE_INVALID);
         }
 
         if (newInvitation.getExpiresAt() == null) {
@@ -135,9 +136,9 @@ public class InvitationServiceImpl implements InvitationService {
     public List<InvitationResponseDto> getInvitationsByEventId(Long eventId) {
 
         User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
         Set<Invitation> invitationSet = invitationRepository.findByEventWithSlotSet(event);
         Set<Slot> allEventSlots = slotRepository.findByEvent(event);
@@ -158,9 +159,9 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public List<InvitationResponseDto> getInvitationsByEventIdAndSlotId(Long eventId, Long slotId) {
         User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
         Set<Invitation> invitationSet = invitationRepository.findByEventIdAndSlotIdOrAllAndFutureWithEventAndSlotSets(eventId, slotId,
                 SlotIncludeMode.ALL_AND_FUTURE);
@@ -182,11 +183,11 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public Long deleteInvitationByEventAndId(Long eventId, Long invitationId) {
         User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Unknow User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("No event found with this Id and User", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
         Invitation invitation = invitationRepository.findByEventAndId(event, invitationId)
-                .orElseThrow(() -> new AppException("No invitation found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invitation not found with event and invitationId", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
 
         invitationRepository.delete(invitation);
 
@@ -196,7 +197,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public InvitationValidationResponseDto validateAccessToken(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEvent(token)
-                .orElseThrow(() -> new AppException("Unknown token", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
 
         Long userId = securityUtil.getCurrentAuthUserIdOrNull();
 
@@ -223,7 +224,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public InvitationResponseDto getInvitationByToken(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEventAndSlotSet(token)
-                .orElseThrow(() -> new AppException("no Invitation Found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
 
         Set<Slot> slotSet;
         if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {

@@ -20,12 +20,13 @@ export class AuthDebug implements OnInit, OnDestroy {
   constructor(public authService: AuthService) { }
 
   ngOnInit(): void {
-    this.token = localStorage.getItem('authToken');
-    this.hasToken = !!this.token;
+    const session = this.authService.getSession();
 
-    if (this.token) {
+    this.hasToken = !!session?.token;
+
+    if (session?.token) {
       try {
-        const parts = this.token.split('.');
+        const parts = session.token.split('.');
         if (parts.length != 3) {
           console.log("invalid token");
         }

@@ -9,7 +9,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.littlek4za.booking_system.dtos.ErrorResponseDto;
+import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,27 +32,31 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             filterChain.doFilter(request, response);
-        } catch (InsufficientAuthenticationException | JWTVerificationException e) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(), request);
-        } catch (JwtAuthFilterException e) {
-            writeErrorResponse(response, e.getHttpStatus(), e.getMessage(), request);
+        } catch (InsufficientAuthenticationException e) {
+            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(),ErrorCode.UNAUTHORIZED, request);
+        } catch(JWTVerificationException e) {
+            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(),ErrorCode.TOKEN_INVALID, request);
+        } catch (JwtAuthFilterException e) { // custome filter
+            writeErrorResponse(response, e.getHttpStatus(), e.getMessage(),ErrorCode.USER_NOT_FOUND, request);
         } catch (AccessDeniedException e) {
-            writeErrorResponse(response, HttpStatus.FORBIDDEN, e.getMessage(), request);
+            writeErrorResponse(response, HttpStatus.FORBIDDEN, e.getMessage(),ErrorCode.ACCESS_DENIED, request);
         } catch (Exception e) {
             log.error("EXCEPTION HANDLER FILTER error: ", e);
-            writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal System Error", request);
+            writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal System Error",ErrorCode.INTERNAL_ERROR, request);
         }
     }
 
-    private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message,
+    private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message, ErrorCode code,
             HttpServletRequest request) throws IOException {
 
         response.setStatus(status.value());
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
 
         ErrorResponseDto errorResponseDto = ErrorResponseDto.create(
                 status,
                 message,
+                code,
                 request.getRequestURI(),
                 null);
 

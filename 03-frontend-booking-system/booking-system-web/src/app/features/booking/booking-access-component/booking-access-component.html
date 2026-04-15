@@ -1,0 +1,30 @@
+<p>booking-access-component works!</p>
+
+<form class="row g-3 needs-validation" [formGroup]="bookingTokenValidationForm" (ngSubmit)="onSubmit()">
+    <div class="col-md-4">
+        <label class="form-label">Booking Token</label>
+        <input type="text" class="form-control" formControlName="bookingToken">
+        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('pattern') &&
+        (bookingTokenValidationForm.get('bookingToken')?.touched ||
+        bookingTokenValidationForm.get('bookingToken')?.dirty)){
+        <div class="text-danger">
+            Invalid booking token.
+        </div>
+        }
+        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('required') &&
+        (bookingTokenValidationForm.get('bookingToken')?.touched ||
+        bookingTokenValidationForm.get('bookingToken')?.dirty)){
+        <div class="text-danger">
+            Booking token is required.
+        </div>
+        }
+    </div>
+    
+    @if (!userValid) {
+    <div id="captcha-container"></div>
+    }
+
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </div>
+</form>

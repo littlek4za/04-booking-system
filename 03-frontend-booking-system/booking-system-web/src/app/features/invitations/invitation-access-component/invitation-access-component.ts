@@ -58,7 +58,7 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
         }
         else if (res.requiredLogin == false) {
           alert("redirecting to booking page");
-          this.router.navigate([`/booking/${token}`]);
+          this.router.navigate([`/bookingConfirmation/${token}`]);
         }
         else if (res.requiredLogin && !this.authService.hasValidToken()) {
           alert("redirecting to login page");
@@ -69,7 +69,7 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
         }
         else if (res.requiredLogin && this.authService.hasValidToken()) {
           alert("redirectingn to booking page");
-          this.router.navigate([`/booking/${token}`]);
+          this.router.navigate([`/bookingConfirmation/${token}`]);
         } else {
           console.warn("Unexpected invitation validation response:", res);
           alert("Unexpected invitation status. Please contact administrator.");
