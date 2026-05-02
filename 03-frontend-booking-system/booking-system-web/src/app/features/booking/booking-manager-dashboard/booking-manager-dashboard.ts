@@ -40,8 +40,8 @@ export class BookingManagerDashboard implements OnChanges {
     this.close.emit();
   }
 
-  comfirmDeleteBooking(slotId: number, bookingId: number) {
-    this.bookingService.softDeleteForBooking(slotId,bookingId).subscribe({
+  comfirmDeleteBooking(slotId:number, bookingId: number) {
+    this.bookingService.softDeleteBookingAsOrganizer(slotId,bookingId).subscribe({
       next:(res)=> {
         console.log("Delete booking succesful");
         this.bookingService.triggerRefreshForBookingListBySlotId(this.slotId);

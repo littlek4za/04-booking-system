@@ -4,11 +4,11 @@ import java.util.List;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
-
+import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 
 public interface BookingService {
 
-    BookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId);
+    BookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId, String clientIp);
 
     List<BookingResponseDto> getBookingsBySlotId(Long slotId);
 
@@ -16,8 +16,16 @@ public interface BookingService {
 
     List<BookingResponseDto> getBookingsByEventId(Long eventId);
 
-    BookingResponseDto softDeleteBooking(Long slotId, Long bookingId);
+    BookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId);
 
-    BookingResponseDto getBookingByToken(String bookingToken);
+    BookingResponseDto softDeleteBookingAsUserAttendee(Long bookingId);
+
+    BookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId);
+
+    AttendeeBookingResponseDto getBookingByTokenAsUserAttendee(String bookingToken);
+
+    AttendeeBookingResponseDto getBookingByTokenAsGuestAttendee(String bookingToken);
+
+    List<AttendeeBookingResponseDto> getUserBookings();
 
 }

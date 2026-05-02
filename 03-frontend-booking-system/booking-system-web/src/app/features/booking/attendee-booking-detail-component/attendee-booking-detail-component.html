@@ -1,0 +1,74 @@
+<p>booking-detail-component works!</p>
+
+@if (attendeeBookingDto()) {
+<div class="booking-card">
+
+    <h2>{{ attendeeBookingDto()?.eventName }}</h2>
+    <p class="slot">{{ attendeeBookingDto()?.slotName }}</p>
+
+    <!-- Name -->
+    <div class="row">
+        <label>Name:</label>
+        @if(attendeeBookingDto()?.isGuest){
+        <span>
+            {{ attendeeBookingDto()?.guestFirstName }} {{ attendeeBookingDto()?.guestLastName }}
+        </span>
+        } @else {
+        <span>
+            {{ attendeeBookingDto()?.firstName }} {{ attendeeBookingDto()?.lastName }}
+        </span>
+        }
+    </div>
+
+    <!-- Email -->
+    <div class="row">
+        <label>Email:</label>
+        <span>{{ attendeeBookingDto()?.email }}</span>
+    </div>
+
+    <!-- Time -->
+    <div class="row">
+        <label>Start Time:</label>
+        <span>{{ attendeeBookingDto()?.bookedStartTime }}</span>
+    </div>
+
+    <div class="row">
+        <label>End Time:</label>
+        <span>{{ attendeeBookingDto()?.bookedEndTime }}</span>
+    </div>
+
+    <!-- Booking Info -->
+    <div class="row">
+        <label>Status:</label>
+        <span>{{ attendeeBookingDto()?.bookingStatus }}</span>
+    </div>
+
+    <div class="row">
+        <label>Booked At:</label>
+        <span>{{ attendeeBookingDto()?.bookedAt }}</span>
+    </div>
+
+    <!-- Organizer -->
+    <div class="row">
+        <label>Organizer:</label>
+        <span>{{ attendeeBookingDto()?.organizerEmail }}</span>
+    </div>
+
+    <!-- Location -->
+    <div class="row">
+        <label>Location:</label>
+        <span>{{ attendeeBookingDto()?.eventLocationAddress }}</span>
+    </div>
+
+    <!-- Google Map Link -->
+    @if (attendeeBookingDto()?.latitude && attendeeBookingDto()?.longitude) {
+    <div class="row">
+        <label>Map:</label>
+        <a [href]="'https://www.google.com/maps?q=' + attendeeBookingDto()?.latitude + ',' + attendeeBookingDto()?.longitude"
+            target="_blank">
+            Open in Google Maps
+        </a>
+    </div>
+    }
+</div>
+}

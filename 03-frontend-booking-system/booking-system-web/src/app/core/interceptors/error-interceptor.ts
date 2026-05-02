@@ -5,20 +5,31 @@ import { catchError, EMPTY, throwError } from "rxjs";
 import { GlobalErrorService } from "../services/global-error-service";
 import { extractFieldErrorMessage } from "@shared/utils/error-utils";
 
-export const errorInterceptor:HttpInterceptorFn = (req,next) => {
+export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const globalErrorService = inject(GlobalErrorService);
 
     return next(req).pipe(
-        catchError((err:HttpErrorResponse) => {
+        catchError((err: HttpErrorResponse) => {
             console.error(`[API Error] ${req.method} ${req.url}:`, err);
-            if (err.status === 401){
-                authService.logoutByExpiry();
+
+            if (req.url.includes('/login')) {
+                if (err.status === 404) {
+                    alert("Invalid username or password");
+                    return throwError(() => err);
+                }
+            }
+
+            if (err.status === 401) {
+                const usedAuth = !!req.headers.get('Authorization');
+                if (usedAuth) {
+                    authService.logoutByExpiry();
+                }
                 alert(extractFieldErrorMessage(err));
                 return throwError(() => err);
             }
 
-            if (err.status === 0){
+            if (err.status === 0) {
                 alert('Network error. Please check connection.');
                 return throwError(() => err);
             }

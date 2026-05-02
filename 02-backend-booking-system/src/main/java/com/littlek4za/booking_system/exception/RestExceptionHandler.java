@@ -5,9 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
@@ -22,8 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 public class RestExceptionHandler {
 
         @ExceptionHandler(value = { AppException.class })
-        @ResponseBody
-        public ResponseEntity<ErrorResponseDto> handleAppException(AppException ex, HttpServletRequest request) {
+        public ResponseEntity<ErrorResponseDto> handleAppException(
+                        AppException ex,
+                        HttpServletRequest request) {
                 log.warn(
                                 "REST EXCEPTION HANDLER error: status={}, error={}, message={}, path={}",
                                 ex.getHttpStatus(),
@@ -35,14 +36,14 @@ public class RestExceptionHandler {
                                 .body(ErrorResponseDto.create(
                                                 ex.getHttpStatus(),
                                                 ex.getMessage(),
-                                                ex.getCode(),
+                                                ex.getErrorCode(),
                                                 request.getRequestURI(),
                                                 null));
         }
 
         @ExceptionHandler(value = { MethodArgumentNotValidException.class })
-        @ResponseBody
-        public ResponseEntity<ErrorResponseDto> handleValidationErrors(MethodArgumentNotValidException ex,
+        public ResponseEntity<ErrorResponseDto> handleValidationErrors(
+                        MethodArgumentNotValidException ex,
                         HttpServletRequest request) {
 
                 // Field Error
@@ -58,7 +59,7 @@ public class RestExceptionHandler {
                                 .stream()
                                 .map(error -> new FieldErrorDto(error.getObjectName(), error.getDefaultMessage()))
                                 .collect(Collectors.toList());
-                
+
                 // Combine both
                 fieldErrorList.addAll(globalErrorList);
 
@@ -72,7 +73,8 @@ public class RestExceptionHandler {
         }
 
         @ExceptionHandler(IllegalStateException.class)
-        public ResponseEntity<ErrorResponseDto> handleIllegalState(IllegalStateException ex,
+        public ResponseEntity<ErrorResponseDto> handleIllegalStateException(
+                        IllegalStateException ex,
                         HttpServletRequest request) {
                 log.warn(
                                 "REST EXCEPTION HANDLER error: status={}, error={}, message={}, path={}",
@@ -80,12 +82,54 @@ public class RestExceptionHandler {
                                 HttpStatus.BAD_REQUEST.value(),
                                 ex.getMessage(),
                                 request.getRequestURI());
+
                 return ResponseEntity
                                 .status(HttpStatus.BAD_REQUEST)
                                 .body(ErrorResponseDto.create(
                                                 HttpStatus.BAD_REQUEST,
                                                 ex.getMessage(),
                                                 ErrorCode.INVALID_STATE,
+                                                request.getRequestURI(),
+                                                null));
+        }
+
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(
+                        AccessDeniedException ex,
+                        HttpServletRequest request) {
+
+                log.warn(
+                                "ACCESS DENIED: status={}, error={}, message={}, path={}",
+                                HttpStatus.FORBIDDEN,
+                                HttpStatus.FORBIDDEN.value(),
+                                ex.getMessage(),
+                                request.getRequestURI());
+
+                return ResponseEntity
+                                .status(HttpStatus.FORBIDDEN)
+                                .body(ErrorResponseDto.create(
+                                                HttpStatus.FORBIDDEN,
+                                                "Access denied",
+                                                ErrorCode.FORBIDDEN,
+                                                request.getRequestURI(),
+                                                null));
+        }
+
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ErrorResponseDto> handleGenericException(
+                        Exception ex,
+                        HttpServletRequest request) {
+                log.error(
+                                "UNEXPECTED ERROR: path={}",
+                                request.getRequestURI(),
+                                ex);
+
+                return ResponseEntity
+                                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(ErrorResponseDto.create(
+                                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                                "Internal System Error",
+                                                ErrorCode.INTERNAL_ERROR,
                                                 request.getRequestURI(),
                                                 null));
         }

@@ -54,7 +54,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public InvitationResponseDto createInvitation(InvitationRequestDto invitationRequestDto, Long eventId) {
 
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+        User user = userRepository.findById(securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -135,7 +135,7 @@ public class InvitationServiceImpl implements InvitationService {
     @Override
     public List<InvitationResponseDto> getInvitationsByEventId(Long eventId) {
 
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+        User user = userRepository.findById(securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -158,7 +158,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Override
     public List<InvitationResponseDto> getInvitationsByEventIdAndSlotId(Long eventId, Long slotId) {
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+        User user = userRepository.findById(securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -182,7 +182,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Override
     public Long deleteInvitationByEventAndId(Long eventId, Long invitationId) {
-        User user = userRepository.findById(securityUtil.getCurrentAuthUserId())
+        User user = userRepository.findById(securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -195,11 +195,11 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
-    public InvitationValidationResponseDto validateAccessToken(String token) {
+    public InvitationValidationResponseDto validateInvitationAccess(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEvent(token)
                 .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
 
-        Long userId = securityUtil.getCurrentAuthUserIdOrNull();
+        Long userId = securityUtil.getUserIdOrNull();
 
         ValidationResult result = invitationValidator.validateAccess(invitation, userId);
 

@@ -75,7 +75,7 @@ export class RegisterComponent {
 
     this.authService.register(signupRequestDto).subscribe({
       next: (response) => {
-        console.log('Register success', response);
+        console.log('Register success');
         alert("Registration Success! Please proceed to log in");
 
         if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login') {

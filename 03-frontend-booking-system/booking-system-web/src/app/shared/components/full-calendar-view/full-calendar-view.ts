@@ -541,7 +541,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         let current = startZdt.clone();
         let i = 0;
 
-        while (current.clone().add(slotFrequencyIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
+        while (current.clone().add(slotIntervalMinutes, 'minutes').isSameOrBefore(endZdt)) {
           const selectEnd = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
           const startTitle = current.clone().tz(this.selectedTimeZone()).format('hh:mm a');
           const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');

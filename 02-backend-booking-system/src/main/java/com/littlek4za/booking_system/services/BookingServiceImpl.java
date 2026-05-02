@@ -8,11 +8,12 @@ import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
-
+import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
@@ -51,13 +52,14 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRequestValidator bookingRequestValidator;
     private final InvitationValidator invitationValidator;
     private final EmailService emailService;
+    private final RiskService riskService;
 
     public BookingServiceImpl(SecurityUtil securityUtil, UserRepository userRepository, SlotRepository slotRepository,
             InvitationRepository invitationRepository, BookingRepository bookingRepository,
             EventRepository eventRepository,
             InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper,
             BookingRequestValidator bookingRequestValidator, InvitationValidator invitationValidator,
-            EmailService emailService) {
+            EmailService emailService, RiskService riskService) {
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.slotRepository = slotRepository;
@@ -69,25 +71,56 @@ public class BookingServiceImpl implements BookingService {
         this.bookingRequestValidator = bookingRequestValidator;
         this.invitationValidator = invitationValidator;
         this.emailService = emailService;
+        this.riskService = riskService;
     }
 
+    @PreAuthorize("@authz.isGuestBookingCreate() or (@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE'))")
     @Transactional
     @Override
-    public BookingResponseDto createBooking(BookingRequestDto dto, Long slotId) {
+    public BookingResponseDto createBooking(BookingRequestDto dto, Long slotId, String clientIp) {
+
+        boolean isGuest = securityUtil.isGuest();
 
         Slot slot = slotRepository.findByIdWithEventForUpdate(slotId)
-                .orElseThrow(() -> new AppException("Unknown Slot Id", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
+                .orElseThrow(() -> {
+                    if (isGuest) {
+                        riskService.recordAttemptForCreate(dto.email(), clientIp);
+                    }
+                    return new AppException("Unknown Slot Id", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
+                });
+
         Event event = slot.getEvent();
+
         Invitation invitation = invitationRepository.findByIdWithEventAndSlotSetsAndUsersForUpdate(dto.invitationId())
-                .orElseThrow(() -> new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND,
-                        ErrorCode.INVITATION_NOT_FOUND));
+                .orElseThrow(() -> {
+                    if (isGuest) {
+                        riskService.recordAttemptForCreate(dto.email(), clientIp);
+                    }
+                    return new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND,
+                            ErrorCode.INVITATION_NOT_FOUND);
+                });
+
         User user = getOrCreateUser(dto);
 
-        bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
+
+        try {
+            bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
+        } catch (AppException e) {
+
+            if (isGuest && e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
+                riskService.recordAttemptForCreate(dto.email(), clientIp);
+            }
+
+            throw e;
+        }
+
         bookingRequestValidator.validateGuestOrUserFields(dto);
 
         ValidationResult validationResult = invitationValidator.validateAccess(invitation, user.getId());
         if (!validationResult.isValid()) {
+            if (isGuest) {
+                riskService.recordAttemptForCreate(dto.email(), clientIp);
+            }
             throw new AppException(validationResult.getMessage(), HttpStatus.BAD_REQUEST,
                     validationResult.getErrorCode());
         }
@@ -98,12 +131,19 @@ public class BookingServiceImpl implements BookingService {
 
         emailService.sendBookingConfirmationDetails(bookingResponseDto);
 
+        if (isGuest) {
+            riskService.resetEmailIpForCreate(dto.email(), clientIp);
+            riskService.reduceIpPenaltyForCreate(clientIp);
+            riskService.recordCreateSuccess(clientIp);
+        }
+
         return bookingResponseDto;
     }
 
     private User getOrCreateUser(BookingRequestDto dto) {
-        if (securityUtil.isAuthenticated()) {
-            return userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+        Long userId = securityUtil.getUserIdOrNull();
+        if (userId != null) {
+            return userRepository.findById(userId)
                     .orElseThrow(
                             () -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         }
@@ -155,11 +195,11 @@ public class BookingServiceImpl implements BookingService {
         } else {
             invitationUsage = new InvitationUsage(invitation, user);
             try { // for case that same user doing two instance at same time,
-                // and two instance reaches this point at the same time,
-                // saving invitationUsage will failed for one of them
-                // because the faster instance already save it
-                // and this slower instance under go catch will try to get the invitationusage
-                // one more time, if cant, then throw the error
+                  // and two instance reaches this point at the same time,
+                  // saving invitationUsage will failed for one of them
+                  // because the faster instance already save it
+                  // and this slower instance under go catch will try to get the invitationusage
+                  // one more time, if cant, then throw the error
                 invitationUsageRepository.save(invitationUsage);
             } catch (DataIntegrityViolationException e) {
                 invitationUsage = invitationUsageRepository
@@ -239,10 +279,11 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.getBookingsCountBySlot(slot);
     }
 
+    @PreAuthorize("@authz.isUser()")
     @Override
     public List<BookingResponseDto> getBookingsByEventId(Long eventId) {
 
-        User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+        User user = userRepository.findById(this.securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user",
@@ -256,16 +297,18 @@ public class BookingServiceImpl implements BookingService {
         return bookingResponseDtoList;
     }
 
+    @PreAuthorize("@authz.isUser()")
     @Override
     @Transactional
-    public BookingResponseDto softDeleteBooking(Long slotId, Long bookingId) {
+    public BookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId) {
 
-        userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+        userRepository.findById(this.securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
         Booking booking = bookingRepository
-                .findByIdAndSlotIdAndUserId(bookingId, slotId, this.securityUtil.getCurrentAuthUserId())
-                .orElseThrow(() -> new AppException("Booking not found with bookingId, slotId and user", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+                .findOrganizerBookingByIdAndSlotIdAndUserId(bookingId, slotId, this.securityUtil.requireUserId())
+                .orElseThrow(() -> new AppException("Booking not found with bookingId, slotId and user",
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
 
         booking.setDeletedBy(DeletedBy.ORGANIZER);
         booking.setDeletedAt(Instant.now());
@@ -276,16 +319,74 @@ public class BookingServiceImpl implements BookingService {
         return dtoMapper.toBookingResponseDto(booking);
     }
 
+    @PreAuthorize("@authz.isUser()")
     @Override
-    public BookingResponseDto getBookingByToken(String bookingToken) {
-        Long userId = securityUtil.getCurrentAuthUserId();
-        Booking booking = bookingRepository.findByBookingTokenAndUserIdWithUserAndSlot(bookingToken, userId)
-                .orElseThrow(() -> new AppException("Booking not found with booking token and user", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+    @Transactional
+    public BookingResponseDto softDeleteBookingAsUserAttendee(Long bookingId) {
 
-        BookingResponseDto bookingResponseDto = dtoMapper.toBookingResponseDto(booking);
+        Booking booking = bookingRepository
+                .findAttendeeBookingByIdAndUserId(bookingId, this.securityUtil.requireUserId())
+                .orElseThrow(() -> new AppException("Booking not found with bookingId and user",
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+
+        booking.setDeletedBy(DeletedBy.ATTENDEE);
+        booking.setDeletedAt(Instant.now());
+        booking.setDeleted(true);
+
+        bookingRepository.save(booking);
+
+        return dtoMapper.toBookingResponseDto(booking);
+    }
+
+    @PreAuthorize("@authz.isGuestBookingView()")
+    @Override
+    @Transactional
+    public BookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId) {
+        throw new AppException("METHOD NOT IMPLMENTED", null, null);
+
+    }
+
+    @PreAuthorize("@authz.isUser()")
+    @Override
+    public AttendeeBookingResponseDto getBookingByTokenAsUserAttendee(String bookingToken) {
+
+        Long userId = securityUtil.requireUserId();
+        Booking booking = bookingRepository.findByBookingTokenAndUserId(bookingToken, userId)
+                .orElseThrow(() -> new AppException("Booking not found with booking token and user",
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+
+        AttendeeBookingResponseDto bookingResponseDto = dtoMapper.toAttendeeBookingResponseDto(booking);
 
         return bookingResponseDto;
     }
-    
+
+    @PreAuthorize("@authz.isGuestBookingView()")
+    @Override
+    public AttendeeBookingResponseDto getBookingByTokenAsGuestAttendee(String bookingToken) {
+
+        String email = securityUtil.requireEmail();
+        Booking booking = bookingRepository.findbyBookingTokenAndEmail(bookingToken, email)
+                .orElseThrow(() -> new AppException("Booking not found with booking token and email",
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+
+        AttendeeBookingResponseDto bookingResponseDto = dtoMapper.toAttendeeBookingResponseDto(booking);
+
+        return bookingResponseDto;
+    }
+
+    @PreAuthorize("@authz.isUser()")
+    @Override
+    public List<AttendeeBookingResponseDto> getUserBookings() {
+        Long userId = securityUtil.requireUserId();
+        List<Booking> bookings = bookingRepository.findByUserId(userId);
+
+        List<AttendeeBookingResponseDto> bookingUserResponseDtos = bookings.stream()
+                .map(booking -> {
+                    return dtoMapper.toAttendeeBookingResponseDto(booking);
+                }).toList();
+
+        return bookingUserResponseDtos;
+
+    }
 
 }

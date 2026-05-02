@@ -29,31 +29,32 @@ public class SecurityConfig {
 
     @Value("${allowed.origins}")
     private String[] allowedOrigins;
-    private final UserAuthProvider userAuthProvider;
+    private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
-    public SecurityConfig(UserAuthProvider userAuthProvider) {
-        this.userAuthProvider = userAuthProvider;
+    public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider) {
+        this.jwtAuthenticationProvider = jwtAuthenticationProvider;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
         http
-                .addFilterBefore(new JwtAuthFilter(userAuthProvider), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthFilter(jwtAuthenticationProvider), BasicAuthenticationFilter.class)
                 .addFilterBefore(new ExceptionHandlerFilter(objectMapper), JwtAuthFilter.class)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         request -> request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register", "/api/v1/slots/*/bookings").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate","/api/v1/invitations/*","/api/v1/slots/*/bookings","/api/v1/slots/*/bookings/count").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/v1/guest/**").permitAll() // guest access is validated manually in service layer
+                        .requestMatchers(HttpMethod.POST, "/api/v1/guest/bookings/view/init", "/api/v1/guest/bookings/view/access","/api/v1/guest/bookings/create/init", "/api/v1/guest/bookings/create/access").permitAll() // guest access is validated manually in service layer
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {
                             log.warn("authenticationEntryPoint failed: {}", e.getMessage());
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
                             response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
                             ErrorResponseDto errorResponseDto = ErrorResponseDto.create(
                                 HttpStatus.UNAUTHORIZED, 
                                 "Token missing or invalid",

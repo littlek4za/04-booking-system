@@ -1,8 +1,7 @@
+import { UserAccessTokenDto } from "./user-access-token-dto";
+import { UserDto } from "./user-dto";
+
 export class LoginResponseDto {
-    username!: string;
-    email!: string;
-    firstName!: string;
-    lastName!: string;
-    roleSet!: string[];
-    token!: string;
+    userDto!: UserDto;
+    userAccessTokenDto!: UserAccessTokenDto;
 }

@@ -8,74 +8,102 @@ import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
+import com.littlek4za.booking_system.models.TokenType;
 
 import lombok.extern.slf4j.Slf4j;
 
+// Read information from SecurityContext
 @Slf4j
 @Component
 public class SecurityUtil {
 
-    public AuthUserPrincipal getCurrentAuthUser() {
-        Authentication authentication = SecurityContextHolder
+    public AuthPrincipal getCurrentPrincipal() {
+        Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof AuthUserPrincipal principal)) {
+        if (auth == null
+                || !auth.isAuthenticated()
+                || auth instanceof AnonymousAuthenticationToken
+                || !(auth.getPrincipal() instanceof AuthPrincipal principal)) {
+            return null;
+        }
+
+        return principal;
+    }
+
+    // strict getter
+    public AuthPrincipal requirePrincipal() {
+        AuthPrincipal principal = getCurrentPrincipal();
+        if (principal == null) {
             throw new AppException("Authentication required", HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
         }
 
         return principal;
     }
 
-    public Long getCurrentAuthUserId() {
+    public UserPrincipal requireUserPrincipal() {
+        AuthPrincipal principal = requirePrincipal();
 
-        return getCurrentAuthUser().getId();
+        if (!(principal instanceof UserPrincipal userPrincipal)) {
+            throw new AppException("User access required", HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN);
+        }
+
+        return userPrincipal;
     }
 
-    public Long getCurrentAuthUserIdOrNull() {
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-        // if (authentication == null ||
-        // !authentication.isAuthenticated() ||
-        // authentication instanceof AnonymousAuthenticationToken ||
-        // !(authentication.getPrincipal() instanceof AuthUserPrincipal principal)) {
-        // return null;
-        // }
-        log.debug("Authentication object: " + authentication);
-        if (authentication == null) {
-            log.debug("Authentication is NULL");
-            return null;
+    public GuestPrincipal requireGuestPrincipal() {
+        AuthPrincipal principal = requirePrincipal();
+
+        if (!(principal instanceof GuestPrincipal guestPrincipal)) {
+            throw new AppException("Guest access required", HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN);
         }
 
-        log.debug("Authentication class: " + authentication.getClass().getName());
-        log.debug("Principal: " + authentication.getPrincipal());
-        log.debug("isAuthenticated(): " + authentication.isAuthenticated());
-
-        if (authentication instanceof AnonymousAuthenticationToken) {
-            log.debug(">>> This is AnonymousAuthenticationToken");
-            return null;
-        }
-
-        if (!(authentication.getPrincipal() instanceof AuthUserPrincipal principal)) {
-            log.debug("Principal is not AuthUserPrincipal");
-            return null;
-        }
-
-        return principal.getId();
+        return guestPrincipal;
     }
 
-    public boolean isAuthenticated(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public Long requireUserId() {
+        return requireUserPrincipal().getId();
+    }
 
-        if(authentication == null){
-            return false;
+    public String requireEmail() {
+        return requirePrincipal().getEmail();
+    }
+
+    // getter
+    public Long getUserIdOrNull() {
+        AuthPrincipal principal = getCurrentPrincipal();
+
+        if (principal instanceof UserPrincipal user) {
+            return user.getId();
         }
 
-        if(authentication instanceof AnonymousAuthenticationToken){
-            return false;
-        }
+        return null;
+    }
 
-        return authentication.getPrincipal() instanceof AuthUserPrincipal;
+    // boolean check
+
+    public boolean isAuthenticated() {
+        return getCurrentPrincipal() != null;
+    }
+
+    public boolean isUser() {
+        return getCurrentPrincipal() instanceof UserPrincipal;
+    }
+
+    public boolean isGuest() {
+        return getCurrentPrincipal() instanceof GuestPrincipal;
+    }
+    
+    public boolean isGuestBookingView() {
+        AuthPrincipal principal = getCurrentPrincipal();
+        return principal != null
+                && principal.getTokenType() == TokenType.GUEST_BOOKING_VIEW;
+    }
+
+    public boolean isGuestBookingCreate() {
+        AuthPrincipal principal = getCurrentPrincipal();
+        return principal != null
+                && principal.getTokenType() == TokenType.GUEST_BOOKING_CREATE;
     }
 
 }

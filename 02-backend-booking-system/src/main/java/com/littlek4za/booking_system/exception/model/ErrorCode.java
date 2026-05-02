@@ -11,6 +11,7 @@ public enum ErrorCode {
     
 
     // Auth
+    FORBIDDEN,
     UNAUTHORIZED,
     ACCESS_DENIED,
     TOKEN_INVALID,

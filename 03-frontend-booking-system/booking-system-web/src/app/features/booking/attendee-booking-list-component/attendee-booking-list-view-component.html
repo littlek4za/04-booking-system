@@ -1,0 +1,77 @@
+<p>user-booking-list-component works!</p>
+
+<table class="table table-hover align-middle">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Event Name</th>
+            <th scope="col">Slot Name</th>
+            <th scope="col">Booked Time Range</th>
+            <th scope="col">Booking Token</th>
+            <th scope="col">Booking Creation Time</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (booking of bookingList(); track booking.id ; let i = $index) {
+        <tr>
+            <td scope="row">{{i+1}}</td>
+            <td>{{booking.eventName}}</td>
+            <td>{{booking.slotName}}</td>
+            <td>
+                @if ((booking.bookedStartTime | date:'yyyyMMdd') === (booking.bookedEndTime | date:'yyyyMMdd')) {
+                <div class="fw-semibold">
+                    {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
+                </div>
+                <div class="text-muted small">
+                    {{ booking.bookedStartTime | date:'hh:mm a' }}
+                    →
+                    {{ booking.bookedEndTime | date:'hh:mm a' }}
+                </div>
+                } @else {
+                <div class="fw-semibold">
+                    {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
+                </div>
+                <div class="text-muted small">
+                    {{ booking.bookedStartTime | date:'hh:mm a' }}
+                </div>
+                <div>
+                    →
+                </div>
+                <div class="fw-semibold">
+                    {{ booking.bookedEndTime | date:'dd MMM yyyy' }}
+                </div>
+                <div class="text-muted small">
+                    {{ booking.bookedEndTime | date:'hh:mm a' }}
+                </div>
+                }
+            </td>
+            <td>{{booking.bookingToken}}</td>
+            <td>
+                <div class="fw-semibold">
+                    {{booking.bookedAt | date:'dd MMM yyyy'}}
+                </div>
+                <div class="text-muted small">
+                    {{booking.bookedAt | date:'hh:mm a'}}
+                </div>
+            </td>
+            <td [ngClass]="statusClassMap[booking.bookingStatus]">{{booking.bookingStatus}}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" (click)="comfirmDeleteUserBooking(booking.id)">
+                    Delete Booking
+                </button>
+            </td>
+        </tr>
+        }
+        @empty {
+        <tr>
+            <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-calendar-x"></i> No bookings found.
+            </td>
+        </tr>
+        }
+
+    </tbody>
+
+</table>

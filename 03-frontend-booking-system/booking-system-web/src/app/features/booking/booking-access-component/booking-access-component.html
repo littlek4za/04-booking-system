@@ -1,5 +1,9 @@
 <p>booking-access-component works!</p>
 
+<button class="btn btn-outline-secondary btn-sm" (click)="closePage()">
+    <i class="fa fa-times"></i>
+</button>
+
 <form class="row g-3 needs-validation" [formGroup]="bookingTokenValidationForm" (ngSubmit)="onSubmit()">
     <div class="col-md-4">
         <label class="form-label">Booking Token</label>
@@ -19,10 +23,27 @@
         </div>
         }
     </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Booking Email</label>
+        <input type="text" class="form-control" formControlName="email">
+        @if (bookingTokenValidationForm.get('email')?.hasError('pattern') &&
+        (bookingTokenValidationForm.get('email')?.touched ||
+        bookingTokenValidationForm.get('email')?.dirty)){
+        <div class="text-danger">
+            Invalid email.
+        </div>
+        }
+        @if (bookingTokenValidationForm.get('email')?.hasError('required') &&
+        (bookingTokenValidationForm.get('email')?.touched ||
+        bookingTokenValidationForm.get('email')?.dirty)){
+        <div class="text-danger">
+            Booking email is required.
+        </div>
+        }
+    </div>
     
-    @if (!userValid) {
     <div id="captcha-container"></div>
-    }
 
     <div class="col-12">
         <button class="btn btn-primary" type="submit">Submit form</button>

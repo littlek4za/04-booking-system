@@ -19,7 +19,7 @@ public class AppException extends RuntimeException {
         return this.httpStatus;
     }
 
-    public ErrorCode getCode(){
+    public ErrorCode getErrorCode(){
         return this.code;
     }
 

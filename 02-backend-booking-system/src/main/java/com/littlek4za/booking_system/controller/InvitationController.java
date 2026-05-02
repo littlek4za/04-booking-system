@@ -63,7 +63,7 @@ public class InvitationController {
     
     @GetMapping(path = "{version}/invitations/{token}/validate", version="1")
     public ResponseEntity<InvitationValidationResponseDto> validateToken(@PathVariable("token") String token) {
-        InvitationValidationResponseDto validationResponseDto = invitationService.validateAccessToken(token);
+        InvitationValidationResponseDto validationResponseDto = invitationService.validateInvitationAccess(token);
         return ResponseEntity.ok(validationResponseDto);
     }
 

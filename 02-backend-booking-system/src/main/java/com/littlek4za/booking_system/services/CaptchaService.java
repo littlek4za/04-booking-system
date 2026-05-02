@@ -17,8 +17,8 @@ public class CaptchaService {
     @Value("${recaptcha.secret-key}")
     private String secretKey;
 
-    public CaptchaService(WebClient.Builder wBuilder) {
-        this.webClient = wBuilder.baseUrl("https://www.google.com").build(); // set default baseUrl
+    public CaptchaService(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.baseUrl("https://www.google.com").build(); // set default baseUrl
     }
 
     public boolean verify(String captchaToken){

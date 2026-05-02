@@ -51,7 +51,7 @@ public class BookingRequestValidator {
     }
 
     public void validateGuestOrUserFields(BookingRequestDto bookingRequestDto) {
-        boolean authenticated = securityUtil.isAuthenticated();
+        boolean authenticated = securityUtil.isUser();
 
         if (authenticated) {
             if (bookingRequestDto.email() != null || bookingRequestDto.firstName() != null

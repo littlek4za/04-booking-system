@@ -3,7 +3,7 @@ package com.littlek4za.booking_system.entities;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.littlek4za.booking_system.models.RoleName;
+import com.littlek4za.booking_system.models.RoleType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,7 +29,7 @@ public class Role {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role_name", unique = true)
-    private RoleName roleName;
+    private RoleType roleName;
 
     @ManyToMany(mappedBy = "roleSet", fetch = FetchType.LAZY)
     private Set<User> userSet = new HashSet<>();
@@ -37,7 +37,7 @@ public class Role {
     protected Role() {
     }
 
-    public Role(RoleName roleName) {
+    public Role(RoleType roleName) {
         this.roleName = roleName;
     }
 

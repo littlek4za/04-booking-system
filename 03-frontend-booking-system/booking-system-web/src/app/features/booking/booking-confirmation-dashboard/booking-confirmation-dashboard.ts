@@ -52,7 +52,7 @@ export class BookingConfirmationDashboard {
   });
 
   ngOnInit() {
-    const token = this.route.snapshot.paramMap.get('token');
+    const token = this.route.snapshot.paramMap.get('invitationToken');
     this.validateToken(token);
   }
 

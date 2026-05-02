@@ -15,10 +15,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final UserAuthProvider userAuthProvider;
+    private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
-    public JwtAuthFilter(UserAuthProvider userAuthProvider) {
-        this.userAuthProvider = userAuthProvider;
+    public JwtAuthFilter(JwtAuthenticationProvider jwtAuthenticationProvider) {
+        this.jwtAuthenticationProvider = jwtAuthenticationProvider;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return path.startsWith("/api/v1/guest/bookings/view/init")
+                || path.startsWith("/api/v1/guest/bookings/view/access")
+                || path.startsWith("/api/v1/guest/bookings/create/init")
+                || path.startsWith("/api/v1/guest/bookings/create/access");
     }
 
     @Override
@@ -28,6 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
+
         log.debug("JwtAuthFilter triggered for path: {}", path);
 
         String authHeader = request.getHeader((HttpHeaders.AUTHORIZATION));
@@ -43,7 +54,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.debug("Bearer token found, validating...");
 
             SecurityContextHolder.getContext()
-                    .setAuthentication(userAuthProvider.validateTokenStrongly(token));
+                    .setAuthentication(jwtAuthenticationProvider.authenticate(token));
         } catch (Exception e) {
             log.debug("Token validation failed: {}", e.getMessage());
 

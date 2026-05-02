@@ -3,8 +3,6 @@ package com.littlek4za.booking_system.exception.filter;
 import java.io.IOException;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -32,18 +30,15 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             filterChain.doFilter(request, response);
-        } catch (InsufficientAuthenticationException e) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(),ErrorCode.UNAUTHORIZED, request);
-        } catch(JWTVerificationException e) {
+        }  catch(JWTVerificationException e) {
             writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(),ErrorCode.TOKEN_INVALID, request);
-        } catch (JwtAuthFilterException e) { // custome filter
+        } catch (JwtAuthFilterException e) { // custom filter
             writeErrorResponse(response, e.getHttpStatus(), e.getMessage(),ErrorCode.USER_NOT_FOUND, request);
-        } catch (AccessDeniedException e) {
-            writeErrorResponse(response, HttpStatus.FORBIDDEN, e.getMessage(),ErrorCode.ACCESS_DENIED, request);
-        } catch (Exception e) {
-            log.error("EXCEPTION HANDLER FILTER error: ", e);
-            writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal System Error",ErrorCode.INTERNAL_ERROR, request);
-        }
+        }  
+        // catch (Exception e) {
+        //     log.error("EXCEPTION HANDLER FILTER error: ", e);
+        //     writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal System Error",ErrorCode.INTERNAL_ERROR, request);
+        // }
     }
 
     private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message, ErrorCode code,

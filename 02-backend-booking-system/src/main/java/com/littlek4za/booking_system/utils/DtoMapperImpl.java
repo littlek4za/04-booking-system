@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.dtos.BookingResponseDto;
+import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
@@ -172,7 +173,8 @@ public class DtoMapperImpl implements DtoMapper {
                                 savedBooking.getBookedEndTime(),
                                 savedBooking.getBookingToken(),
                                 savedBooking.getBookedAt(),
-                                status);
+                                status,
+                                toEventResponseDto(savedBooking.getSlot().getEvent()));
         }
 
         private BookingStatus calculateStatus(Booking savedBooking) {
@@ -193,18 +195,53 @@ public class DtoMapperImpl implements DtoMapper {
         }
 
         @Override
+        public AttendeeBookingResponseDto toAttendeeBookingResponseDto(Booking savedBooking) {
+
+                BookingStatus status = calculateStatus(savedBooking);
+
+                String guestFirstName = null;
+                String guestLastName = null;
+
+                if (Boolean.TRUE.equals(savedBooking.getUser().getGuest())) {
+                        guestFirstName = savedBooking.getGuestFirstName();
+                        guestLastName = savedBooking.getGuestLastName();
+                }
+
+                return new AttendeeBookingResponseDto(
+                                savedBooking.getId(),
+                                savedBooking.getUser().getUsername(),
+                                savedBooking.getUser().getLastName(),
+                                savedBooking.getUser().getFirstName(),
+                                guestLastName,
+                                guestFirstName,
+                                savedBooking.getUser().getGuest(),
+                                savedBooking.getUser().getEmail(),
+                                savedBooking.getBookedStartTime(),
+                                savedBooking.getBookedEndTime(),
+                                savedBooking.getBookingToken(),
+                                savedBooking.getBookedAt(),
+                                status,
+                                savedBooking.getEventName(),
+                                savedBooking.getSlotName(),
+                                savedBooking.getOrganizerEmail(),
+                                savedBooking.getAttendeeEmail(),
+                                savedBooking.getEventLocationAddress(),
+                                savedBooking.getLatitude(),
+                                savedBooking.getLongitude());
+        }
+
+        @Override
         public UserDto toUserDto(User user) {
                 return new UserDto(
-                        user.getId(), 
-                        user.getUsername(), 
-                        user.getEmail(), 
-                        user.getFirstName(), 
-                        user.getLastName(), 
-                        user.getRoleSet()
-                        .stream()
-                        .map(role -> role.getRoleName())
-                        .collect(Collectors.toSet())
-                );
+                                user.getId(),
+                                user.getUsername(),
+                                user.getEmail(),
+                                user.getFirstName(),
+                                user.getLastName(),
+                                user.getRoleSet()
+                                                .stream()
+                                                .map(role -> role.getRoleName())
+                                                .collect(Collectors.toSet()));
         }
 
 }

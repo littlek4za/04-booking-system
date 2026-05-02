@@ -6,7 +6,9 @@ import { SignupRequestDto } from './dtos/signup-request-dto';
 import { Router } from '@angular/router';
 import { LoginResponseDto } from './dtos/login-response-dto';
 import { AuthTokenPayload } from './dtos/auth-token-payload';
-import { AuthSession } from './model/auth-session';
+import { UserAccessTokenDto } from './dtos/user-access-token-dto';
+import { GuestAccessTokenDto } from './dtos/guest-access-token-dto';
+import { TokenType } from './model/token-type';
 
 @Injectable({
   providedIn: 'root',
@@ -25,31 +27,46 @@ export class AuthService {
   login(loginRequestDto: LoginRequestDto): Observable<LoginResponseDto> {
     return this.httpClient.post<LoginResponseDto>(this.loginUrl, loginRequestDto).pipe(
       tap(res => {
-        const authTokenPayload: AuthTokenPayload | null = this.decodeToken(res.token);
-        const session: AuthSession = {
-          token: res.token,
-          type: 'USER',
-          expiry: authTokenPayload?.exp ?? 0
-        };
-
-        localStorage.setItem('session', JSON.stringify(session));
+        this.storeToken(res.userAccessTokenDto);
         this.authStatus.next(true);
       })
     );
   }
 
-  register(signupRequestDto: SignupRequestDto): Observable<any> {
-    return this.httpClient.post<SignupRequestDto>(this.registerUrl, signupRequestDto);
+  storeToken(token:UserAccessTokenDto | GuestAccessTokenDto){
+    localStorage.setItem('session', JSON.stringify(token));
+    localStorage.removeItem('guestSession');
+  }
+
+  storeGuestToken(token:UserAccessTokenDto | GuestAccessTokenDto){
+    localStorage.setItem('guestSession', JSON.stringify(token));
+  }
+
+  register(signupRequestDto: SignupRequestDto): Observable<void> {
+    return this.httpClient.post<void>(this.registerUrl, signupRequestDto);
   }
 
   hasValidToken(): boolean {
     const session = this.getSession();
-
     if (!session) return false;
 
-    const timeNow = Math.floor(Date.now() / 1000);
+    const payload = this.decodeToken(session.accessToken);
+     if (!payload || !payload.exp) return false;
 
-    return session.expiry > timeNow;
+    const timeNow = Date.now(); //millisecond
+
+    const expiry = payload.exp * 1000; //millisecond
+
+    return expiry > timeNow;
+  }
+
+  isLoggedInUser(): boolean {
+    const session = this.getSession();
+    if (!session) return false;
+
+    const payload = this.decodeToken(session.accessToken);
+
+    return payload?.tokenType == TokenType.USER;
   }
 
   getAuthTokenInfo(): AuthTokenPayload | null {
@@ -57,11 +74,22 @@ export class AuthService {
 
     if (!session) return null;
 
-    return this.decodeToken(session.token);
+    return this.decodeToken(session.accessToken);
   }
 
-  getSession(): AuthSession | null {
+  getSession(): UserAccessTokenDto | null {
     const data = localStorage.getItem('session');
+    if (!data) return null;
+
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  getGuestSession(): GuestAccessTokenDto | null {
+    const data = localStorage.getItem('guestSession');
     if (!data) return null;
 
     try {
@@ -75,7 +103,7 @@ export class AuthService {
     const session =this.getSession();
     if(!session) return [];
 
-    const payload = this.decodeToken(session.token);
+    const payload = this.decodeToken(session.accessToken);
     return payload?.roles || [];
   }
 
@@ -115,6 +143,7 @@ export class AuthService {
 
   private clearSession(): void {
     localStorage.removeItem('session');
+    localStorage.removeItem('guestSession');
     this.authStatus.next(false);
   }
 }

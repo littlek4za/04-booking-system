@@ -1,4 +1,8 @@
 <p>invitation-access-component works!</p>
+<button class="btn btn-outline-secondary btn-sm" (click)="closePage()">
+    <i class="fa fa-times"></i>
+</button>
+
 <form class="row g-3 needs-validation" [formGroup]="tokenValidationForm" (ngSubmit)="onSubmit()">
     <div class="col-md-4">
         <label class="form-label">Invitation code</label>

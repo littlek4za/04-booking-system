@@ -40,7 +40,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   // IO for component
   slotName: string | null = null;
-  eventName: string|null = null;
+  eventName: string | null = null;
 
   // for destroy usage
   private destroy$ = new Subject<void>();
@@ -112,9 +112,12 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
 
-    if (h > 0 && m > 0) return `${h} hour ${m} minute`;
-    if (h > 0) return `${h} hour`;
-    return `${m} minute`;
+    const hourText = h === 1 ? 'hour' : 'hours';
+    const minuteText = m === 1 ? 'minute' : 'minutes';
+
+    if (h > 0 && m > 0) return `${h} ${hourText} ${m} ${minuteText}`;
+    if (h > 0) return `${h} ${hourText}`;
+    return `${m} ${minuteText}`;
   }
 
   openCreateSlotWizard() {

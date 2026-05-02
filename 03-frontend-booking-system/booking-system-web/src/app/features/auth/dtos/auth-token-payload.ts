@@ -7,4 +7,5 @@ export class AuthTokenPayload {
     iss!: string;
     iat!: number;
     exp!: number;
+    tokenType!: string;
 }

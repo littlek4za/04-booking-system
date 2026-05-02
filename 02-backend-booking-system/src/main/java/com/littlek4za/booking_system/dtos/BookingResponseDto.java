@@ -18,8 +18,9 @@ public record BookingResponseDto(
     Instant bookedEndTime,
     String bookingToken,
     Instant bookedAt,
-    BookingStatus bookingStatus
-    
+    BookingStatus bookingStatus,
+    EventResponseDto eventResponseDto
+
 ) { 
 
 }

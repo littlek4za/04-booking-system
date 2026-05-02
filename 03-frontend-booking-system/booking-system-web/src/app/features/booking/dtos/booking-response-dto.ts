@@ -1,3 +1,4 @@
+import { EventResponseDto } from "@features/events/dtos/event-response-dto";
 import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
 
 export class BookingResponseDto {
@@ -16,4 +17,5 @@ export class BookingResponseDto {
     bookingToken!: string;
     bookedAt!: string;
     bookingStatus!: string;
+    event!: EventResponseDto;
 }

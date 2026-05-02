@@ -49,7 +49,7 @@ public class EventServiceImpl implements EventService {
         @Override
         @Transactional
         public EventResponseDto createEvent(EventRequestDto eRequestDto) {
-                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
 
@@ -74,7 +74,7 @@ public class EventServiceImpl implements EventService {
         @Override
         public List<EventWithSlotCountReponseDto> getEvents() {
 
-                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
                 List<Event> eventList = eventRepository.findByUser(user);
@@ -90,7 +90,7 @@ public class EventServiceImpl implements EventService {
 
         @Override
         public EventWithSlotCountReponseDto getEventById(Long eventId) {
-                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -103,7 +103,7 @@ public class EventServiceImpl implements EventService {
         @Transactional
         public EventResponseDto putEventById(Long eventId,
                         EventRequestDto eRequestDto) {
-                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
                                 .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
@@ -132,7 +132,7 @@ public class EventServiceImpl implements EventService {
         @Override
         @Transactional
         public Long deleteEventById(Long eventId) {
-                User user = userRepository.findById(this.securityUtil.getCurrentAuthUserId())
+                User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
                 List<Invitation> invitationList = invitationRepository.findByEventIdWithSlotSet(eventId);

@@ -12,7 +12,7 @@ import com.littlek4za.booking_system.dtos.UserDto;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.models.RoleName;
+import com.littlek4za.booking_system.models.RoleType;
 import com.littlek4za.booking_system.repos.RoleRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.utils.DtoMapper;
@@ -59,8 +59,8 @@ public class UserServiceImpl implements UserService {
         User user = User.createRegistered(signUpRequestDto.username(), passwordEncoder.encode(signUpRequestDto.password()),
                 signUpRequestDto.email(), signUpRequestDto.firstName(), signUpRequestDto.lastName());
 
-        user.addRole(roleRepository.findByRoleName(RoleName.ROLE_ATTENDEE.name()));
-        user.addRole(roleRepository.findByRoleName(RoleName.ROLE_ORGANIZER.name()));
+        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ATTENDEE.name()));
+        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ORGANIZER.name()));
 
         userRepository.save(user);
     }

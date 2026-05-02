@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InvitationService } from '../invitation-service';
@@ -17,6 +17,8 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
   tokenValidationForm!: FormGroup;
   invitationInfo: InvitationValidationResponseDto | null = null;
 
+  @Output() close = new EventEmitter<void>();
+
   private destroy$ = new Subject<void>();
 
   constructor(private route: ActivatedRoute,
@@ -26,7 +28,7 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.initTokenValidationForm();
-    const token = this.route.snapshot.paramMap.get('token');
+    const token = this.route.snapshot.paramMap.get('invitationToken');
 
     if (token) {
       this.processToken(token);
@@ -49,36 +51,36 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
 
   private processToken(token: string) {
     this.invitationService.validateInvitation(token)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (res) => {
-        this.invitationInfo = res;
-        if (res.valid == false) {
-          alert(res.reason);
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.invitationInfo = res;
+          if (res.valid == false) {
+            alert(res.reason);
+          }
+          else if (res.requiredLogin == false) {
+            alert("redirecting to booking page");
+            this.router.navigate([`/bookingConfirmation/${token}`]);
+          }
+          else if (res.requiredLogin && !this.authService.hasValidToken()) {
+            alert("redirecting to login page");
+            const currentUrl = this.router.url;
+            this.router.navigate(['/login'], {
+              queryParams: { returnUrl: currentUrl }
+            });
+          }
+          else if (res.requiredLogin && this.authService.hasValidToken()) {
+            alert("redirectingn to booking page");
+            this.router.navigate([`/bookingConfirmation/${token}`]);
+          } else {
+            console.warn("Unexpected invitation validation response:", res);
+            alert("Unexpected invitation status. Please contact administrator.");
+          }
+        },
+        error: (err) => {
+          alert("Token validation error. Please contact administrator");
         }
-        else if (res.requiredLogin == false) {
-          alert("redirecting to booking page");
-          this.router.navigate([`/bookingConfirmation/${token}`]);
-        }
-        else if (res.requiredLogin && !this.authService.hasValidToken()) {
-          alert("redirecting to login page");
-          const currentUrl = this.router.url;
-          this.router.navigate(['/login'], {
-            queryParams: { returnUrl: currentUrl }
-          });
-        }
-        else if (res.requiredLogin && this.authService.hasValidToken()) {
-          alert("redirectingn to booking page");
-          this.router.navigate([`/bookingConfirmation/${token}`]);
-        } else {
-          console.warn("Unexpected invitation validation response:", res);
-          alert("Unexpected invitation status. Please contact administrator.");
-        }
-      },
-      error: (err) => {
-        alert("Token validation error. Please contact administrator");
-      }
-    })
+      })
   };
 
   onSubmit() {
@@ -91,6 +93,10 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
 
     this.processToken(token);
 
+  }
+
+  closePage() {
+    this.close.emit();
   }
 
 }

@@ -1,91 +1,155 @@
-<p>booking-confirmation-wizard works!</p>
 @if (showCalendar){
-<div class="calendar-step-wrapper" > <!-- disables background -->
-    <div class="calendar-content">
-        <app-full-calendar-view 
-            mode="EDIT" 
-            [eventId]="null" 
-            [eventType]="null"
-            [slotId]="null"
-            [slot]="slot" 
-            [invitation]="invitation"
-            (close)="closeCalendar()"
-            (selectedStartTime)="processSelectedStartTime($event)"
+<div class="calendar-step-wrapper"> <!-- disables background -->
+    <div class="calendar-content shadow rounded bg-white p-3">
+        <app-full-calendar-view mode="EDIT" [eventId]="null" [eventType]="null" [slotId]="null" [slot]="slot"
+            [invitation]="invitation" (close)="closeCalendar()" (selectedStartTime)="processSelectedStartTime($event)"
             (timeZone)="processSelectedTimeZone($event)">
         </app-full-calendar-view>
     </div>
 </div>
 }
 
-<div [hidden]="showCalendar">
-    <button (click)="closeWizard()">close</button>
-    <p>Event Name: {{invitation.event.eventName}}</p>
-    @if(invitation.event.eventDescription) {
-    <p>Event Description: {{invitation.event.eventDescription}}</p>
-    }
+<div [hidden]="showCalendar" class="container mt-4">
 
-    <h3>Chosen Slot</h3>
-    <p>Slot Name: {{slot.slotName}}</p>
-    @if(slot.slotDescription) {
-    <p>Slot Name: {{slot.slotDescription}}</p>
-    }
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            Booking Summary
+        </h4>
+        <button class="btn btn-outline-secondary btn-sm" (click)="closeWizard()">
+            <i class="fa fa-times"></i>
+        </button>
+    </div>
 
-    @if (invitation.event.eventType == EventTypeModel.FIXED) {
-    <p>Slot StartTime: {{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
-    <p>Slot EndTime: {{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
+    <!-- Event Info -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Event Name: {{invitation.event.eventName}}</h5>
+
+            @if(invitation.event.eventDescription) {
+            <p class="text-muted mb-0"><strong>Event Description:</strong> {{invitation.event.eventDescription}}</p>
+            }
+        </div>
+    </div>
+
+    <!-- Slot Info -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Chosen Slot</h5>
+
+            <p><strong>Slot Name:</strong> {{slot.slotName}}</p>
+
+            @if(slot.slotDescription) {
+            <p class="text-muted"><strong>Slot Description:</strong> {{slot.slotDescription}}</p>
+            }
+
+            <p>
+                <strong>Slot Duration:</strong>
+                {{slot.slotIntervalMinutes}}
+                {{slot.slotIntervalMinutes === 1 ? 'minute' : 'minutes'}}
+            </p>
+
+            @if (invitation.event.eventType == EventTypeModel.FIXED) {
+            <p><strong>Start:</strong> {{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
+            <p><strong>End:</strong> {{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
+            } @else {
+            <p><strong>Start:</strong> {{guestForm.get('choosenStartTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}</p>
+            <p><strong>End:</strong> {{guestForm.get('choosenEndTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}
+            </p>
+
+            @if (guestForm.hasError('startOrEndTimeOutOfRange') &&
+            (guestForm.controls['choosenStartTime'].touched ||
+            guestForm.controls['choosenStartTime'].dirty ||
+            guestForm.controls['choosenEndTime'].touched||
+            guestForm.controls['choosenEndTime'].dirty)) {
+            <div class="alert alert-danger py-1">
+                Invalid time range. Please choose another slot.
+            </div>
+            }
+
+            <button class="btn btn-outline-primary btn-sm" (click)="openCalendar()">
+                <i class="fa fa-clock me-1"></i>Choose Time
+            </button>
+            }
+        </div>
+    </div>
+
+    <!-- Guest Form -->
+    @if(!loggedInUser){
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Attendee Details</h5>
+            <form [formGroup]="guestForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" formControlName="firstName">
+                        @if (guestForm.controls['firstName'].invalid && (guestForm.controls['firstName'].touched ||
+                        guestForm.controls['firstName'].dirty)){
+                        <div class="text-danger">
+                            First Name must be between 1 and 100 characters
+                        </div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" formControlName="lastName">
+                        @if (guestForm.controls['lastName'].invalid && (guestForm.controls['lastName'].touched ||
+                        guestForm.controls['lastName'].dirty)){
+                        <div class="text-danger">
+                            Last Name must be between 1 and 100 characters
+                        </div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email</label>
+                        <input type="text" class="form-control" formControlName="email">
+                        @if (guestForm.controls['email'].invalid && (guestForm.controls['email'].touched ||
+                        guestForm.controls['email'].dirty)){
+                        <div class="text-danger">
+                            Invalid Email Address
+                        </div>
+                        }
+                    </div>
+
+                    @if ((guestForm.controls['choosenStartTime'].invalid &&
+                    (guestForm.controls['choosenStartTime'].touched
+                    ||
+                    guestForm.controls['choosenStartTime'].dirty)) || (guestForm.controls['choosenEndTime'].invalid &&
+                    (guestForm.controls['choosenEndTime'].touched || guestForm.controls['choosenEndTime'].dirty))
+                    ){
+                    <div class="text-danger small">
+                        Please choose your slot time.
+                    </div>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
     } @else {
-    <p>Slot StartTime: {{guestForm.get('choosenStartTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}</p>
-    <p>Slot EndTime: {{guestForm.get('choosenEndTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}</p>
-
-    <button type="button" class="btn btn-outline-info" (click)="openCalendar()">
-        Choose Slot Time
-    </button>
+    @if(authTokenPayload){
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Booked By:</h5>
+            <p>First Name: {{authTokenPayload.firstName}}</p>
+            <p>Last Name: {{authTokenPayload.lastName}}</p>
+            <p>Email Name: {{authTokenPayload.email}}</p>
+        </div>
+    </div>
     }
 
-    @if(!authTokenPayload){
-    <h3>Key in Attendee Details</h3>
-    <form class="row g-3 needs-validation" [formGroup]="guestForm" (ngSubmit)="bookSlot(slot)">
-        <div class="col-md-4">
-            <label class="form-label">First Name</label>
-            <input type="text" class="form-control" formControlName="firstName">
-            @if (guestForm.controls['firstName'].invalid && (guestForm.controls['firstName'].touched ||
-            guestForm.controls['firstName'].dirty)){
-            <div class="text-danger">
-                First Name must be between 1 and 100 characters
-            </div>
-            }
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Last Name</label>
-            <input type="text" class="form-control" formControlName="lastName">
-            @if (guestForm.controls['lastName'].invalid && (guestForm.controls['lastName'].touched ||
-            guestForm.controls['lastName'].dirty)){
-            <div class="text-danger">
-                Last Name must be between 1 and 100 characters
-            </div>
-            }
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Email</label>
-            <input type="text" class="form-control" formControlName="email">
-            @if (guestForm.controls['email'].invalid && (guestForm.controls['email'].touched ||
-            guestForm.controls['email'].dirty)){
-            <div class="text-danger">
-                Invalid Email Address
-            </div>
-            }
-        </div>
-        <div class="col-12">
-            <button class="btn btn-primary" type="submit" [disabled]="guestForm.invalid">Book this slot</button>
-        </div>
-    </form>
-    } @else {
-    <h3>Booked By:</h3>
-    <p>First Name: {{authTokenPayload.firstName}}</p>
-    <p>Last Name: {{authTokenPayload.lastName}}</p>
-    <p>Email Name: {{authTokenPayload.email}}</p>
-
-
-    <button class="btn btn-primary" (click)="bookSlot(slot)">Book this slot</button>
     }
+    <!--Submit-->
+    <div class="captcha-wrapper">
+        <div id="captcha-container"></div>
+        @if(isBookingInProgress){
+        <div class="captcha-overlay"></div>
+        }
+    </div>
+
+    <div class="text-end">
+        <button class="btn btn-primary" (click)="bookSlot(slot)">
+            <i class="fa fa-check me-1"></i>Book Slot
+        </button>
+    </div>
 </div>

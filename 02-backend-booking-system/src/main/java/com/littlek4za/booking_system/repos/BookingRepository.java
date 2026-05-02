@@ -59,11 +59,22 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
                 WHERE b.id = :bookingId
-                AND s.id = :slotId
                 AND e.user.id = :userId
+                AND b.slot.id = :slotId
                 AND b.isDeleted = false
             """)
-    Optional<Booking> findByIdAndSlotIdAndUserId(@Param("bookingId") Long bookingId, @Param("slotId") Long slotId, @Param("userId") Long userId);
+    Optional<Booking> findOrganizerBookingByIdAndSlotIdAndUserId(@Param("bookingId") Long bookingId, @Param("slotId") Long slotId, @Param("userId") Long userId);
+
+    @Query("""
+                SELECT b 
+                FROM Booking b
+                JOIN FETCH b.slot s
+                JOIN FETCH s.event e
+                WHERE b.id = :bookingId
+                AND b.user.id = :userId
+                AND b.isDeleted = false
+            """)
+    Optional<Booking> findAttendeeBookingByIdAndUserId(@Param("bookingId") Long bookingId, @Param("userId") Long userId);
 
 
     @Query("""
@@ -106,13 +117,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b
                 FROM Booking b
-                LEFT JOIN FETCH b.user
-                LEFT JOIN FETCH b.slot
                 WHERE b.user.id = :userId
                 AND b.bookingToken = :bookingToken
                 AND b.isDeleted = false
             """) 
-    Optional<Booking> findByBookingTokenAndUserIdWithUserAndSlot(@Param("bookingToken") String bookingToken,@Param("userId") Long userId);
+    Optional<Booking> findByBookingTokenAndUserId(@Param("bookingToken") String bookingToken,@Param("userId") Long userId);
 
     @Query("""
                 SELECT b
@@ -122,6 +131,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                 AND b.isDeleted = false
             """) 
     Optional<Booking> findByBookingToken(@Param("bookingToken") String bookingToken);
+
+    @Query("""
+                SELECT b
+                FROM Booking b
+                WHERE b.user.id = :userId
+                AND b.isDeleted = false
+            """) 
+    List<Booking> findByUserId(@Param("userId") Long userId);
+
+    @Query("""
+                SELECT b
+                FROM Booking b
+                WHERE b.user.email = :email
+                AND b.bookingToken = :bookingToken
+                AND b.isDeleted = false
+            """)     
+    Optional<Booking> findbyBookingTokenAndEmail(@Param("bookingToken") String bookingToken,@Param("email") String email);
 
 
 }

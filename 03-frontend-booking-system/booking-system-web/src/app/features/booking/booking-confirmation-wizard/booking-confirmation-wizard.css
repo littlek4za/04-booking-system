@@ -11,3 +11,15 @@
   /* This ensures the calendar-view component has a 
      defined height to fill, enabling its own scrollbar */
 }
+
+.captcha-wrapper {
+  position: relative;
+}
+
+.captcha-overlay {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  z-index: 10;
+  cursor: not-allowed;
+}

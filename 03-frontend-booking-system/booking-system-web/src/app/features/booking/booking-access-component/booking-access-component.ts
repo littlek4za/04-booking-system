@@ -1,11 +1,13 @@
-import { AfterViewInit, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, inject, OnDestroy, OnInit, Output } from '@angular/core';
 import { BookingResponseDto } from '../dtos/booking-response-dto';
 import { Subject, takeUntil } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../booking-service';
 import { AuthService } from '@features/auth/auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { GuestBookingRequestDto } from '../dtos/guest-booking-request-dto';
+import { GuestBookingViewInitRequestDto } from '../dtos/guest-booking-view-init-request-dto';
+import { GuestBookingViewAccessRequestDto } from '../dtos/guest-booking-view-access-request-dto';
+import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
 
 declare var grecaptcha: any;
 
@@ -16,21 +18,27 @@ declare var grecaptcha: any;
   styleUrl: './booking-access-component.css',
 })
 
-export class BookingAccessComponent implements OnInit, OnDestroy, AfterViewInit {
+export class BookingAccessComponent implements OnInit, OnDestroy {
 
   private authService = inject(AuthService);
+
+  @Output() close = new EventEmitter<void>();
+
+
+
 
   // Form
   bookingTokenValidationForm!: FormGroup;
 
   // Submit Field
-  bookingInfo: BookingResponseDto | null = null;
+  bookingInfo: AttendeeBookingResponseDto | null = null;
 
   // Recaptcha Field
+  private captchaWidgetId: number | null = null;
   captchaToken: string | null = null;
-
-  // IO
-  userValid: boolean = this.authService.hasValidToken();
+  // for Recaptcha auto submit
+  private pendingEmail: string | null = null;
+  private pendingBookingToken: string | null = null;
 
   // Destroy Field
   private destroy$ = new Subject<void>();
@@ -42,18 +50,6 @@ export class BookingAccessComponent implements OnInit, OnDestroy, AfterViewInit 
 
   ngOnInit(): void {
     this.initbookingTokenValidationForm();
-    const bookingToken = this.route.snapshot.paramMap.get('bookingToken');
-
-    if (bookingToken) {
-      this.processBookingToken(bookingToken);
-    }
-  }
-
-  ngAfterViewInit(): void {
-    if (!this.userValid) {
-      this.renderCaptcha();
-    }
-
   }
 
   ngOnDestroy(): void {
@@ -61,12 +57,64 @@ export class BookingAccessComponent implements OnInit, OnDestroy, AfterViewInit 
     this.destroy$.complete();
   }
 
-  renderCaptcha() {
-    grecaptcha.render('captcha-container', {
+  private initbookingTokenValidationForm() {
+    this.bookingTokenValidationForm = new FormGroup({
+      bookingToken: new FormControl<string>("", [
+        Validators.required,
+        Validators.pattern(`^[a-zA-Z0-9]{6}$`)
+      ]),
+      email: new FormControl<string>("", [
+        Validators.required,
+        Validators.pattern('^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$')
+      ])
+    });
+  }
+
+  private initGuestAccess(email: string, bookingToken: string) {
+    let requestDto = new GuestBookingViewInitRequestDto();
+    requestDto.bookingToken = bookingToken;
+    requestDto.email = email;
+    this.bookingService.initGuestBookingViewAccess(requestDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(res => {
+        if (res.captchaRequired) {
+          console.log("moving to renderCaptcha");
+          this.renderCaptcha();
+          return;
+        }
+        if (!res.valid) {
+          alert("Invalid booking");
+          return;
+        }
+        console.log("moving to issueToken");
+        this.issueToken(email, bookingToken, null);
+      })
+  }
+
+  private renderCaptcha() {
+
+    if (this.captchaWidgetId !== null) {
+      grecaptcha.reset(this.captchaWidgetId);
+      return;
+    }
+
+    this.captchaWidgetId = grecaptcha.render('captcha-container', {
       'sitekey': '6LdkcLUsAAAAAJMLxLQMGoW3hZ0acjtL7-RdotBu',
       'callback': (response: string) => {
         console.log('Token:', response);
         this.captchaToken = response;
+
+        // AUTO CONTINUE HERE captcha->issuetoken
+        if (!this.captchaToken) return;
+        if (!this.pendingEmail || !this.pendingBookingToken) return;
+        if (this.pendingEmail && this.pendingBookingToken) {
+          console.log("moving to issueToken");
+          this.issueToken(
+            this.pendingEmail,
+            this.pendingBookingToken,
+            this.captchaToken
+          );
+        }
       },
       'expiry-callback': () => {
         this.captchaToken = null;
@@ -74,50 +122,37 @@ export class BookingAccessComponent implements OnInit, OnDestroy, AfterViewInit 
     });
   }
 
-  private initbookingTokenValidationForm() {
-    this.bookingTokenValidationForm = new FormGroup({
-      bookingToken: new FormControl<string>("", [
-        Validators.required,
-        Validators.pattern(`^[a-zA-Z0-9]{6}$`)
-      ])
-    });
-  }
-
-  private processBookingToken(bookingToken: string) {
-
-    this.bookingService.getBookingByToken(bookingToken)
+  private issueToken(email: string, bookingToken: string, captchaToken: string | null) {
+    let requestDto = new GuestBookingViewAccessRequestDto();
+    requestDto.bookingToken = bookingToken;
+    requestDto.email = email;
+    requestDto.captchaToken = captchaToken;
+    console.log('Guest', this.authService.getGuestSession());
+    console.log('User', this.authService.getSession());
+    this.bookingService.issueGuestBookingViewAccessToken(requestDto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.bookingInfo = res;
-          alert("redirecting to booking details page");
-          this.router.navigate([`/booking/${bookingToken}`])
+          this.authService.storeGuestToken(res);
+          this.pendingBookingToken = null;
+          this.pendingEmail = null;
+          this.captchaToken = null;
+          if (this.captchaWidgetId !== null) {
+            grecaptcha.reset(this.captchaWidgetId);
+          }
+          this.router.navigate([`/bookingView/${bookingToken}`]);
         },
         error: (err) => {
-          alert("GET Booking failed.");
+          alert("Access denied");
+          console.log(err);
+          this.pendingBookingToken = null;
+          this.pendingEmail = null;
+          this.captchaToken = null;
+          if (this.captchaWidgetId !== null) {
+            grecaptcha.reset(this.captchaWidgetId);
+          }
         }
-      });
-
-
-  }
-
-  private processGuestBookingToken(bookingToken: string) {
-    let dto = new GuestBookingRequestDto();
-    if (!this.captchaToken) return;
-    dto.captcha = this.captchaToken;
-    dto.bookingToken = bookingToken;
-    this.bookingService.retrieveGuestBooking(dto)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.bookingInfo = res;
-          alert("redirecting to booking details page");
-          this.router.navigate([`/booking/${bookingToken}`])
-        },
-        error: (err) => {
-          alert("GET Guest Booking failed.");
-        }
-      });
+      })
   }
 
   onSubmit() {
@@ -127,15 +162,16 @@ export class BookingAccessComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     const bookingToken = this.bookingTokenValidationForm.value.bookingToken;
+    const email = this.bookingTokenValidationForm.value.email;
 
-    if (this.userValid) {
-      this.processBookingToken(bookingToken);
-    } else {
-      if (this.captchaToken == null) {
-        alert('Please complete the captcha');
-        return;
-      }
-      this.processGuestBookingToken(bookingToken);
-    }
+
+    this.pendingEmail = email;
+    this.pendingBookingToken = bookingToken;
+    this.initGuestAccess(email, bookingToken);
+
+  }
+
+  closePage() {
+    this.close.emit();
   }
 }

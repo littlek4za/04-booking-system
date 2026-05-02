@@ -1,0 +1,30 @@
+<p>attendee-access-component works!</p>
+
+<button (click)="viewInvitationAccess()">I have an invitation code</button>
+@if (loggedInUser) {
+<button (click)="viewBookingList()">List out all my bookings</button>
+} @else {
+<button (click)="viewBookingAccess()">I have a booking code</button>
+}
+
+
+@if (showInvitationAccessPage === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-invitation-access-component (close)="closeInvitationAccessPage()"></app-invitation-access-component>
+</div>
+}
+
+@if (showBookingAccessPage === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+  <app-booking-access-component (close)="closeBookingAccessPage()"></app-booking-access-component>
+</div>
+}
+
+@if(showUserBookingListDashboard === true) {
+<div class="modal-backdrop fade show"></div> <!-- disables background -->
+<div class="pop-out-wizard">
+    <app-attendee-booking-list-view-component (close)="closeUserBookingListDashboard()"></app-attendee-booking-list-view-component>
+</div>
+}

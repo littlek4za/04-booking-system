@@ -2,7 +2,7 @@ package com.littlek4za.booking_system.dtos;
 
 import java.util.Set;
 
-import com.littlek4za.booking_system.models.RoleName;
+import com.littlek4za.booking_system.models.RoleType;
 
 public record UserDto(
     Long id,
@@ -10,5 +10,5 @@ public record UserDto(
     String email,
     String firstName,
     String lastName,
-    Set<RoleName> roleSet
+    Set<RoleType> roleSet
 ) {}

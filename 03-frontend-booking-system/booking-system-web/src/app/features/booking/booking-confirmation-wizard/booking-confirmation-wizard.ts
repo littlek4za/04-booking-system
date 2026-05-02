@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
@@ -12,6 +12,11 @@ import { BookingResponseDto } from '../dtos/booking-response-dto';
 import { validateStartAndEndTimeBaseOnEvent } from '@shared/validators/custom-validator';
 import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
 import moment from 'moment';
+import { Subject, takeUntil } from 'rxjs';
+import { GuestBookingCreateInitRequestDto } from '../dtos/guest-booking-create-init-request-dto';
+import { GuestBookingCreateAccessRequestDto } from '../dtos/guest-booking-create-access-request-dto';
+
+declare var grecaptcha: any;
 
 @Component({
   selector: 'app-booking-confirmation-wizard',
@@ -19,7 +24,7 @@ import moment from 'moment';
   templateUrl: './booking-confirmation-wizard.html',
   styleUrl: './booking-confirmation-wizard.css',
 })
-export class BookingConfirmationWizard implements OnInit {
+export class BookingConfirmationWizard implements OnInit, OnDestroy {
 
   // component IO
   @Output() close = new EventEmitter<void>();
@@ -39,14 +44,30 @@ export class BookingConfirmationWizard implements OnInit {
   // show or hide component
   showCalendar: boolean = false;
 
+  // Recaptcha Field
+  private captchaWidgetId: number | null = null;
+  captchaToken: string | null = null;
+  isBookingInProgress: boolean = false;
+  // for Recaptcha auto submit
+  private pendingEmail: string | null = null
+
+  // Destroy Field
+  private destroy$ = new Subject<void>();
+
   constructor(private bookingService: BookingService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.authTokenPayload = this.authService.getAuthTokenInfo();
     this.initGuestForm();
     this.populateFormBaseOnEventType();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 
@@ -79,10 +100,100 @@ export class BookingConfirmationWizard implements OnInit {
     }
   }
 
-  bookSlot(slot: SlotResponseDto) {
-    const bookingRequestDto = new BookingRequestDto;
+  get loggedInUser() {
+    return this.authService.hasValidToken() && this.authService.isLoggedInUser();
+  }
 
-    if (!this.authTokenPayload) {
+  private renderCaptcha(bookingRequestDto: BookingRequestDto) {
+
+    if (this.captchaWidgetId !== null) {
+      grecaptcha.reset(this.captchaWidgetId);
+      return;
+    }
+
+    this.captchaWidgetId = grecaptcha.render('captcha-container', {
+      'sitekey': '6LdkcLUsAAAAAJMLxLQMGoW3hZ0acjtL7-RdotBu',
+      'callback': (response: string) => {
+
+        console.log('Token:', response);
+        this.captchaToken = response;
+
+        // AUTO CONTINUE HERE captcha->issuetoken
+        if (!this.captchaToken) return;
+        if (!this.pendingEmail) return;
+
+        console.log("moving to issueToken");
+
+        if (this.pendingEmail) {
+          this.isBookingInProgress = true;
+          this.cdr.detectChanges();
+          this.issueGuestBookingCreateAccessToken(
+            bookingRequestDto,
+            this.pendingEmail,
+            this.captchaToken,
+            this.invitation.id,
+            this.slot.id
+          );
+        }
+
+      },
+      'expiry-callback': () => {
+        this.captchaToken = null;
+      }
+    });
+  }
+
+  bookSlot(slot: SlotResponseDto) {
+
+    if (this.isBookingInProgress) return;
+
+    this.guestForm.markAllAsTouched();
+    if (this.guestForm.invalid) {
+      console.log('form invalid');
+      return;
+    }
+
+
+    const bookingRequestDto = this.buildBookingRequestDto();
+
+    console.log("BookingRequestDto", bookingRequestDto);
+
+    if (this.loggedInUser) {
+      this.createBooking(bookingRequestDto);
+    } else {
+      let requestDto = new GuestBookingCreateInitRequestDto();
+      requestDto.email = this.guestForm?.value.email;
+
+      this.bookingService.initGuestBookingCreateAccess(requestDto)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            this.pendingEmail = this.guestForm?.value.email;
+
+            if (res.captchaRequired) {
+              console.log("moving to renderCaptcha");
+              this.renderCaptcha(bookingRequestDto);
+              return;
+            }
+            console.log("moving to issueToken");
+
+            if (this.pendingEmail) {
+              this.isBookingInProgress = true;
+              this.issueGuestBookingCreateAccessToken(bookingRequestDto, this.pendingEmail, null, this.invitation.id, this.slot.id);
+            }
+          },
+          error: (err) => {
+            console.log(err);
+            this.isBookingInProgress = false;
+          }
+        })
+    }
+
+  }
+
+  private buildBookingRequestDto(): BookingRequestDto {
+    let bookingRequestDto = new BookingRequestDto
+    if (!this.loggedInUser) {
       bookingRequestDto.email = this.guestForm?.value.email;
       bookingRequestDto.firstName = this.guestForm?.value.firstName;
       bookingRequestDto.lastName = this.guestForm?.value.lastName;
@@ -97,19 +208,60 @@ export class BookingConfirmationWizard implements OnInit {
       console.error("Event Type Error", this.invitation);
       alert('Event type error. Please contact administrator')
     }
+    return bookingRequestDto;
+  }
 
-    console.log("BookingRequestDto", bookingRequestDto);
-    this.bookingService.createBooking(bookingRequestDto, slot.id).subscribe({
-      next: (res) => {
-        this.bookingResponseDto = res;
-        console.log("Booking created successfully");
-        alert('Booking created successfully');
-        this.closeWizard();
-      },
-      error: (err) => {
-        console.log("Booking create unsuccesful");
-      },
-    })
+  private createBooking(bookingRequestDto: BookingRequestDto) {
+    console.log('BookingRequestDto', bookingRequestDto);
+    this.bookingService.createBooking(bookingRequestDto, this.slot.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.bookingResponseDto = res;
+          console.log("Booking created successfully");
+          alert('Booking created successfully');
+          this.isBookingInProgress = false;
+          this.closeWizard();
+        },
+        error: (err) => {
+          console.log("Booking create unsuccesful");
+          this.isBookingInProgress = false;
+        },
+      })
+  }
+
+  private issueGuestBookingCreateAccessToken(bookingRequestDto: BookingRequestDto, email: string, captchaToken: string | null, invitationId: number, slotId: number) {
+    let requestDto = new GuestBookingCreateAccessRequestDto();
+    requestDto.email = email;
+    requestDto.captchaToken = captchaToken;
+    requestDto.invitationId = invitationId;
+    requestDto.slotId = slotId;
+
+    console.log('GuestBookingCreateAccessRequestDto', requestDto);
+
+    this.bookingService.issueGuestBookingCreateAccessToken(requestDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.authService.storeGuestToken(res);
+          this.createBooking(bookingRequestDto);
+          this.captchaToken = null;
+          this.pendingEmail = null;
+          if (this.captchaWidgetId !== null) {
+            grecaptcha.reset(this.captchaWidgetId);
+          }
+        },
+        error: (err) => {
+          alert("Access denied");
+          console.log(err);
+          this.captchaToken = null;
+          this.pendingEmail = null;
+          this.isBookingInProgress = false;
+          if (this.captchaWidgetId !== null) {
+            grecaptcha.reset(this.captchaWidgetId);
+          }
+        }
+      })
   }
 
   closeWizard() {
@@ -149,8 +301,8 @@ export class BookingConfirmationWizard implements OnInit {
     }
 
     if (endTime) {
-      const endTimeIso = moment(startTime).tz(this.timeZone).toISOString();
-      this.guestForm.get('choosenStartTime')?.patchValue(endTimeIso, { emitEvent: false });
+      const endTimeIso = moment(endTime).tz(this.timeZone).toISOString();
+      this.guestForm.get('choosenEndTime')?.patchValue(endTimeIso, { emitEvent: false });
     }
     this.guestForm.updateValueAndValidity({ emitEvent: false });
   }

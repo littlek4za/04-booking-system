@@ -1,63 +1,71 @@
 package com.littlek4za.booking_system.services;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import com.littlek4za.booking_system.repos.InvitationRepository;
+import com.littlek4za.booking_system.repos.SlotRepository;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.littlek4za.booking_system.dtos.GuestAccessTokenDto;
+import com.littlek4za.booking_system.dtos.GuestBookingCreateAccessRequestDto;
+import com.littlek4za.booking_system.dtos.GuestBookingCreateInitRequestDto;
+import com.littlek4za.booking_system.dtos.GuestBookingCreateInitResponseDto;
 import com.littlek4za.booking_system.dtos.GuestBookingViewAccessRequestDto;
 import com.littlek4za.booking_system.dtos.GuestBookingViewInitRequestDto;
 import com.littlek4za.booking_system.dtos.GuestBookingViewInitResponseDto;
 import com.littlek4za.booking_system.entities.Booking;
+import com.littlek4za.booking_system.entities.Invitation;
+import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.models.RoleName;
-import com.littlek4za.booking_system.models.TokenType;
 import com.littlek4za.booking_system.repos.BookingRepository;
-import com.littlek4za.booking_system.security.UserAuthProvider;
+import com.littlek4za.booking_system.security.JwtTokenService;
+import com.littlek4za.booking_system.validators.BookingRequestValidator;
 
 @Service
 public class GuestBookingAccessServiceImpl implements GuestBookingAccessService {
 
+    private final InvitationRepository invitationRepository;
+    private final SlotRepository slotRepository;
     private final BookingRepository bookingRepository;
     private final RiskService riskService;
     private final CaptchaService captchaService;
-    private final UserAuthProvider userAuthProvider;
-
-    @Value("${security.jwt.token.secret-key:dev-secret-key}")
-    private String secretKey;
-    @Value("${security.jwt.issuer:booking-system}")
-    private String issuerString;
+    private final BookingRequestValidator bookingRequestValidator;
+    private final JwtTokenService jwtTokenService;
 
     public GuestBookingAccessServiceImpl(BookingRepository bookingRepository, RiskService riskService,
-            CaptchaService captchaService, UserAuthProvider userAuthProvider) {
+            CaptchaService captchaService, InvitationRepository invitationRepository,
+            SlotRepository slotRepository, BookingRequestValidator bookingRequestValidator, JwtTokenService jwtTokenService) {
+        this.slotRepository = slotRepository;
         this.bookingRepository = bookingRepository;
         this.riskService = riskService;
         this.captchaService = captchaService;
-        this.userAuthProvider = userAuthProvider;
+        this.invitationRepository = invitationRepository;
+        this.bookingRequestValidator = bookingRequestValidator;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @Override
-    public GuestBookingViewInitResponseDto initGuestBookingViewAccess(GuestBookingViewInitRequestDto requestDto) {
+    public GuestBookingViewInitResponseDto initGuestBookingViewAccess(GuestBookingViewInitRequestDto requestDto,
+            String ip) {
 
-        validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken());
+        boolean valid = true;
+        try {
+            validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken(), ip);
+        } catch (Exception e) {
+            valid = false;
+        }
 
-        boolean captchaRequired = riskService.shouldRequireCaptcha(requestDto.email());
+        boolean captchaRequired = riskService.shouldLimitView(requestDto.email(), ip);
 
-        return new GuestBookingViewInitResponseDto(captchaRequired);
+        return new GuestBookingViewInitResponseDto(captchaRequired, valid);
     }
 
     @Override
-    public GuestAccessTokenDto issueGuestBookingViewAccessToken(GuestBookingViewAccessRequestDto requestDto) {
+    public GuestAccessTokenDto issueGuestBookingViewAccessToken(GuestBookingViewAccessRequestDto requestDto,
+            String ip) {
 
-        validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken());
-
-        boolean captchaRequired = riskService.shouldRequireCaptcha(requestDto.email());
+        boolean captchaRequired = riskService.shouldLimitView(requestDto.email(), ip);
 
         if (captchaRequired) {
             if (requestDto.captchaToken() == null) {
@@ -67,40 +75,105 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
             boolean validCaptcha = captchaService.verify(requestDto.captchaToken());
 
             if (!validCaptcha) {
-                riskService.recordAttempt(requestDto.email());
+                riskService.recordAttemptForView(requestDto.email(), ip);
                 throw new AppException("Captcha invalid", HttpStatus.FORBIDDEN, ErrorCode.CAPTCHA_INVALID);
             }
         }
 
-        riskService.reset(requestDto.email());
+        try {
+            validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken(), ip);
+        } catch (Exception e) {
+            riskService.recordAttemptForView(requestDto.email(), ip);
+            throw e;
+        }
 
-        Instant now = Instant.now();
-        Instant expiry = now.plus(15, ChronoUnit.MINUTES);
+        riskService.resetEmailIpForView(requestDto.email(), ip);
+        riskService.reduceIpPenaltyForView(ip);
 
-        return userAuthProvider.toGuestAccessTokenDto(
-                JWT.create()
-                        .withIssuer(issuerString)
-                        .withSubject(requestDto.email())
-                        .withIssuedAt(now)
-                        .withExpiresAt(expiry)
-                        .withClaim("email", requestDto.email())
-                        .withClaim("roles", RoleName.ROLE_ATTENDEE.name())
-                        .withClaim("tokenType", TokenType.GUEST_BOOKING_VIEW.name())
-                        .sign(Algorithm.HMAC256(secretKey)));
+        System.out.println("Issuing guest token for: " + requestDto.email());
+        System.out.println("Captcha required: " + captchaRequired);
+        System.out.println("Captcha token: " + requestDto.captchaToken());
+
+        return jwtTokenService.toGuestAccessTokenDto(jwtTokenService.createGuestBookingViewToken(requestDto.email()));
 
     }
 
-    private void validateBookingOrRecordFailure(String email, String bookingToken) {
+    private void validateBookingOrRecordFailure(String email, String bookingToken, String ip) {
         Booking booking = bookingRepository.findByBookingToken(bookingToken)
                 .orElseThrow(() -> {
-                    riskService.recordAttempt(email);
+                    riskService.recordAttemptForView(email, ip);
                     return new AppException("Booking not found", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND);
                 });
 
         if (!booking.getUser().getEmail().equalsIgnoreCase(email)) {
-            riskService.recordAttempt(email);
+            riskService.recordAttemptForView(email, ip);
             throw new AppException("Booking not found", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND);
         }
+    }
+
+    @Override
+    public GuestBookingCreateInitResponseDto initGuestBookingCreateAccess(GuestBookingCreateInitRequestDto requestDto,
+            String clientIp) {
+
+        boolean captchaRequired = riskService.shouldLimitCreate(requestDto.email(), clientIp);
+
+        return new GuestBookingCreateInitResponseDto(captchaRequired);
+    }
+
+    @Override
+    public GuestAccessTokenDto issueGuestBookingCreateAccessToken(GuestBookingCreateAccessRequestDto requestDto,
+            String clientIp) {
+        boolean captchaRequired = riskService.shouldLimitCreate(requestDto.email(), clientIp);
+
+        if (captchaRequired) {
+            if (requestDto.captchaToken() == null) {
+                throw new AppException("Captcha is required", HttpStatus.FORBIDDEN, ErrorCode.CAPTCHA_REQUIRED);
+            }
+
+            boolean validCaptcha = captchaService.verify(requestDto.captchaToken());
+
+            if (!validCaptcha) {
+                riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+                throw new AppException("Captcha invalid",
+                        HttpStatus.FORBIDDEN, ErrorCode.CAPTCHA_INVALID);
+            }
+        }
+
+        // risk record
+        Invitation invitation = invitationRepository.findById(requestDto.invitationId())
+                .orElseThrow(() -> {
+                    riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+
+                    return new AppException(
+                            "Invitation not found",
+                            HttpStatus.NOT_FOUND,
+                            ErrorCode.INVITATION_NOT_FOUND);
+                });
+        Slot slot = slotRepository.findById(requestDto.slotId())
+                .orElseThrow(() -> {
+                    riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+
+                    return new AppException(
+                            "Slot not found",
+                            HttpStatus.NOT_FOUND,
+                            ErrorCode.SLOT_NOT_FOUND);
+                });
+
+        try {
+            bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
+        } catch (AppException e) {
+
+            if (e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
+                riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+            }
+
+            throw e;
+        }
+
+        riskService.resetEmailIpForCreate(requestDto.email(), clientIp);
+        riskService.reduceIpPenaltyForCreate(clientIp);
+
+        return jwtTokenService.toGuestAccessTokenDto(jwtTokenService.createGuestBookingCreateToken(requestDto.email()));
     }
 
 }
