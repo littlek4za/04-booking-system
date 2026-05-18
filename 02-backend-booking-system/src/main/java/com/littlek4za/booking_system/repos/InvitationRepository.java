@@ -22,7 +22,11 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
         @Query("""
                         SELECT i
                         FROM Invitation i
-                        LEFT JOIN FETCH i.slotSet
+                        LEFT JOIN FETCH i.event e
+                        LEFT JOIN FETCH e.user
+                        LEFT JOIN FETCH i.user
+                        LEFT JOIN FETCH i.slotSet s
+                        LEFT JOIN FETCH s.event
                         WHERE i.event.id = :eventId
                         """)
         List<Invitation> findByEventIdWithSlotSet(Long eventId);
@@ -30,7 +34,11 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
         @Query("""
                         SELECT DISTINCT i
                         FROM Invitation i
-                        LEFT JOIN FETCH i.slotSet
+                        LEFT JOIN FETCH i.event e
+                        LEFT JOIN FETCH e.user
+                        LEFT JOIN FETCH i.user
+                        LEFT JOIN FETCH i.slotSet s
+                        LEFT JOIN FETCH s.event
                         WHERE i.event = :event
                         """)
         Set<Invitation> findByEventWithSlotSet(@Param("event") Event event);
@@ -50,8 +58,11 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
         @Query("""
                         SELECT i
                         FROM Invitation i
-                        LEFT JOIN FETCH i.event
-                        LEFT JOIN FETCH i.slotSet
+                        LEFT JOIN FETCH i.event e
+                        LEFT JOIN FETCH e.user
+                        LEFT JOIN FETCH i.user
+                        LEFT JOIN FETCH i.slotSet s
+                        LEFT JOIN FETCH s.event
                         WHERE i.accessToken = :accessToken
                         """)
         Optional<Invitation> findByAccessTokenWithEventAndSlotSet(@Param("accessToken") String token);
@@ -71,7 +82,10 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
                         SELECT DISTINCT i
                         FROM Invitation i
                         LEFT JOIN FETCH i.event e
+                        LEFT JOIN FETCH e.user 
                         LEFT JOIN FETCH i.slotSet s
+                        LEFT JOIN FETCH s.event
+                        LEFT JOIN FETCH i.user u
                         WHERE e.id = :eventId
                         AND (i.slotIncludeMode = :allAndFuture
                             OR EXISTS (
@@ -79,7 +93,7 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
                             )
                             )
                         """)
-        Set<Invitation> findByEventIdAndSlotIdOrAllAndFutureWithEventAndSlotSets(@Param("eventId") Long eventId,
+        Set<Invitation> findInvitationsApplicableToSlot(@Param("eventId") Long eventId,
                         @Param("slotId") Long slotId, @Param("allAndFuture") SlotIncludeMode allAndFuture);
 
 }

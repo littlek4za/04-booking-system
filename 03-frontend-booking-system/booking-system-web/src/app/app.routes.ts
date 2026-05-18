@@ -14,6 +14,7 @@ import { InvitationAccessComponent } from '@features/invitations/invitation-acce
 import { BookingConfirmationDashboard } from '@features/booking/booking-confirmation-dashboard/booking-confirmation-dashboard';
 import { AttendeeAccessComponent } from '@shared/components/attendee-access-component/attendee-access-component';
 import { AttendeeBookingDetailComponent } from '@features/booking/attendee-booking-detail-component/attendee-booking-detail-component';
+import { BookingAccessComponent } from '@features/booking/booking-access-component/booking-access-component';
 
 
 export const routes: Routes = [
@@ -23,11 +24,13 @@ export const routes: Routes = [
     { path: 'welcome', component: WelcomeComponent },
     { path: 'authDebug', component: AuthDebug },
     { path: 'attendeeAccess', component: AttendeeAccessComponent },
+    { path: 'invitation', component: InvitationAccessComponent },
     { path: 'invitation/:invitationToken', component: InvitationAccessComponent },
     { path: 'eventDashboard', component: EventDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'mapSelection', component: LeafletMapSelection },
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'bookingConfirmation/:invitationToken', component: BookingConfirmationDashboard },
+    { path: 'my-booking/:bookingToken', component: BookingAccessComponent },
     { path: 'bookingView/:bookingToken', component: AttendeeBookingDetailComponent },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }

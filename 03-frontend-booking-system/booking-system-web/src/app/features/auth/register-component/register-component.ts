@@ -3,8 +3,8 @@ import { AuthService } from '../auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { passwordMatchedValidator } from '../../../shared/validators/custom-validator';
 import { SignupRequestDto } from '../dtos/signup-request-dto';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
-import { extractFieldErrorMessage } from '../../../shared/utils/error-utils';
+import { ActivatedRoute, Router } from '@angular/router';
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-register-component',
@@ -20,7 +20,7 @@ export class RegisterComponent {
 
   successRegisterReturnUrl: string = '/login';
 
-  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) { }
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private logger: LoggerService) { }
 
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -59,11 +59,14 @@ export class RegisterComponent {
     },
       { validators: passwordMatchedValidator }
     );
+    this.logger.debug('[RegisterComponent] Register form initialized');
   }
 
   onSubmit() {
+    this.logger.debug('[RegisterComponent] Register form submitted');
     this.registerForm.markAllAsTouched();
     if (this.registerForm.invalid) {
+      this.logger.warn('[RegisterComponent] Register form validation failed');
       return;
     }
     const signupRequestDto = new SignupRequestDto;
@@ -72,12 +75,12 @@ export class RegisterComponent {
     signupRequestDto.email = this.registerForm.value.email;
     signupRequestDto.firstName = this.registerForm.value.firstName;
     signupRequestDto.lastName = this.registerForm.value.lastName;
-
+    this.logger.debug('[RegisterComponent] Sending AuthService.register request');
     this.authService.register(signupRequestDto).subscribe({
       next: (response) => {
-        console.log('Register success');
         alert("Registration Success! Please proceed to log in");
 
+        this.logger.info('[RegisterComponent] Navigating to /login');
         if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login') {
           this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.successRegisterReturnUrl }
@@ -88,11 +91,12 @@ export class RegisterComponent {
 
       },
       error: (err) => {
-        console.log('Registration failed');
       },
     });
   }
+
   goLogin() {
+    this.logger.info('[RegisterComponent] Navigating to /login');
     this.router.navigate(['/login']);
   }
 }

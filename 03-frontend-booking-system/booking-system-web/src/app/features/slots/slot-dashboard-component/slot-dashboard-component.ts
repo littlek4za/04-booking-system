@@ -11,6 +11,7 @@ import { BookingManagerDashboard } from "@features/booking/booking-manager-dashb
 import { InvitationEditWizard } from '@features/invitations/invitation-edit-wizard/invitation-edit-wizard';
 import { Subject, takeUntil } from 'rxjs';
 import { InvitationDashboard } from '@features/invitations/invitation-dashboard/invitation-dashboard';
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   standalone: true,
@@ -24,7 +25,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   private slotService = inject(SlotService);
 
   updateSlotWizard: boolean = false;
-  slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
+  slotList = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
   eventId!: number;
   eventType!: EventTypeModel;
   slotId: number | null = null;
@@ -46,7 +47,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
 
-  constructor(private route: ActivatedRoute, private eventService: EventService) { }
+  constructor(private route: ActivatedRoute, private eventService: EventService, private logger: LoggerService) { }
 
   ngOnInit(): void {
     this.refreshSlotListWithEventId();
@@ -65,45 +66,66 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
         paramMap => {
           this.eventId = +paramMap.get('id')!;
           if (this.eventId) {
-            this.slotService.triggerRefresh(this.eventId);
+            this.logger.debug(`[SlotDashboardComponent] ParmMap eventId detected`);
+            this.logger.debug(`[SlotDashboardComponent] Sending slotService.triggerRefreshForSlotListByEventId request`);
+            this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           }
         }
       );
   }
 
   private subscribeEventType() {
+    this.logger.debug(`[SlotDashboardComponent] Sending eventService.getEventById request`);
     this.eventService.getEventById(this.eventId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          console.log('GET Event Succesful', res);
           this.eventType = res.eventType;
           this.eventName = res.eventName;
         },
-        error: (err) => {
-          console.log('GET Event Failed');
+        error: () => {
+          alert('Fail to load event info. Please try again. If the problem persists, please contact the administrator.');
         }
       });
   }
 
   confirmDeleteSlot(slotId: number) {
-    if (confirm("Are you sure you want to delete this Slot?")) {
-      this.deleteSlotById(slotId);
-    }
+    this.logger.debug(`[SlotDashboardComponent] Sending slotService.slotDeleteValidation request`);
+    this.slotService.slotDeleteValidation(this.eventId, slotId).subscribe({
+      next: (res) => {
+        if (res.canDelete == false) {
+          alert(
+            `This slot cannot be deleted because there are active booking(s):\n\n` +
+            `• Upcoming booking(s): ${res.upcomingBookingCount}\n` +
+            `• Ongoing booking(s): ${res.ongoingBookingCount}\n\n` +
+            `Please cancel or complete all bookings before deleting this slot.`
+          );
+          return;
+        }
+        if (confirm("Are you sure you want to delete this Slot?")) {
+          this.deleteSlotById(slotId);
+        }
+      },
+      error: () => {
+        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
+      }   
+    });
+
   }
 
   private deleteSlotById(slotId: number) {
+    this.logger.debug(`[SlotDashboardComponent] Sending slotService.deleteSlotByIdAndEvent request`);
     this.slotService.deleteSlotByIdAndEvent(this.eventId, slotId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => {
-          console.log('Delete Slot Succesfully');
-          this.slotService.triggerRefresh(this.eventId);
+        next: () => {
+          this.logger.debug(`[SlotDashboardComponent] Sending slotService.triggerRefreshForSlotListByEventId request`);
+          this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
         },
-        error: (err) => {
-          console.error('Delete Slot Failed');
+        error: () => {
+          alert('Fail to delete slot. Please try again. If the problem persists, please contact the administrator.');
         }
-      })
+      });
   }
 
   //Slot Wizard

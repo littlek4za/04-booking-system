@@ -15,12 +15,15 @@
             }
         </select>
     </div>
+
     <div class="calendar-body">
         <full-calendar #calendar [options]="calendarOptions"></full-calendar>
     </div>
+
+    @if(mode == 'VIEW'){
     <div class="slot-filter">
         <label>
-            Show slots for:  
+            Show slots for:
         </label>
         @for (slot of normalizedSlots(); track $index) {
         <label>
@@ -30,14 +33,16 @@
         </label>
         }
     </div>
+    }
+
     @if(mode == 'VIEW' && showBookings()){
     <div class="slot-filter">
         <label>
-            Show bookings for:  
+            Show bookings for:
         </label>
         @for (slot of distinctBookingSlots(); track $index) {
         <label>
-            <input type="checkbox" [checked]="selectedBookingList().has(slot.id)"
+            <input type="checkbox" [checked]="selectedOrganizerBookingListForView().has(slot.id)"
                 (change)="toggleBookingFilter(slot.id, $event.target.checked)">
             {{slot.slotName}}
         </label>

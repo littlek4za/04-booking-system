@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.littlek4za.booking_system.dtos.DeleteValidationResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
 import com.littlek4za.booking_system.services.SlotService;
@@ -63,6 +64,10 @@ public class SlotController {
         return ResponseEntity.status(HttpStatus.OK).body(slotResponseDto);
     }
 
-
+    @GetMapping(path = "{version}/events/{eventId}/slots/{slotId}/delete-validation", version="1")
+    public ResponseEntity<DeleteValidationResponseDto> slotDeleteValidationV1(@PathVariable("eventId") Long eventId, @PathVariable("slotId") Long slotId){
+        DeleteValidationResponseDto deleteValidationResponse = slotService.slotDeleteValidation(eventId, slotId);
+        return ResponseEntity.status(HttpStatus.OK).body(deleteValidationResponse);
+    }
 
 }

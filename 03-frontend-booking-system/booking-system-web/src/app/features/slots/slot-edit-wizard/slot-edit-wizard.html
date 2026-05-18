@@ -466,6 +466,11 @@
                                                         }
                                                     </mat-select>
                                                 </mat-form-field>
+                                                @if (showBusinessIntervalWarning(interval)) {
+                                                <mat-hint class="text-danger">
+                                                    Please select "Slot Interval (minutes"), "Start Time" and "Business Allow OverTime" first.
+                                                </mat-hint>
+                                                }
                                             </div>
                                             <!-- old -->
                                             <!-- <label class="form-label">Start Time</label>
@@ -542,10 +547,10 @@
             <div class="col-md-4 mb-2">
                 <label class="form-label">Business Allow OverTime</label>
                 <select class="form-select" formControlName="businessAllowOt">
-                    <option [value]=true>
+                    <option [ngValue]="true">
                         Allow Over Time
                     </option>
-                    <option [value]=false>
+                    <option [ngValue]="false">
                         No Over Time
                     </option>
                 </select>

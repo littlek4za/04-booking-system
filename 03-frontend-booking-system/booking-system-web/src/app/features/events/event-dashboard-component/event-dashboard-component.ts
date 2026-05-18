@@ -8,6 +8,7 @@ import { FullCalendarView } from '@shared/components/full-calendar-view/full-cal
 import { EventTypeModel } from '../dtos/event-type-model';
 import { InvitationEditWizard } from "@features/invitations/invitation-edit-wizard/invitation-edit-wizard";
 import { InvitationDashboard } from "@features/invitations/invitation-dashboard/invitation-dashboard";
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   standalone: true,
@@ -19,6 +20,7 @@ import { InvitationDashboard } from "@features/invitations/invitation-dashboard/
 export class EventDashboardComponent {
 
   private eventService = inject(EventService);
+  private logger = inject(LoggerService);
 
   // show component
   showEventWizard: boolean = false;
@@ -27,56 +29,51 @@ export class EventDashboardComponent {
   showInvitationDashboard: boolean = false;
 
   modeEventWizard!: 'CREATE' | 'UPDATE';
-  
+
   // field value
   updateEventId: number | null = null;
   updateEventName: string | null = null;
   eventId: number | null = null;
   eventType: EventTypeModel | null = null;
 
-  // OPTIONAL TO USE async to update form
-  // eventList$?: Observable<EventResponseDto[]>;
   eventList = toSignal(this.eventService.eventList$, { initialValue: [] });
 
-
-  // this.eventList$ = this.eventService.getEventsForUser().pipe(
-  //   tap(res => console.log('GET Event List succeed', this.eventList$)),
-  //   catchError(err => {
-  //     console.log('GET Event List failed', err);
-  //     extractFieldErrorMessage(err);
-  //     return of([]);
-  //   }));
-
-  // browse page utility
-
   confirmDeleteEvent(eventId: number, eventSlotCount: number) {
-    const message = eventSlotCount > 0
-      ? `Are you sure you want to delete this event?\n${eventSlotCount} slot(s) under this event will be deleted too`
-      : 'Are you sure you want to delete this event?';
 
-    if (confirm(message)) {
-      this.deleteEventById(eventId);
-    }
-    // if (eventSlotCount > 0) {
-    //   if (confirm(`Are you sure you want to delete this event? 
-    //         \n ${eventSlotCount} number of slot under this event will be delted too`)) {
-    //     this.deleteEventById(eventId);
-    //   }
-    // } else {
-    //   if (confirm(`Are you sure you want to delete this event?`)) {
-    //     this.deleteEventById(eventId);
-    //   }
-    // }
+    this.eventService.eventDeleteValidation(eventId).subscribe({
+      next: (res) => {
+        if (res.canDelete == false) {
+          this.logger.debug('[EventDashboardComponent] Event delete validation: not allowed delete');
+          alert(
+            `This event cannot be deleted because there are active booking(s):\n\n` +
+            `• Upcoming booking(s): ${res.upcomingBookingCount}\n` +
+            `• Ongoing booking(s): ${res.ongoingBookingCount}\n\n` +
+            `Please cancel or complete all bookings before deleting this event.`
+          );
+          return;
+        }
+        const message = eventSlotCount > 0
+          ? `Are you sure you want to delete this event?\n${eventSlotCount} slot(s) under this event will be deleted too`
+          : 'Are you sure you want to delete this event?';
+
+        if (confirm(message)) {
+          this.deleteEventById(eventId);
+        }
+      },
+      error: () => {
+        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
+      }
+    });
   }
 
   private deleteEventById(eventId: number) {
+    this.logger.debug('[EventDashboardComponent] Sending eventService.deleteEventById request');
     this.eventService.deleteEventById(eventId).subscribe({
       next: (res) => {
-        console.log('Delete Event Succesfully');
         this.eventService.triggerRefresh();
       },
       error: (err) => {
-        console.error('Delete Event Failed');
+        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }
@@ -97,7 +94,7 @@ export class EventDashboardComponent {
     this.showEventWizard = false;
   }
 
-  openInvitationDashboard(eventId: number, eventName: string){
+  openInvitationDashboard(eventId: number, eventName: string) {
     this.updateEventId = eventId;
     this.updateEventName = eventName;
     this.showInvitationDashboard = true;
@@ -118,7 +115,7 @@ export class EventDashboardComponent {
     this.showCalendarView = false;
   }
 
-  openInvitationWizard(eventId: number, eventType: EventTypeModel){
+  openInvitationWizard(eventId: number, eventType: EventTypeModel) {
     this.eventId = eventId;
     this.eventType = eventType;
     this.showInvitationWizard = true;

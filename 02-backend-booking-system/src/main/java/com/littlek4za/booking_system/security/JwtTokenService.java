@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -65,15 +66,15 @@ public class JwtTokenService {
                 .sign(algorithm);
     }
 
-    public String createGuestBookingViewToken(String email) {
-        return createGuestToken(email, TokenType.GUEST_BOOKING_VIEW);
+    public String createGuestBookingViewToken(String email, String bookingToken) {
+        return createGuestToken(email, TokenType.GUEST_BOOKING_VIEW, bookingToken);
     }
 
     public String createGuestBookingCreateToken(String email) {
-        return createGuestToken(email, TokenType.GUEST_BOOKING_CREATE);
+        return createGuestToken(email, TokenType.GUEST_BOOKING_CREATE,null);
     }
 
-    private String createGuestToken(String email, TokenType tokenType) {
+    private String createGuestToken(String email, TokenType tokenType, String bookingToken) {
 
         if (!tokenType.isGuestToken()) {
             throw new IllegalArgumentException("Invalid guest token type");
@@ -81,15 +82,20 @@ public class JwtTokenService {
         Instant now = Instant.now();
         Instant expiry = now.plus(15, ChronoUnit.MINUTES);
 
-        return JWT.create()
+        JWTCreator.Builder builder = JWT.create()
                 .withIssuer(issuer)
                 .withSubject(email)
                 .withIssuedAt(now)
                 .withExpiresAt(expiry)
                 .withClaim("email", email)
                 .withClaim("roles", RoleType.ROLE_ATTENDEE.name())
-                .withClaim("tokenType", tokenType.name())
-                .sign(algorithm);
+                .withClaim("tokenType", tokenType.name());
+
+        if (bookingToken != null){
+            builder.withClaim("bookingToken", bookingToken);
+        }
+        
+        return builder.sign(algorithm);
 
     }
 

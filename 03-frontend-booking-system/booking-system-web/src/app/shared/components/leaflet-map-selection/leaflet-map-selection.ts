@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, AfterViewInit, EventEmitter, Output, Input, NgZone, signal } from '@angular/core';
+import { LoggerService } from '@core/services/logger-service';
 import * as L from 'leaflet';
 
 @Component({
@@ -23,14 +24,14 @@ export class LeafletMapSelection implements AfterViewInit {
   private readonly defaultLatLng: L.LatLngExpression = [3.09005, 101.66473];
   private mapReady: boolean = false;
 
-  constructor(private ngZone: NgZone) { }
+  constructor(private ngZone: NgZone, private logger: LoggerService) { }
 
   ngAfterViewInit(): void {
     this.initMap();
-
   }
 
   initMap(): void {
+    this.logger.debug('[LeafletMapSelection] Initializing Leaflet map')
     this.map = L.map('map', {
       center: this.defaultLatLng,
       zoom: 11
@@ -48,6 +49,7 @@ export class LeafletMapSelection implements AfterViewInit {
 
     //Piority: Input -> get -> default
     if (this.inputLatLng) {
+      this.logger.debug('[LeafletMapSelection] Setting map location with input latitude and longitude');
       this.setMapLocation(this.inputLatLng);
     } else {
       this.tryGeoLocation();
@@ -76,11 +78,14 @@ export class LeafletMapSelection implements AfterViewInit {
   }
 
   private updateSelection(latlng: L.LatLng): void {
+    this.logger.debug('[LeafletMapSelection] Updated selectedLatLng field');
     this.selectedLatLng.set(latlng);
 
     if (!this.marker) {
+      this.logger.debug('[LeafletMapSelection] Creating marker on map');
       this.marker = this.createMarker(latlng);
     } else {
+      this.logger.debug('[LeafletMapSelection] Updating marker on map');
       this.marker.setLatLng(latlng);
     }
   }
@@ -115,20 +120,22 @@ export class LeafletMapSelection implements AfterViewInit {
 
   private tryGeoLocation(): void {
     if (!navigator.geolocation) return;
-
+    
     navigator.geolocation.getCurrentPosition(
     (position) => {
+      this.logger.debug('[LeafletMapSelection] Setting map with geolocation');
       this.ngZone.run(() => {
         this.setMapLocation([position.coords.latitude, position.coords.longitude]);
       });
     },
     (error) => {
-      console.warn('Geolocation failed', error);
+      this.logger.debug('[LeafletMapSelection] Get geolocation failed, setting up map with default location');
       this.setMapLocation(this.defaultLatLng);
     });
   }
 
   clearLocation() {
+    this.logger.debug('[LeafletMapSelection] Removing marker and selected location');
     if (this.marker) {
       this.marker.remove();
       this.marker = undefined;

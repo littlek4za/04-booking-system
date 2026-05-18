@@ -10,6 +10,7 @@ import { InvitationRequestDto } from '../dtos/invitation-request-dto';
 import { maxUsagePerIdentityExceedMaxUsage } from '@shared/validators/custom-validator';
 import { InvitationService } from '../invitation-service';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-invitation-edit-wizard',
@@ -20,6 +21,7 @@ import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   private slotService = inject(SlotService);
+  private logger = inject(LoggerService);
 
   @Input() mode!: 'CREATE';
   @Input() eventId!: number;
@@ -33,7 +35,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   today: string = '';
 
   //signal from service
-  slotList = toSignal(this.slotService.slotList$, { initialValue: [] });
+  slotList = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
 
   //data from service
   slotSingle?: SlotResponseDto;
@@ -51,23 +53,26 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     if (this.slotId != null &&
       this.eventId != null &&
       (changes['slotId'] || changes['eventId'])) {
+      this.logger.debug(`[InvitationEditWizard] Changes detected for input "eventId" and "slotId"`);
+      this.logger.debug(`[InvitationEditWizard] Sending slotService.getSlotByIdAndEventId request`);
       this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
             this.slotSingle = res;
-            console.log('GET slot succesfull', res);
             this.prefillInvitationFormForSingleSlotUsage();
           },
-          error: (error) => {
-            console.log('GET slot failed');
+          error: () => {
+            alert('Fail to load slot info. Please try again. If the problem persists, please contact the administrator.')
           }
         })
       return;
     }
 
     if (changes['eventId'] && this.eventId) {
-      this.slotService.triggerRefresh(this.eventId);
+      this.logger.debug(`[InvitationEditWizard] Changes detected for input "eventId"`);
+      this.logger.debug(`[InvitationEditWizard] Sending slotService.triggerRefreshForSlotListByEventId request`);
+      this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
     }
   }
 
@@ -95,24 +100,37 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     }, {
       validators: maxUsagePerIdentityExceedMaxUsage
     });
+    this.logger.debug(`[InvitationEditWizard] Invitation form initiated`);
   }
 
   private actionWhenFormValueChanges() {
     this.invitationForm.get('slotIncludeMode')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onSlotIncludeModeChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[InvitationEditWizard] Formcontrol 'slotIncludeMode' value changes detected`);
+        this.onSlotIncludeModeChanges(value)
+      });
 
     this.invitationForm.get('noExpiry')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoExpiryChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[InvitationEditWizard] Formcontrol 'noExpiry' value changes detected`);
+        this.onNoExpiryChanges(value)
+      });
 
     this.invitationForm.get('noMaxUsage')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoMaxUsageChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[InvitationEditWizard] Formcontrol 'noMaxUsage' value changes detected`);
+        this.onNoMaxUsageChanges(value)
+      });
 
     this.invitationForm.get('noMaxUsagePerIdentity')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoMaxUsagePerIdentityChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[InvitationEditWizard] Formcontrol 'noMaxUsagePerIdentity' value changes detected`);
+        this.onNoMaxUsagePerIdentityChanges(value)
+      });
   }
 
   get isCustomSlot(): boolean {
@@ -185,6 +203,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   }
 
   prefillInvitationFormForSingleSlotUsage() {
+    this.logger.debug(`[InvitationEditWizard] Prefilling invitation form for single slot usage`);
     this.invitationForm.get('selectedSlotIds')?.patchValue([this.slotId]);
     this.invitationForm.get('slotIncludeMode')?.patchValue(this.includeMode.SELECTED);
     this.invitationForm.get('slotIncludeMode')?.disable();
@@ -213,14 +232,15 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
 
   onSubmit() {
+    this.logger.debug('[InvitationEditWizard] Invitation form submitted');
     this.invitationForm.markAllAsTouched();
     if (this.invitationForm.invalid) {
-      console.warn('Form Submission Field Invalid');
-      logFormErrors(this.invitationForm);
+      this.logger.warn('[InvitationEditWizard] Invitation form invalid');
+      logFormErrors(this.invitationForm, this.logger);
       return;
     }
 
-    logControls(this.invitationForm);
+    logControls(this.invitationForm, this.logger);
 
     const invitationRequestDto = new InvitationRequestDto;
     invitationRequestDto.maxUsage = this.mapNullToUndefined(this.invitationForm.get('maxUsage')?.value);
@@ -242,18 +262,15 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
         : null
     );
 
-    console.log("InvitationRequestDto: ", invitationRequestDto);
-    console.log("event Id", this.eventId);
-
+    this.logger.debug('[InvitationEditWizard] Sending invitationService.createInvitation request');
     this.invitationService.createInvitation(invitationRequestDto, this.eventId).subscribe({
-      next: (res) => {
-        console.log('Create invitation success', invitationRequestDto);
+      next: () => {
         alert("Create invitation success");
-        this.invitationService.triggerRefreshForInvitationList(this.eventId);
+        this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
         this.closeInvitationWizard();
       },
-      error: (err) => {
-        console.warn('Create invitation failed');
+      error: () => {
+        alert('Create invitation failed. Please try again. If the problem persists, please contact the administrator.');
       }
     })
 

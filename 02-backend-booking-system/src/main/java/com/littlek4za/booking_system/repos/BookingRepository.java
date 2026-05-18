@@ -19,6 +19,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
             SELECT b
             FROM Booking b
+            JOIN FETCH b.user u
+            JOIN FETCH b.slot s
+            JOIN FETCH s.event e
+            JOIN FETCH e.user
             WHERE b.slot = :slot
             AND b.isDeleted = false
             """)
@@ -35,8 +39,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b 
                 FROM Booking b
+                JOIN FETCH b.user
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
+                JOIN FETCH e.user
                 WHERE e = :event
                 AND b.isDeleted = false
             """)
@@ -46,8 +52,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b 
                 FROM Booking b
+                JOIN FETCH b.user u
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
+                JOIN FETCH e.user
                 WHERE e = :event
                 AND b.isDeleted = false
             """)
@@ -56,8 +64,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b 
                 FROM Booking b
+                JOIN FETCH b.user
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
+                JOIN FETCH e.user
                 WHERE b.id = :bookingId
                 AND e.user.id = :userId
                 AND b.slot.id = :slotId
@@ -68,6 +78,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b 
                 FROM Booking b
+                JOIN FETCH b.user
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
                 WHERE b.id = :bookingId
@@ -75,6 +86,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                 AND b.isDeleted = false
             """)
     Optional<Booking> findAttendeeBookingByIdAndUserId(@Param("bookingId") Long bookingId, @Param("userId") Long userId);
+
+    @Query("""
+                SELECT b 
+                FROM Booking b
+                JOIN FETCH b.user
+                JOIN FETCH b.slot s
+                JOIN FETCH s.event e
+                WHERE b.id = :bookingId
+                AND b.user.email = :email
+                AND b.bookingToken = :bookingToken
+                AND b.isDeleted = false
+            """)
+    Optional<Booking> findAttendeeBookingByIdAndUserEmailAndBookingToken(@Param("bookingId") Long bookingId, @Param("email") String email, @Param("bookingToken") String bookingToken);
 
 
     @Query("""
@@ -117,6 +141,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b
                 FROM Booking b
+                JOIN FETCH b.user
                 WHERE b.user.id = :userId
                 AND b.bookingToken = :bookingToken
                 AND b.isDeleted = false
@@ -135,6 +160,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b
                 FROM Booking b
+                JOIN FETCH b.user
                 WHERE b.user.id = :userId
                 AND b.isDeleted = false
             """) 
@@ -143,11 +169,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b
                 FROM Booking b
+                JOIN FETCH b.user
                 WHERE b.user.email = :email
                 AND b.bookingToken = :bookingToken
                 AND b.isDeleted = false
             """)     
     Optional<Booking> findbyBookingTokenAndEmail(@Param("bookingToken") String bookingToken,@Param("email") String email);
 
+
+    List<Booking> findBySlot_Event_IdAndIsDeletedFalse(Long eventId);
+
+    List<Booking> findBySlot_IdAndSlot_Event_IdAndIsDeletedFalse(Long slotId, Long eventId);
 
 }

@@ -17,6 +17,8 @@ import com.littlek4za.booking_system.repos.RoleRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.utils.DtoMapper;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -37,15 +39,16 @@ public class UserServiceImpl implements UserService {
     public UserDto login(LoginRequestDto loginRequestDto) {
 
         User user = userRepository.findByUsername(loginRequestDto.username())
-                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invalid username or password", HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS));
 
         if (passwordEncoder.matches(CharBuffer.wrap(loginRequestDto.password()), user.getPassword())) {
             return dtoMapper.toUserDto(user);
         }
-        throw new AppException("Invalid password", HttpStatus.BAD_REQUEST, ErrorCode.PASSWORD_INVALID);
+        throw new AppException("Invalid username or password", HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS);
     }
 
     @Override
+    @Transactional
     public void register(SignUpRequestDto signUpRequestDto) {
 
         if (userRepository.existsByUsername(signUpRequestDto.username())) {
@@ -59,8 +62,8 @@ public class UserServiceImpl implements UserService {
         User user = User.createRegistered(signUpRequestDto.username(), passwordEncoder.encode(signUpRequestDto.password()),
                 signUpRequestDto.email(), signUpRequestDto.firstName(), signUpRequestDto.lastName());
 
-        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ATTENDEE.name()));
-        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ORGANIZER.name()));
+        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ATTENDEE));
+        user.addRole(roleRepository.findByRoleName(RoleType.ROLE_ORGANIZER));
 
         userRepository.save(user);
     }

@@ -7,15 +7,18 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.littlek4za.booking_system.dtos.DeleteValidationResponseDto;
 import com.littlek4za.booking_system.dtos.EventRequestDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
+import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.EventType;
+import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
@@ -25,7 +28,9 @@ import com.littlek4za.booking_system.security.SecurityUtil;
 import com.littlek4za.booking_system.utils.DtoMapper;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class EventServiceImpl implements EventService {
 
@@ -35,22 +40,28 @@ public class EventServiceImpl implements EventService {
         private final SlotRepository slotRepository;
         private final SecurityUtil securityUtil;
         private final InvitationRepository invitationRepository;
+        private final BookingRepository bookingRepository;
+        private final DeleteValidationService deleteValidationService ;
 
         public EventServiceImpl(EventRepository eventRepository, UserRepository userRepository, DtoMapper dtoMapper,
-                        SlotRepository slotRepository, SecurityUtil securityUtil, InvitationRepository invitationRepository) {
+                        SlotRepository slotRepository, SecurityUtil securityUtil,
+                        InvitationRepository invitationRepository, BookingRepository bookingRepository, DeleteValidationService deleteValidationService) {
                 this.eventRepository = eventRepository;
                 this.userRepository = userRepository;
                 this.dtoMapper = dtoMapper;
                 this.slotRepository = slotRepository;
                 this.securityUtil = securityUtil;
                 this.invitationRepository = invitationRepository;
+                this.bookingRepository = bookingRepository;
+                this.deleteValidationService = deleteValidationService;
         }
 
         @Override
         @Transactional
         public EventResponseDto createEvent(EventRequestDto eRequestDto) {
                 User user = userRepository.findById(this.securityUtil.requireUserId())
-                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
 
                 Event newEvent = new Event(
@@ -75,7 +86,8 @@ public class EventServiceImpl implements EventService {
         public List<EventWithSlotCountReponseDto> getEvents() {
 
                 User user = userRepository.findById(this.securityUtil.requireUserId())
-                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
 
                 List<Event> eventList = eventRepository.findByUser(user);
                 List<EventSlotCount> slotCountList = slotRepository.countSlotForEvents(eventList);
@@ -91,9 +103,11 @@ public class EventServiceImpl implements EventService {
         @Override
         public EventWithSlotCountReponseDto getEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.requireUserId())
-                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User",
+                                                HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
 
                 return dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
@@ -104,9 +118,11 @@ public class EventServiceImpl implements EventService {
         public EventResponseDto putEventById(Long eventId,
                         EventRequestDto eRequestDto) {
                 User user = userRepository.findById(this.securityUtil.requireUserId())
-                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
-                                .orElseThrow(() -> new AppException("Event not found with eventId and User", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User",
+                                                HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
                 if (slotCount > 0 && !event.getEventType().equals(eventTypeEnum)) {
@@ -133,7 +149,27 @@ public class EventServiceImpl implements EventService {
         @Transactional
         public Long deleteEventById(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.requireUserId())
-                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
+
+                eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User",
+                                                HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+
+                List<Booking> bookingList = bookingRepository.findBySlot_Event_IdAndIsDeletedFalse(eventId);
+
+                boolean canDelete = true;
+
+                if (!bookingList.isEmpty()) {
+                        canDelete = deleteValidationService.buildDeleteValidationResponseDto(bookingList).canDelete();
+                }
+
+                if (canDelete == false) {
+                        throw new AppException(
+                                        "Event cannot be deleted due to active bookings",
+                                        HttpStatus.BAD_REQUEST,
+                                        ErrorCode.EVENT_HAS_ACTIVE_BOOKINGS);
+                }
 
                 List<Invitation> invitationList = invitationRepository.findByEventIdWithSlotSet(eventId);
 
@@ -145,8 +181,9 @@ public class EventServiceImpl implements EventService {
 
                 int deleted = eventRepository.deleteByIdAndUserId(eventId, user.getId());
 
-                if(deleted == 0) {
-                        throw new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND);
+                if (deleted == 0) {
+                        throw new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
+                                        ErrorCode.EVENT_NOT_FOUND);
                 }
 
                 return eventId;
@@ -157,8 +194,26 @@ public class EventServiceImpl implements EventService {
                 try {
                         eventTypeEnum = EventType.valueOf(slotName);
                 } catch (IllegalArgumentException | NullPointerException ex) {
-                        throw new AppException("Event type invalid", HttpStatus.BAD_REQUEST, ErrorCode.EVENT_TYPE_INVALID);
+                        throw new AppException("Event type invalid", HttpStatus.BAD_REQUEST,
+                                        ErrorCode.EVENT_TYPE_INVALID);
                 }
                 return eventTypeEnum;
         }
+
+        @Override
+        public DeleteValidationResponseDto eventDeleteValidation(Long eventId) {
+                User user = userRepository.findById(this.securityUtil.requireUserId())
+                                .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND));
+                eventRepository.findByIdAndUser(eventId, user)
+                                .orElseThrow(() -> new AppException("Event not found with eventId and User",
+                                                HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+
+                List<Booking> bookingList = bookingRepository.findBySlot_Event_IdAndIsDeletedFalse(eventId);
+
+                DeleteValidationResponseDto responseDto = deleteValidationService.buildDeleteValidationResponseDto(bookingList);
+
+                return responseDto;
+        }
+
 }

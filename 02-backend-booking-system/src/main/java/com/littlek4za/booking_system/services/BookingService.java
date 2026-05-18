@@ -3,29 +3,28 @@ package com.littlek4za.booking_system.services;
 import java.util.List;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
-import com.littlek4za.booking_system.dtos.BookingResponseDto;
+import com.littlek4za.booking_system.dtos.OrganizerBookingResponseDto;
+import com.littlek4za.booking_system.dtos.SlotBookedTimeResponseDto;
 import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 
 public interface BookingService {
 
-    BookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId, String clientIp);
+    OrganizerBookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId, String clientIp);
 
-    List<BookingResponseDto> getBookingsBySlotId(Long slotId);
+    List<OrganizerBookingResponseDto> getOrganizerBookingsBySlotId(Long slotId);
 
-    Integer getCountBySlotId(Long slotId);
+    List<OrganizerBookingResponseDto> getOrganizerBookingsByEventId(Long eventId);
 
-    List<BookingResponseDto> getBookingsByEventId(Long eventId);
+    OrganizerBookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId);
 
-    BookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId);
+    OrganizerBookingResponseDto softDeleteBookingAsAttendee(Long bookingId);
 
-    BookingResponseDto softDeleteBookingAsUserAttendee(Long bookingId);
+    OrganizerBookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId);
 
-    BookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId);
+    AttendeeBookingResponseDto getBookingByTokenAsAttendee(String bookingToken);
 
-    AttendeeBookingResponseDto getBookingByTokenAsUserAttendee(String bookingToken);
+    List<AttendeeBookingResponseDto> getAttendeeBookings();
 
-    AttendeeBookingResponseDto getBookingByTokenAsGuestAttendee(String bookingToken);
-
-    List<AttendeeBookingResponseDto> getUserBookings();
+    List<SlotBookedTimeResponseDto> getSlotBookedTimesBySlotId(Long slotId);
 
 }

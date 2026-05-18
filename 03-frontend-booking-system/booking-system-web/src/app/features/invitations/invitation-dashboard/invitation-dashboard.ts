@@ -5,6 +5,7 @@ import { Clipboard } from '@angular/cdk/clipboard'
 import { SlotIncludeMode } from '../dtos/slot-include-mode';
 import { InvitationResponseDto } from '../dtos/invitation-response-dto';
 import { Subject, takeUntil } from 'rxjs';
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-invitation-dashboard',
@@ -45,7 +46,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
   // for destroy usage
   private destroy$ = new Subject<void>();
 
-  constructor(private clipboard: Clipboard) { }
+  constructor(private clipboard: Clipboard, private logger: LoggerService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
 
@@ -53,20 +54,21 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
     const slotChanged = changes['slotId'];
 
     if (eventChanged || slotChanged) {
+      this.logger.debug(`[InvitationDashboard] Changes detected for input "eventId" and "slotId"`);
       if (this.slotId) {
+        this.logger.debug(`[InvitationDashboard] Sending invitationService.getInvitationsByEventIdAndSlotId request`);
         this.invitationService.getInvitationsByEventIdAndSlotId(this.eventId, this.slotId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
             this.invitationListByEventIdAndSlotId.set(res);
-            console.log('GET Invitation List successful', res);
           },
-          error: (err) => {
-            console.log('GET Invitation List failed');
+          error: () => {
+            alert("Invitation list failed to load. Please try again. If the problem persists, please contact the administrator.");
           }
         })
       } else {
-        this.invitationService.triggerRefreshForInvitationList(this.eventId);
+        this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
       }
 
     }
@@ -83,16 +85,16 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
   }
 
   deleteInvitation(invitationId: number) {
+    this.logger.debug(`[InvitationDashboard] Sending invitationService.deleteInvitation request`);
     this.invitationService.deleteInvitation(this.eventId, invitationId)
     .pipe(takeUntil(this.destroy$))
     .subscribe({
-      next: (res) => {
-        console.log('Invitation delete succeed');
+      next: () => {
         alert('Invitation delete succeed');
-        this.invitationService.triggerRefreshForInvitationList(this.eventId);
+        this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
       },
-      error: (err) => {
-        console.log('Invitation delete failed');
+      error: () => {
+        alert('Delete invitation failed. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }

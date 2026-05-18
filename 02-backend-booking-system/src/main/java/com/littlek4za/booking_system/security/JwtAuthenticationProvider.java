@@ -17,14 +17,12 @@ import com.littlek4za.booking_system.models.RoleType;
 import com.littlek4za.booking_system.models.TokenType;
 import com.littlek4za.booking_system.repos.UserRepository;
 
-
 // build authentication
 @Component
 public class JwtAuthenticationProvider {
 
         private final UserRepository userRepository;
         private final JwtTokenService jwtTokenService;
-
 
         public JwtAuthenticationProvider(UserRepository userRepository, JwtTokenService jwtTokenService) {
                 this.userRepository = userRepository;
@@ -77,10 +75,13 @@ public class JwtAuthenticationProvider {
                 TokenType tokenType = TokenType.valueOf(
                                 decodedJWT.getClaim("tokenType").asString());
 
+                String bookingToken = decodedJWT.getClaim("bookingToken").asString();
+
                 GuestPrincipal guestPricipal = new GuestPrincipal(
                                 email,
                                 Set.of(RoleType.ROLE_ATTENDEE),
-                                tokenType);
+                                tokenType,
+                                bookingToken);
 
                 Set<GrantedAuthority> authoritySet = Set.of(
                                 new SimpleGrantedAuthority(RoleType.ROLE_ATTENDEE.name()));

@@ -11,19 +11,19 @@
         <label>Name:</label>
         @if(attendeeBookingDto()?.isGuest){
         <span>
-            {{ attendeeBookingDto()?.guestFirstName }} {{ attendeeBookingDto()?.guestLastName }}
+            {{ attendeeBookingDto()?.guestAttendeeFirstName }} {{ attendeeBookingDto()?.guestAttendeeLastName }}
         </span>
         } @else {
         <span>
-            {{ attendeeBookingDto()?.firstName }} {{ attendeeBookingDto()?.lastName }}
+            {{ attendeeBookingDto()?.attendeeFirstName }} {{ attendeeBookingDto()?.attendeeLastName }}
         </span>
         }
     </div>
 
     <!-- Email -->
     <div class="row">
-        <label>Email:</label>
-        <span>{{ attendeeBookingDto()?.email }}</span>
+        <label>Attendee Email:</label>
+        <span>{{ attendeeBookingDto()?.attendeeEmail }}</span>
     </div>
 
     <!-- Time -->
@@ -50,7 +50,7 @@
 
     <!-- Organizer -->
     <div class="row">
-        <label>Organizer:</label>
+        <label>Organizer Email:</label>
         <span>{{ attendeeBookingDto()?.organizerEmail }}</span>
     </div>
 
@@ -70,5 +70,10 @@
         </a>
     </div>
     }
+
+    <!-- Cancel Booking-->
+    <div class="row">
+        <button type="button" class="btn btn-sm btn-danger" (click)="deleteBooking()"> Cancel Booking</button>
+    </div>
 </div>
 }

@@ -1,13 +1,16 @@
-<p>booking-access-component works!</p>
-
-<button class="btn btn-outline-secondary btn-sm" (click)="closePage()">
-    <i class="fa fa-times"></i>
-</button>
+@if (showCloseButton == true) {
+<div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-outline-secondary btn-sm" (click)="closePage()">
+        <i class="fa fa-times"></i>
+    </button>
+</div>
+}
 
 <form class="row g-3 needs-validation" [formGroup]="bookingTokenValidationForm" (ngSubmit)="onSubmit()">
     <div class="col-md-4">
         <label class="form-label">Booking Token</label>
-        <input type="text" class="form-control" formControlName="bookingToken">
+        <input type="text" class="form-control" formControlName="bookingToken"
+            placeholder="Please enter your booking token">
         @if (bookingTokenValidationForm.get('bookingToken')?.hasError('pattern') &&
         (bookingTokenValidationForm.get('bookingToken')?.touched ||
         bookingTokenValidationForm.get('bookingToken')?.dirty)){
@@ -26,7 +29,8 @@
 
     <div class="col-md-4">
         <label class="form-label">Booking Email</label>
-        <input type="text" class="form-control" formControlName="email">
+        <input type="text" class="form-control" formControlName="email"
+            placeholder="Please enter the email used for this booking">
         @if (bookingTokenValidationForm.get('email')?.hasError('pattern') &&
         (bookingTokenValidationForm.get('email')?.touched ||
         bookingTokenValidationForm.get('email')?.dirty)){
@@ -42,8 +46,11 @@
         </div>
         }
     </div>
-    
-    <div id="captcha-container"></div>
+
+    <div [hidden]="!showCaptcha">
+        <div #captchaContainer></div>
+    </div>
+
 
     <div class="col-12">
         <button class="btn btn-primary" type="submit">Submit form</button>

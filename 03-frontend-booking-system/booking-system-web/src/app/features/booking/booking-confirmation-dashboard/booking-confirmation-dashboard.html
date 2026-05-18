@@ -5,6 +5,7 @@
 <p>Event Description: {{invitation()?.event?.eventDescription}}</p>
 }
 <p>Event Location Address: {{invitation()?.event?.eventLocationAddress}}</p>
+@if (invitation()?.event?.includePosition){
 <p>
     Event Location Link:
     <a [href]="'https://www.google.com/maps/place/'+ invitation()?.event?.latitude + ',' + invitation()?.event?.longitude"
@@ -12,6 +13,8 @@
         View on map
     </a>
 </p>
+}
+
 
 @if (showBookingConfirmationWizard && slotField && invitationField) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
@@ -41,7 +44,7 @@
         </tr>
     </thead>
     <tbody>
-        @for (slot of slotListToDisplay(); track slot.id; let i = $index) {
+        @for (slot of invitation()?.slotList; track slot.id; let i = $index) {
         <tr>
             <td scope="row">{{i+1}}</td>
             <td>{{slot.slotName}}</td>

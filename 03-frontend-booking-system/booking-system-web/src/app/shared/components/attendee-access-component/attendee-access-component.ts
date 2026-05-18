@@ -13,21 +13,21 @@ import { AttendeeBookingListViewComponent } from "@features/booking/attendee-boo
 export class AttendeeAccessComponent {
 
   showBookingAccessPage: boolean = false;
-  showUserBookingListDashboard: boolean = false;
+  showUserAttendeeBookingListDashboard: boolean = false;
   showInvitationAccessPage: boolean = false;
 
   constructor(private authService: AuthService) { }
 
   get loggedInUser() {
-    return this.authService.hasValidToken() && this.authService.isLoggedInUser();
+    return this.authService.hasUserValidToken();
   }
 
   viewBookingAccess() {
     this.showBookingAccessPage = true;
   }
 
-  viewBookingList() {
-    this.showUserBookingListDashboard = true;
+  viewUserAttendeeBookingList() {
+    this.showUserAttendeeBookingListDashboard = true;
   }
 
   viewInvitationAccess() {
@@ -42,8 +42,8 @@ export class AttendeeAccessComponent {
     this.showBookingAccessPage = false;
   }
 
-  closeUserBookingListDashboard() {
-    this.showUserBookingListDashboard = false;
+  closeAttendeeBookingListDashboard() {
+    this.showUserAttendeeBookingListDashboard = false;
   }
 
 }

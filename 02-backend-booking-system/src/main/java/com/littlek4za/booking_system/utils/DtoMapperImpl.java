@@ -1,19 +1,18 @@
 package com.littlek4za.booking_system.utils;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.littlek4za.booking_system.dtos.BookingResponseDto;
+import com.littlek4za.booking_system.dtos.OrganizerBookingResponseDto;
 import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
 import com.littlek4za.booking_system.dtos.InvitationResponseDto;
+import com.littlek4za.booking_system.dtos.SlotBookedTimeResponseDto;
 import com.littlek4za.booking_system.dtos.SlotRequestDto;
 import com.littlek4za.booking_system.dtos.SlotResponseDto;
 import com.littlek4za.booking_system.dtos.UserDto;
@@ -25,13 +24,11 @@ import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.models.BookingStatus;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class DtoMapperImpl implements DtoMapper {
-
-        @Value("${security.jwt.token.secret-key:dev-secret-key}")
-        private String secretKey;
-        @Value("${security.jwt.issuer:booking-system}")
-        private String issuerString;
 
         @Override
         public EventWithSlotCountReponseDto toEventWithSlotCountResponseDto(Event event, Long slotCount) {
@@ -147,9 +144,9 @@ public class DtoMapperImpl implements DtoMapper {
         }
 
         @Override
-        public BookingResponseDto toBookingResponseDto(Booking savedBooking) {
+        public OrganizerBookingResponseDto toOrganizerBookingResponseDto(Booking savedBooking) {
 
-                BookingStatus status = calculateStatus(savedBooking);
+                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(), savedBooking.getBookedEndTime(), savedBooking.isDeleted());
 
                 String guestFirstName = null;
                 String guestLastName = null;
@@ -159,7 +156,7 @@ public class DtoMapperImpl implements DtoMapper {
                         guestLastName = savedBooking.getGuestLastName();
                 }
 
-                return new BookingResponseDto(
+                return new OrganizerBookingResponseDto(
                                 savedBooking.getId(),
                                 savedBooking.getUser().getUsername(),
                                 savedBooking.getUser().getLastName(),
@@ -177,27 +174,10 @@ public class DtoMapperImpl implements DtoMapper {
                                 toEventResponseDto(savedBooking.getSlot().getEvent()));
         }
 
-        private BookingStatus calculateStatus(Booking savedBooking) {
-                Instant bookedStartTime = savedBooking.getBookedStartTime();
-                Instant bookedEndTime = savedBooking.getBookedEndTime();
-                Instant now = Instant.now();
-
-                if (savedBooking.isDeleted()) {
-                        return BookingStatus.DELETED;
-                }
-                if (now.isBefore(bookedStartTime)) {
-                        return BookingStatus.UPCOMING;
-                }
-                if (!now.isBefore(bookedStartTime) && !now.isAfter(bookedEndTime)) {
-                        return BookingStatus.ONGOING;
-                }
-                return BookingStatus.EXPIRED;
-        }
-
         @Override
         public AttendeeBookingResponseDto toAttendeeBookingResponseDto(Booking savedBooking) {
 
-                BookingStatus status = calculateStatus(savedBooking);
+                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(), savedBooking.getBookedEndTime(), savedBooking.isDeleted());
 
                 String guestFirstName = null;
                 String guestLastName = null;
@@ -215,7 +195,6 @@ public class DtoMapperImpl implements DtoMapper {
                                 guestLastName,
                                 guestFirstName,
                                 savedBooking.getUser().getGuest(),
-                                savedBooking.getUser().getEmail(),
                                 savedBooking.getBookedStartTime(),
                                 savedBooking.getBookedEndTime(),
                                 savedBooking.getBookingToken(),
@@ -242,6 +221,13 @@ public class DtoMapperImpl implements DtoMapper {
                                                 .stream()
                                                 .map(role -> role.getRoleName())
                                                 .collect(Collectors.toSet()));
+        }
+
+        @Override
+        public SlotBookedTimeResponseDto toSlotBookedTimeResponseDto(Booking booking) {
+                return new SlotBookedTimeResponseDto(
+                                booking.getBookedStartTime(),
+                                booking.getBookedEndTime());
         }
 
 }

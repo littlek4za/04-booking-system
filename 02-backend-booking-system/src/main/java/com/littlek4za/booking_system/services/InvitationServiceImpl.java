@@ -28,6 +28,8 @@ import com.littlek4za.booking_system.security.SecurityUtil;
 import com.littlek4za.booking_system.utils.DtoMapper;
 import com.littlek4za.booking_system.validators.InvitationValidator;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class InvitationServiceImpl implements InvitationService {
 
@@ -52,6 +54,7 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
+    @Transactional
     public InvitationResponseDto createInvitation(InvitationRequestDto invitationRequestDto, Long eventId) {
 
         User user = userRepository.findById(securityUtil.requireUserId())
@@ -63,7 +66,7 @@ public class InvitationServiceImpl implements InvitationService {
         Set<Slot> slotSet;
         if (SlotIncludeMode.SELECTED.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            slotSet = slotRepository.findByIdInAndEventId(invitationRequestDto.slotIdList(), eventId);
+            slotSet = slotRepository.findByIdInAndEventIdWithEvent(invitationRequestDto.slotIdList(), eventId);
             if (slotSet.size() != invitationRequestDto.slotIdList().size()) {
                 throw new AppException("Some slots do not belong to this event", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_EVENT_MISMATCH);
             }
@@ -77,7 +80,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         } else if (SlotIncludeMode.ALL_CURRENT.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            slotSet = slotRepository.findByEvent(event);
+            slotSet = slotRepository.findByEventWithEvent(event);
 
             if (slotSet.isEmpty()) {
                 throw new AppException("Slot not found with event, Please create slot before create invitation",
@@ -90,7 +93,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         } else if (SlotIncludeMode.ALL_AND_FUTURE.name().equals(invitationRequestDto.slotIncludeMode())) {
 
-            slotSet = slotRepository.findByEvent(event);
+            slotSet = slotRepository.findByEventWithEvent(event);
 
             if (slotSet.isEmpty()) {
                 throw new AppException("No Slot found, Please create slot before create invitation",
@@ -111,7 +114,11 @@ public class InvitationServiceImpl implements InvitationService {
 
         Invitation savedInvitation = invitationRepository.save(newInvitation);
 
-        return dtoMapper.toInvitationResponseDto(savedInvitation, slotSet);
+        Invitation invitationForResponse = invitationRepository
+        .findByAccessTokenWithEventAndSlotSet(savedInvitation.getAccessToken())
+        .orElseThrow(() -> new AppException("Invitation not found ", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+
+        return dtoMapper.toInvitationResponseDto(invitationForResponse, slotSet);
     }
 
     private String generateUniqueAccessToken() {
@@ -141,7 +148,7 @@ public class InvitationServiceImpl implements InvitationService {
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
         Set<Invitation> invitationSet = invitationRepository.findByEventWithSlotSet(event);
-        Set<Slot> allEventSlots = slotRepository.findByEvent(event);
+        Set<Slot> allEventSlots = slotRepository.findByEventWithEvent(event);
 
         List<InvitationResponseDto> invitationResponseDtoList = invitationSet.stream().map(invitation -> {
             Set<Slot> slotSetToUse;
@@ -163,9 +170,9 @@ public class InvitationServiceImpl implements InvitationService {
         Event event = eventRepository.findByIdAndUser(eventId, user)
                 .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
 
-        Set<Invitation> invitationSet = invitationRepository.findByEventIdAndSlotIdOrAllAndFutureWithEventAndSlotSets(eventId, slotId,
+        Set<Invitation> invitationSet = invitationRepository.findInvitationsApplicableToSlot(eventId, slotId,
                 SlotIncludeMode.ALL_AND_FUTURE);
-        Set<Slot> allEventSlots = slotRepository.findByEvent(event);
+        Set<Slot> allEventSlots = slotRepository.findByEventWithEvent(event);
 
         List<InvitationResponseDto> invitationResponseDtoList = invitationSet.stream().map(invitation -> {
             Set<Slot> slotSetToUse;
@@ -181,6 +188,7 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
+    @Transactional
     public Long deleteInvitationByEventAndId(Long eventId, Long invitationId) {
         User user = userRepository.findById(securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
@@ -194,6 +202,7 @@ public class InvitationServiceImpl implements InvitationService {
         return invitationId;
     }
 
+    // guest and user share
     @Override
     public InvitationValidationResponseDto validateInvitationAccess(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEvent(token)
@@ -228,7 +237,7 @@ public class InvitationServiceImpl implements InvitationService {
 
         Set<Slot> slotSet;
         if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
-            slotSet = slotRepository.findByEvent(invitation.getEvent());
+            slotSet = slotRepository.findByEventWithEvent(invitation.getEvent());
         } else {
             slotSet = invitation.getSlotSet();
         }

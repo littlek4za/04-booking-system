@@ -1,12 +1,11 @@
 export class AttendeeBookingResponseDto {
-    id!: number;
-    username?: string;
-    lastName?: string;
-    firstName?: string;
-    guestLastName?: string;
-    guestFirstName?: string;
+    bookingId!: number;
+    attendeeUsername?: string;
+    attendeeLastName?: string;
+    attendeeFirstName?: string;
+    guestAttendeeLastName?: string;
+    guestAttendeeFirstName?: string;
     isGuest!: boolean;
-    email!: string;
     bookedStartTime!: string;
     bookedEndTime!: string;
     bookingToken!: string;

@@ -79,7 +79,7 @@ export function divisibleBy5Validator(abstractControl: AbstractControl) {
     return value % 5 === 0 ? null : { notDivisibleBy5: true };
 }
 
-export function timeRangeValidatorForFlexible (getSlotIntervalMinutes?: () => number | null) {
+export function timeRangeValidatorForFlexible(getSlotIntervalMinutes?: () => number | null) {
     return (abstractControl: AbstractControl): ValidationErrors | null => {
 
         const startDate = abstractControl.get('startDate')?.value;
@@ -110,29 +110,36 @@ export function timeRangeValidatorForFlexible (getSlotIntervalMinutes?: () => nu
     }
 }
 
-export function timeRangeValidatorForBusiness (getSlotIntervalMinutes?: () => number | null) {
+export function timeRangeValidatorForBusiness(
+    getSlotIntervalMinutes?: () => number | null,
+    getBusinessAllowOt?: () => boolean | null) {
     return (abstractControl: AbstractControl): ValidationErrors | null => {
 
         const open = abstractControl.get('open')?.value;
         const close = abstractControl.get('close')?.value;
+        const allowOt = getBusinessAllowOt?.();
+        const slotIntervalMinutes = getSlotIntervalMinutes?.();
 
-        if (!open  || !close) {
-            return null;
-        }
+        if (!open || !close) return null;
 
-        const startMinutes = timeToMinutes(open);
-        const endMinutes = timeToMinutes(close);
+        const openMinutes = timeToMinutes(open);
+        const closeMinutes = timeToMinutes(close);
 
-        if (startMinutes >= endMinutes) {
+        if (openMinutes >= closeMinutes) {
             return { endBeforeStart: true };
         }
 
-        if (getSlotIntervalMinutes != null) {
-            const minInterval = Number(getSlotIntervalMinutes?.());
-            if (minInterval > 0 && endMinutes - startMinutes < minInterval) {
+        if (allowOt == null) return null;
+        
+        if (slotIntervalMinutes == null) return null;
+
+        if (allowOt == false) {
+            const minInterval = Number(slotIntervalMinutes);
+            if (minInterval > 0 && closeMinutes - openMinutes < minInterval) {
                 return { rangeTooShortForInterval: true };
             }
         }
+
         return null;
     }
 }

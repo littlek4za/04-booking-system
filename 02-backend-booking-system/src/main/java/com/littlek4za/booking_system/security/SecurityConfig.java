@@ -44,10 +44,18 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         request -> request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/login", "/api/v1/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/invitations/*/validate","/api/v1/invitations/*","/api/v1/slots/*/bookings","/api/v1/slots/*/bookings/count").permitAll()
+                        .requestMatchers(HttpMethod.POST, 
+                            "/api/v1/login", "/api/v1/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, 
+                            "/api/v1/invitations/by-token/*/validate",
+                            "/api/v1/invitations/by-token/*",
+                            "/api/v1/slots/*/booked-times").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/guest/bookings/view/init", "/api/v1/guest/bookings/view/access","/api/v1/guest/bookings/create/init", "/api/v1/guest/bookings/create/access").permitAll() // guest access is validated manually in service layer
+                        .requestMatchers(HttpMethod.POST, 
+                            "/api/v1/guest/bookings/view/init", 
+                            "/api/v1/guest/bookings/view/access",
+                            "/api/v1/guest/bookings/create/init", 
+                            "/api/v1/guest/bookings/create/access").permitAll() // guest access is validated manually in service layer
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {

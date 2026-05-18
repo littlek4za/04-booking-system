@@ -20,7 +20,7 @@ import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.security.JwtTokenService;
-import com.littlek4za.booking_system.validators.BookingRequestValidator;
+import com.littlek4za.booking_system.validators.BookingValidator;
 
 @Service
 public class GuestBookingAccessServiceImpl implements GuestBookingAccessService {
@@ -30,18 +30,18 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     private final BookingRepository bookingRepository;
     private final RiskService riskService;
     private final CaptchaService captchaService;
-    private final BookingRequestValidator bookingRequestValidator;
+    private final BookingValidator bookingValidator;
     private final JwtTokenService jwtTokenService;
 
     public GuestBookingAccessServiceImpl(BookingRepository bookingRepository, RiskService riskService,
             CaptchaService captchaService, InvitationRepository invitationRepository,
-            SlotRepository slotRepository, BookingRequestValidator bookingRequestValidator, JwtTokenService jwtTokenService) {
+            SlotRepository slotRepository, BookingValidator bookingValidator, JwtTokenService jwtTokenService) {
         this.slotRepository = slotRepository;
         this.bookingRepository = bookingRepository;
         this.riskService = riskService;
         this.captchaService = captchaService;
         this.invitationRepository = invitationRepository;
-        this.bookingRequestValidator = bookingRequestValidator;
+        this.bookingValidator = bookingValidator;
         this.jwtTokenService = jwtTokenService;
     }
 
@@ -49,7 +49,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     public GuestBookingViewInitResponseDto initGuestBookingViewAccess(GuestBookingViewInitRequestDto requestDto,
             String ip) {
 
-        boolean valid = true;
+        Boolean valid = true;
         try {
             validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken(), ip);
         } catch (Exception e) {
@@ -57,6 +57,10 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         }
 
         boolean captchaRequired = riskService.shouldLimitView(requestDto.email(), ip);
+
+        if(captchaRequired){
+            valid = null;
+        }
 
         return new GuestBookingViewInitResponseDto(captchaRequired, valid);
     }
@@ -94,7 +98,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         System.out.println("Captcha required: " + captchaRequired);
         System.out.println("Captcha token: " + requestDto.captchaToken());
 
-        return jwtTokenService.toGuestAccessTokenDto(jwtTokenService.createGuestBookingViewToken(requestDto.email()));
+        return jwtTokenService.toGuestAccessTokenDto(jwtTokenService.createGuestBookingViewToken(requestDto.email(),requestDto.bookingToken()));
 
     }
 
@@ -160,7 +164,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
                 });
 
         try {
-            bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
+            bookingValidator.validateSlotBelongsToInvitation(slot, invitation);
         } catch (AppException e) {
 
             if (e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {

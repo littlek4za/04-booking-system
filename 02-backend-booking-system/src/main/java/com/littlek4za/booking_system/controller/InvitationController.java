@@ -61,13 +61,15 @@ public class InvitationController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
     
-    @GetMapping(path = "{version}/invitations/{token}/validate", version="1")
-    public ResponseEntity<InvitationValidationResponseDto> validateToken(@PathVariable("token") String token) {
+    // guest and user share
+    @GetMapping(path = "{version}/invitations/by-token/{token}/validate", version="1")
+    public ResponseEntity<InvitationValidationResponseDto> validateInvitation(@PathVariable("token") String token) {
         InvitationValidationResponseDto validationResponseDto = invitationService.validateInvitationAccess(token);
         return ResponseEntity.ok(validationResponseDto);
     }
 
-    @GetMapping(path = "{version}/invitations/{token}", version="1")
+    // guest and user share
+    @GetMapping(path = "{version}/invitations/by-token/{token}", version="1")
     public ResponseEntity<InvitationResponseDto> getInvitationByTokenV1(@PathVariable("token") String token) {
         InvitationResponseDto invitationResponseDto = invitationService.getInvitationByToken(token);
 

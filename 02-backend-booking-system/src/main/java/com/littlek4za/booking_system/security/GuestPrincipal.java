@@ -10,11 +10,13 @@ public class GuestPrincipal implements AuthPrincipal {
     private final String email;
     private final Set<RoleType> roles;
     private final TokenType tokenType;
+    private final String bookingToken;
 
-    public GuestPrincipal(String email, Set<RoleType> roles, TokenType tokenType) {
+    public GuestPrincipal(String email, Set<RoleType> roles, TokenType tokenType, String bookingToken) {
         this.email = email;
         this.roles = roles;
         this.tokenType = tokenType;
+        this.bookingToken = bookingToken;
     }
 
     @Override
@@ -30,6 +32,10 @@ public class GuestPrincipal implements AuthPrincipal {
     @Override
     public TokenType getTokenType() {
         return tokenType;
+    }
+
+    public String getBookingToken() {
+        return bookingToken;
     }
 
 }

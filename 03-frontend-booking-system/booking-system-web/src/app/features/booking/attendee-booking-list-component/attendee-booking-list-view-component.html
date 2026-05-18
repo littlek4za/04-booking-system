@@ -1,4 +1,9 @@
-<p>user-booking-list-component works!</p>
+<div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-outline-secondary" (click)="closeWizard()">
+        <i class="fa fa-times"></i>
+    </button>
+</div>
+
 
 <table class="table table-hover align-middle">
     <thead>
@@ -14,7 +19,7 @@
         </tr>
     </thead>
     <tbody>
-        @for (booking of bookingList(); track booking.id ; let i = $index) {
+        @for (booking of bookingList(); track booking.bookingId ; let i = $index) {
         <tr>
             <td scope="row">{{i+1}}</td>
             <td>{{booking.eventName}}</td>
@@ -58,7 +63,8 @@
             </td>
             <td [ngClass]="statusClassMap[booking.bookingStatus]">{{booking.bookingStatus}}</td>
             <td>
-                <button type="button" class="btn btn-sm btn-danger" (click)="comfirmDeleteUserBooking(booking.id)">
+                <button type="button" class="btn btn-sm btn-danger"
+                    (click)="comfirmDeleteUserBooking(booking.bookingId)">
                     Delete Booking
                 </button>
             </td>

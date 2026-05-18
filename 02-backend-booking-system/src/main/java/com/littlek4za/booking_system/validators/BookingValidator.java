@@ -27,13 +27,16 @@ import com.littlek4za.booking_system.models.SlotIncludeMode;
 import com.littlek4za.booking_system.models.TimeRange;
 import com.littlek4za.booking_system.security.SecurityUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
-public class BookingRequestValidator {
+public class BookingValidator {
 
     private final BookingRepository bookingRepository;
     private final SecurityUtil securityUtil;
 
-    public BookingRequestValidator(SecurityUtil securityUtil, BookingRepository bookingRepository) {
+    public BookingValidator(SecurityUtil securityUtil, BookingRepository bookingRepository) {
         this.securityUtil = securityUtil;
         this.bookingRepository = bookingRepository;
     }
@@ -41,12 +44,14 @@ public class BookingRequestValidator {
     public void validateSlotBelongsToInvitation(Slot slot, Invitation invitation) {
         if (!SlotIncludeMode.ALL_AND_FUTURE.equals(invitation.getSlotIncludeMode())
                 && !invitation.getSlotSet().contains(slot)) {
-            throw new AppException("Slot does not belong to this invitation", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_INVITATION_MISMATCH);
+            throw new AppException("Slot does not belong to this invitation", HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_INVITATION_MISMATCH);
         }
 
         if (SlotIncludeMode.ALL_AND_FUTURE.equals(invitation.getSlotIncludeMode())
                 && !slot.getEvent().getId().equals(invitation.getEvent().getId())) {
-            throw new AppException("Slot does not belong to this invitation", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_INVITATION_MISMATCH);
+            throw new AppException("Slot does not belong to this invitation", HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_INVITATION_MISMATCH);
         }
     }
 
@@ -56,35 +61,41 @@ public class BookingRequestValidator {
         if (authenticated) {
             if (bookingRequestDto.email() != null || bookingRequestDto.firstName() != null
                     || bookingRequestDto.lastName() != null) {
-                throw new AppException("Authenticated user booking request should not provide email, firstName and lastName", HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+                throw new AppException(
+                        "Authenticated user booking request should not provide email, firstName and lastName",
+                        HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
             }
         } else {
             if (bookingRequestDto.email() == null || bookingRequestDto.firstName() == null
                     || bookingRequestDto.lastName() == null) {
-                throw new AppException("Guest booking request requires email, firtName and lastName", HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+                throw new AppException("Guest booking request requires email, firtName and lastName",
+                        HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
             }
         }
     }
 
-    public void validateBookingInfo(BookingRequestDto dto, Invitation invitation, Slot slot, Event event, User user) {
+    public void validateBookingRequestInfo(BookingRequestDto dto, Invitation invitation, Slot slot, Event event,
+            User user) {
 
         Integer bookingsLimitForEvent = event.getMaxBookingsPerIdentity();
 
-        if(bookingsLimitForEvent != null){
+        if (bookingsLimitForEvent != null) {
             Long bookingsCount = bookingRepository.countByUserAndEvent(user, event);
 
-            if(bookingsCount>=bookingsLimitForEvent){
-                throw new AppException(("Booking failed. Max booking limit per user for this event has reached"), HttpStatus.BAD_REQUEST, ErrorCode.EVENT_BOOKING_LIMIT_REACHED);
+            if (bookingsCount >= bookingsLimitForEvent) {
+                throw new AppException(("Booking failed. Max booking limit per user for this event has reached"),
+                        HttpStatus.BAD_REQUEST, ErrorCode.EVENT_BOOKING_LIMIT_REACHED);
             }
         }
 
         Integer bookingsLimitForSlot = slot.getMaxBookingsPerIdentity();
 
-        if(bookingsLimitForSlot != null){
+        if (bookingsLimitForSlot != null) {
             Long bookingsCount = bookingRepository.countByUserAndSlot(user, slot);
 
-            if(bookingsCount>=bookingsLimitForSlot){
-                throw new AppException(("Booking failed. Max booking limit per user for this slot has reached"), HttpStatus.BAD_REQUEST, ErrorCode.SLOT_BOOKING_LIMIT_REACHED);
+            if (bookingsCount >= bookingsLimitForSlot) {
+                throw new AppException(("Booking failed. Max booking limit per user for this slot has reached"),
+                        HttpStatus.BAD_REQUEST, ErrorCode.SLOT_BOOKING_LIMIT_REACHED);
             }
         }
 
@@ -99,35 +110,39 @@ public class BookingRequestValidator {
 
     private void validateFixedBooking(BookingRequestDto dto, Slot slot, Invitation invitation) {
         if (dto.bookedStartTime() != null) {
-            throw new AppException(("Fixed Type Event do not require start time field"), HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+            throw new AppException(("Fixed Type Event do not require start time field"), HttpStatus.BAD_REQUEST,
+                    ErrorCode.BOOKING_REQUEST_INVALID);
         }
 
         int count = bookingRepository.getBookingsCountBySlot(slot);
 
-        if(count >= slot.getMaxBookPerInterval()){
-            throw new AppException(("Booking failed. Slot capacity has been reached."), HttpStatus.BAD_REQUEST, ErrorCode.SLOT_FULL);
+        if (count >= slot.getMaxBookPerInterval()) {
+            throw new AppException(("Booking failed. Slot capacity has been reached."), HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_FULL);
         }
     }
 
     private void validateFlexibleBooking(BookingRequestDto dto, Slot slot, Invitation invitation) {
         if (dto.bookedStartTime() == null) {
-            throw new AppException(("Flexible type event booking request require input for start time"), HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+            throw new AppException(("Flexible type event booking request require input for start time"),
+                    HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
         }
-        
+
         Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
         Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
         // check if the time is occupied
         List<Booking> bookingList = bookingRepository.findBySlot(slot);
-        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
+        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book) -> {
             Instant occupiedStartTime = book.getBookedStartTime();
             Instant occupiedEndTime = book.getBookedEndTime();
 
             return requestedStartTime.isBefore(occupiedEndTime) && occupiedStartTime.isBefore(requestedEndTime);
         });
 
-        if(timeIsBookedByOthers){
-            throw new AppException(("The selected time is already booked by others"), HttpStatus.BAD_REQUEST, ErrorCode.SLOT_TIME_ALREADY_BOOKED);
+        if (timeIsBookedByOthers) {
+            throw new AppException(("The selected time is already booked by others"), HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_TIME_ALREADY_BOOKED);
         }
 
         // check if selected book time is out of timerange
@@ -137,30 +152,32 @@ public class BookingRequestValidator {
                         && !requestedEndTime.isAfter(range.close));
 
         if (!fitsInInstantRange) {
-            throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"), HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+            throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"),
+                    HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
         }
     }
 
     public void validateBusinessBooking(BookingRequestDto dto, Slot slot, Invitation invitation) {
         if (dto.bookedStartTime() == null) {
-            throw new AppException(("Business type event booking request require input for start time"), HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+            throw new AppException(("Business type event booking request require input for start time"),
+                    HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
         }
 
         Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
         Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
-        
 
         // check if the time is occupied
         List<Booking> bookingList = bookingRepository.findBySlot(slot);
-        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book)->{
+        boolean timeIsBookedByOthers = bookingList.stream().anyMatch((book) -> {
             Instant occupiedStartTime = book.getBookedStartTime();
             Instant occupiedEndTime = book.getBookedEndTime();
 
             return requestedStartTime.isBefore(occupiedEndTime) && occupiedStartTime.isBefore(requestedEndTime);
         });
 
-        if(timeIsBookedByOthers){
-            throw new AppException(("The selected time is already booked by others"), HttpStatus.BAD_REQUEST, ErrorCode.SLOT_TIME_ALREADY_BOOKED);
+        if (timeIsBookedByOthers) {
+            throw new AppException(("The selected time is already booked by others"), HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_TIME_ALREADY_BOOKED);
         }
 
         // check if selected book time is out of timerange
@@ -193,7 +210,8 @@ public class BookingRequestValidator {
                 });
 
         if (!fitsInInstantRange) {
-            throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"), HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+            throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"),
+                    HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
         }
     }
 

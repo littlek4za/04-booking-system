@@ -1,8 +1,10 @@
 import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { BookingResponseDto } from '../dtos/booking-response-dto';
+import { OrganizerBookingResponseDto } from '../dtos/booking-response-dto';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookingService } from '../booking-service';
 import { DatePipe, NgClass } from '@angular/common';
+import { LoggerService } from '@core/services/logger-service';
+import { SlotService } from '@features/slots/slot-service';
 
 @Component({
   selector: 'app-booking-manager-dashboard',
@@ -13,12 +15,14 @@ import { DatePipe, NgClass } from '@angular/common';
 export class BookingManagerDashboard implements OnChanges {
 
   private bookingService = inject(BookingService);
+  private slotService = inject(SlotService);
 
-  bookingListBySlotId = toSignal(this.bookingService.bookingListBySlotId$, { initialValue: [] as BookingResponseDto[] });
+  organizerBookingListBySlotId = toSignal(this.bookingService.organizerBookingListBySlotId$, { initialValue: [] as OrganizerBookingResponseDto[] });
 
   @Input() slotId!: number;
   @Input() slotName!: string | null;
   @Input() eventName!: string | null;
+  @Input() eventId!: number | null;
   @Output() close = new EventEmitter<void>();
 
   statusClassMap: Record<string, string> = {
@@ -28,11 +32,12 @@ export class BookingManagerDashboard implements OnChanges {
     EXPIRED: 'bg-warning text-dark'
   };
 
-  constructor() { }
+  constructor(private logger: LoggerService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['slotId']) {
-      this.bookingService.triggerRefreshForBookingListBySlotId(this.slotId);
+      this.logger.debug(`[BookingManagerDashboard] Slot id changes detected, sending bookingService.triggerRefreshForOrganizerBookingListBySlotId request`);
+      this.bookingService.triggerRefreshForOrganizerBookingListBySlotId(this.slotId);
     }
   }
 
@@ -40,17 +45,20 @@ export class BookingManagerDashboard implements OnChanges {
     this.close.emit();
   }
 
-  comfirmDeleteBooking(slotId:number, bookingId: number) {
-    this.bookingService.softDeleteBookingAsOrganizer(slotId,bookingId).subscribe({
-      next:(res)=> {
-        console.log("Delete booking succesful");
-        this.bookingService.triggerRefreshForBookingListBySlotId(this.slotId);
-      },
-      error:(err)=> {
-        console.log("Delete unsucessful");
-        alert("Delete unsucessful, please contact admin");
-      },
-    })
+  comfirmDeleteBooking(slotId: number, bookingId: number) {
+    if (confirm("Confirm Delete Booking?")) {
+      this.logger.debug(`[BookingManagerDashboard] Sending bookingService.softDeleteBookingAsOrganizer request`);
+      this.bookingService.softDeleteBookingAsOrganizer(slotId, bookingId).subscribe({
+        next: () => {
+          this.bookingService.triggerRefreshForOrganizerBookingListBySlotId(this.slotId);
+          if(this.eventId){
+            this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
+          }
+        },
+        error: () => {
+          alert("Delete unsucessful, please contact admin");
+        },
+      });
+    }
   }
-
 }

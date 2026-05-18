@@ -11,17 +11,17 @@ public record ErrorResponseDto(
         int status,
         String error,
         String message,
-        ErrorCode code,
+        ErrorCode errorCode,
         Instant timestamp,
         String path,
         List<FieldErrorDto> fieldErrorList) {
 
-    public static ErrorResponseDto create(HttpStatus status, String message, ErrorCode code, String path, List<FieldErrorDto> fieldErrorList ) {
+    public static ErrorResponseDto create(HttpStatus status, String message, ErrorCode errorCode, String path, List<FieldErrorDto> fieldErrorList ) {
         return new ErrorResponseDto(
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                code,
+                errorCode,
                 Instant.now(),
                 path,
                 fieldErrorList);

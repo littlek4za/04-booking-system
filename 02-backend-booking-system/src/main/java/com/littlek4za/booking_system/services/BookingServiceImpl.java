@@ -12,7 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.littlek4za.booking_system.dtos.BookingRequestDto;
-import com.littlek4za.booking_system.dtos.BookingResponseDto;
+import com.littlek4za.booking_system.dtos.OrganizerBookingResponseDto;
+import com.littlek4za.booking_system.dtos.SlotBookedTimeResponseDto;
 import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
@@ -22,6 +23,7 @@ import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
+import com.littlek4za.booking_system.models.BookingStatus;
 import com.littlek4za.booking_system.models.DeletedBy;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.models.ValidationResult;
@@ -33,7 +35,7 @@ import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
 import com.littlek4za.booking_system.utils.DtoMapper;
-import com.littlek4za.booking_system.validators.BookingRequestValidator;
+import com.littlek4za.booking_system.validators.BookingValidator;
 import com.littlek4za.booking_system.validators.InvitationValidator;
 
 import jakarta.transaction.Transactional;
@@ -49,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
     private final EventRepository eventRepository;
     private final InvitationUsageRepository invitationUsageRepository;
     private final DtoMapper dtoMapper;
-    private final BookingRequestValidator bookingRequestValidator;
+    private final BookingValidator bookingValidator;
     private final InvitationValidator invitationValidator;
     private final EmailService emailService;
     private final RiskService riskService;
@@ -58,7 +60,7 @@ public class BookingServiceImpl implements BookingService {
             InvitationRepository invitationRepository, BookingRepository bookingRepository,
             EventRepository eventRepository,
             InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper,
-            BookingRequestValidator bookingRequestValidator, InvitationValidator invitationValidator,
+            BookingValidator bookingValidator, InvitationValidator invitationValidator,
             EmailService emailService, RiskService riskService) {
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
@@ -68,22 +70,22 @@ public class BookingServiceImpl implements BookingService {
         this.eventRepository = eventRepository;
         this.invitationUsageRepository = invitationUsageRepository;
         this.dtoMapper = dtoMapper;
-        this.bookingRequestValidator = bookingRequestValidator;
+        this.bookingValidator = bookingValidator;
         this.invitationValidator = invitationValidator;
         this.emailService = emailService;
         this.riskService = riskService;
     }
 
+    @Override
     @PreAuthorize("@authz.isGuestBookingCreate() or (@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE'))")
     @Transactional
-    @Override
-    public BookingResponseDto createBooking(BookingRequestDto dto, Long slotId, String clientIp) {
+    public OrganizerBookingResponseDto createBooking(BookingRequestDto dto, Long slotId, String clientIp) {
 
-        boolean isGuest = securityUtil.isGuest();
+        boolean isGuestBookingCreate = securityUtil.isGuestBookingCreate();
 
         Slot slot = slotRepository.findByIdWithEventForUpdate(slotId)
                 .orElseThrow(() -> {
-                    if (isGuest) {
+                    if (isGuestBookingCreate) {
                         riskService.recordAttemptForCreate(dto.email(), clientIp);
                     }
                     return new AppException("Unknown Slot Id", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
@@ -93,7 +95,7 @@ public class BookingServiceImpl implements BookingService {
 
         Invitation invitation = invitationRepository.findByIdWithEventAndSlotSetsAndUsersForUpdate(dto.invitationId())
                 .orElseThrow(() -> {
-                    if (isGuest) {
+                    if (isGuestBookingCreate) {
                         riskService.recordAttemptForCreate(dto.email(), clientIp);
                     }
                     return new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND,
@@ -102,42 +104,41 @@ public class BookingServiceImpl implements BookingService {
 
         User user = getOrCreateUser(dto);
 
-
         try {
-            bookingRequestValidator.validateSlotBelongsToInvitation(slot, invitation);
+            bookingValidator.validateSlotBelongsToInvitation(slot, invitation);
         } catch (AppException e) {
 
-            if (isGuest && e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
+            if (isGuestBookingCreate && e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
                 riskService.recordAttemptForCreate(dto.email(), clientIp);
             }
 
             throw e;
         }
 
-        bookingRequestValidator.validateGuestOrUserFields(dto);
+        bookingValidator.validateGuestOrUserFields(dto);
 
         ValidationResult validationResult = invitationValidator.validateAccess(invitation, user.getId());
         if (!validationResult.isValid()) {
-            if (isGuest) {
+            if (isGuestBookingCreate) {
                 riskService.recordAttemptForCreate(dto.email(), clientIp);
             }
             throw new AppException(validationResult.getMessage(), HttpStatus.BAD_REQUEST,
                     validationResult.getErrorCode());
         }
 
-        bookingRequestValidator.validateBookingInfo(dto, invitation, slot, event, user);
+        bookingValidator.validateBookingRequestInfo(dto, invitation, slot, event, user);
 
-        BookingResponseDto bookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
+        OrganizerBookingResponseDto organizerBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
 
-        emailService.sendBookingConfirmationDetails(bookingResponseDto);
+        emailService.sendBookingConfirmationDetails(organizerBookingResponseDto);
 
-        if (isGuest) {
+        if (isGuestBookingCreate) {
             riskService.resetEmailIpForCreate(dto.email(), clientIp);
             riskService.reduceIpPenaltyForCreate(clientIp);
             riskService.recordCreateSuccess(clientIp);
         }
 
-        return bookingResponseDto;
+        return organizerBookingResponseDto;
     }
 
     private User getOrCreateUser(BookingRequestDto dto) {
@@ -165,7 +166,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     // create booking by Event Type sub method
-    private BookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
+    private OrganizerBookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
             User user) {
 
         Instant requestedStartTime;
@@ -233,7 +234,7 @@ public class BookingServiceImpl implements BookingService {
         invitationRepository.save(invitation);
         invitationUsageRepository.save(invitationUsage);
 
-        return dtoMapper.toBookingResponseDto(savedBooking);
+        return dtoMapper.toOrganizerBookingResponseDto(savedBooking);
 
     }
 
@@ -256,32 +257,26 @@ public class BookingServiceImpl implements BookingService {
         return token.toString();
     }
 
+    @PreAuthorize("@authz.isUser()")
     @Override
-    public List<BookingResponseDto> getBookingsBySlotId(Long slotId) {
+    public List<OrganizerBookingResponseDto> getOrganizerBookingsBySlotId(Long slotId) {
 
-        Slot slot = slotRepository.findByIdWithEvent(slotId)
+        Long userId = this.securityUtil.requireUserId();
+
+        Slot slot = slotRepository.findByIdAndEvent_User_Id(slotId, userId)
                 .orElseThrow(() -> new AppException("Slot not found", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
 
         List<Booking> bookingList = bookingRepository.findBySlot(slot);
 
-        List<BookingResponseDto> bookingResponseDtoList = bookingList.stream()
-                .map(booking -> dtoMapper.toBookingResponseDto(booking)).toList();
+        List<OrganizerBookingResponseDto> organizerBookingResponseDtoList = bookingList.stream()
+                .map(booking -> dtoMapper.toOrganizerBookingResponseDto(booking)).toList();
 
-        return bookingResponseDtoList;
-    }
-
-    @Override
-    public Integer getCountBySlotId(Long slotId) {
-
-        Slot slot = slotRepository.findByIdWithEvent(slotId)
-                .orElseThrow(() -> new AppException("Slot not found", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
-
-        return bookingRepository.getBookingsCountBySlot(slot);
+        return organizerBookingResponseDtoList;
     }
 
     @PreAuthorize("@authz.isUser()")
     @Override
-    public List<BookingResponseDto> getBookingsByEventId(Long eventId) {
+    public List<OrganizerBookingResponseDto> getOrganizerBookingsByEventId(Long eventId) {
 
         User user = userRepository.findById(this.securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
@@ -291,16 +286,16 @@ public class BookingServiceImpl implements BookingService {
 
         List<Booking> bookingList = bookingRepository.findActiveBookingsByEventId(event);
 
-        List<BookingResponseDto> bookingResponseDtoList = bookingList.stream()
-                .map(booking -> dtoMapper.toBookingResponseDto(booking)).toList();
+        List<OrganizerBookingResponseDto> organizerBookingResponseDtoList = bookingList.stream()
+                .map(booking -> dtoMapper.toOrganizerBookingResponseDto(booking)).toList();
 
-        return bookingResponseDtoList;
+        return organizerBookingResponseDtoList;
     }
 
-    @PreAuthorize("@authz.isUser()")
     @Override
+    @PreAuthorize("@authz.isUser()")
     @Transactional
-    public BookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId) {
+    public OrganizerBookingResponseDto softDeleteBookingAsOrganizer(Long slotId, Long bookingId) {
 
         userRepository.findById(this.securityUtil.requireUserId())
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
@@ -310,24 +305,45 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new AppException("Booking not found with bookingId, slotId and user",
                         HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
 
+        BookingStatus bookingStatus = BookingStatus.from(booking.getBookedStartTime(), booking.getBookedEndTime(),
+                booking.isDeleted());
+
+        boolean shouldSendCancellationEmail = bookingStatus == BookingStatus.UPCOMING
+                || bookingStatus == BookingStatus.ONGOING;
+
         booking.setDeletedBy(DeletedBy.ORGANIZER);
         booking.setDeletedAt(Instant.now());
         booking.setDeleted(true);
 
         bookingRepository.save(booking);
 
-        return dtoMapper.toBookingResponseDto(booking);
+        if (shouldSendCancellationEmail) {
+            emailService.sendBookingCancelledDetails(booking);
+        }
+
+        return dtoMapper.toOrganizerBookingResponseDto(booking);
     }
 
-    @PreAuthorize("@authz.isUser()")
     @Override
+    @PreAuthorize("(@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE')) or @authz.isGuestBookingView()")
     @Transactional
-    public BookingResponseDto softDeleteBookingAsUserAttendee(Long bookingId) {
+    public OrganizerBookingResponseDto softDeleteBookingAsAttendee(Long bookingId) {
 
-        Booking booking = bookingRepository
-                .findAttendeeBookingByIdAndUserId(bookingId, this.securityUtil.requireUserId())
-                .orElseThrow(() -> new AppException("Booking not found with bookingId and user",
-                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        Booking booking;
+        if (securityUtil.isUser()) {
+            booking = bookingRepository
+                    .findAttendeeBookingByIdAndUserId(bookingId, this.securityUtil.requireUserId())
+                    .orElseThrow(() -> new AppException("Booking not found with bookingId and user",
+                            HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        } else if (securityUtil.isGuestBookingView()) {
+            booking = bookingRepository
+                    .findAttendeeBookingByIdAndUserEmailAndBookingToken(bookingId, this.securityUtil.requireEmail(),
+                            this.securityUtil.requireBookingToken())
+                    .orElseThrow(() -> new AppException("Booking not found with bookingId and email",
+                            HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        } else {
+            throw new AppException("Access denied", HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
+        }
 
         booking.setDeletedBy(DeletedBy.ATTENDEE);
         booking.setDeletedAt(Instant.now());
@@ -335,39 +351,35 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
 
-        return dtoMapper.toBookingResponseDto(booking);
+        return dtoMapper.toOrganizerBookingResponseDto(booking);
     }
 
     @PreAuthorize("@authz.isGuestBookingView()")
     @Override
     @Transactional
-    public BookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId) {
+    public OrganizerBookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId) {
         throw new AppException("METHOD NOT IMPLMENTED", null, null);
 
     }
 
-    @PreAuthorize("@authz.isUser()")
+    @PreAuthorize("(@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE')) or @authz.isGuestBookingView()")
     @Override
-    public AttendeeBookingResponseDto getBookingByTokenAsUserAttendee(String bookingToken) {
+    public AttendeeBookingResponseDto getBookingByTokenAsAttendee(String bookingToken) {
 
-        Long userId = securityUtil.requireUserId();
-        Booking booking = bookingRepository.findByBookingTokenAndUserId(bookingToken, userId)
-                .orElseThrow(() -> new AppException("Booking not found with booking token and user",
-                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
-
-        AttendeeBookingResponseDto bookingResponseDto = dtoMapper.toAttendeeBookingResponseDto(booking);
-
-        return bookingResponseDto;
-    }
-
-    @PreAuthorize("@authz.isGuestBookingView()")
-    @Override
-    public AttendeeBookingResponseDto getBookingByTokenAsGuestAttendee(String bookingToken) {
-
-        String email = securityUtil.requireEmail();
-        Booking booking = bookingRepository.findbyBookingTokenAndEmail(bookingToken, email)
-                .orElseThrow(() -> new AppException("Booking not found with booking token and email",
-                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        Booking booking;
+        if (securityUtil.isUser()) {
+            Long userId = securityUtil.requireUserId();
+            booking = bookingRepository.findByBookingTokenAndUserId(bookingToken, userId)
+                    .orElseThrow(() -> new AppException("Booking not found with booking token and user",
+                            HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        } else if (securityUtil.isGuestBookingView()) {
+            String email = securityUtil.requireEmail();
+            booking = bookingRepository.findbyBookingTokenAndEmail(bookingToken, email)
+                    .orElseThrow(() -> new AppException("Booking not found with booking token and email",
+                            HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
+        } else {
+            throw new AppException("Access denied", HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
+        }
 
         AttendeeBookingResponseDto bookingResponseDto = dtoMapper.toAttendeeBookingResponseDto(booking);
 
@@ -376,7 +388,7 @@ public class BookingServiceImpl implements BookingService {
 
     @PreAuthorize("@authz.isUser()")
     @Override
-    public List<AttendeeBookingResponseDto> getUserBookings() {
+    public List<AttendeeBookingResponseDto> getAttendeeBookings() {
         Long userId = securityUtil.requireUserId();
         List<Booking> bookings = bookingRepository.findByUserId(userId);
 
@@ -387,6 +399,20 @@ public class BookingServiceImpl implements BookingService {
 
         return bookingUserResponseDtos;
 
+    }
+
+    @Override
+    public List<SlotBookedTimeResponseDto> getSlotBookedTimesBySlotId(Long slotId) {
+
+        Slot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new AppException("Slot not found", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND));
+
+        List<Booking> bookingList = bookingRepository.findBySlot(slot);
+
+        List<SlotBookedTimeResponseDto> slotBookedTimeResponseDtoList = bookingList.stream()
+                .map(booking -> dtoMapper.toSlotBookedTimeResponseDto(booking)).toList();
+
+        return slotBookedTimeResponseDtoList;
     }
 
 }

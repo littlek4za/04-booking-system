@@ -8,6 +8,7 @@ import { EventService } from '../event-service';
 import { includePositionValidator } from '@shared/validators/custom-validator';
 import { EventWithSlotCountResponseDto } from '../dtos/event-with-slot-count-response-dto';
 import { Subject, takeUntil } from 'rxjs';
+import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-event-edit-wizard',
@@ -29,13 +30,14 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private eventService: EventService) {
+  constructor(private eventService: EventService, private logger: LoggerService) {
     this.initEventForm();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const eventIdChange = changes['eventId'];
+    this.logger.debug(`[EventEditWizard] Mode is set to ${this.mode}`);
     if (changes['eventId'] && this.mode === 'UPDATE' && this.eventId) {
+      this.logger.debug('[EventEditWizard] Change of eventId in update mode detected')
       this.loadEvent(this.eventId);
     }
   }
@@ -81,21 +83,28 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
         Validators.required
       ])
     }, { validators: includePositionValidator });
+    this.logger.debug(`[EventEditWizard] Event form initiated`);
   }
 
   // condition to clear position input for EventForm
   private actionWhenFormValueChanges() {
-    this.eventForm.get('includePosition')!.valueChanges.subscribe(value => {
-      if (!value) {
-        this.eventForm.patchValue({
-          latitude: null,
-          longitude: null
-        });
-      }
-    });
+    this.eventForm.get('includePosition')!.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.logger.debug(`[EventEditWizard] Formcontrol value changes detected: "includePosition"`);
+        if (!value) {
+          this.eventForm.patchValue({
+            latitude: null,
+            longitude: null
+          });
+        }
+      });
     this.eventForm.get('noMaxBookingsPerIdentity')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoMaxBookingsPerIdentityChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[EventEditWizard] Formcontrol value changes detected: "noMaxBookingsPerIdentity"`);
+        this.onNoMaxBookingsPerIdentityChanges(value);
+      });
   }
 
   get hasMaxBookingsPerIdentity(): boolean {
@@ -116,24 +125,26 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
 
   // for update
   private loadEvent(eventId: number) {
-    console.log('Loading Event for form', this.eventId);
-    this.eventService.getEventById(eventId).subscribe({
+    this.logger.debug('[EventEditWizard] Sending eventService.getEventById request');
+    this.eventService.getEventById(eventId)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (res) => {
-        console.log('GET Event Success', res);
         this.eventData = res;
         this.prefillForm(this.eventData);
         this.updateEventTypeControl();
-        if (this.eventData?.includePosition) {
-          this.userLatLng = [this.eventData.latitude!, this.eventData.longitude!];
+        if (this.eventData.includePosition && this.eventData.latitude && this.eventData.longitude) {
+          this.userLatLng = [this.eventData.latitude, this.eventData.longitude];
         }
       },
-      error: (err) => {
-        console.log('GET Event Failed');
+      error: () => {
+        alert('Failed to load event. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }
 
   private prefillForm(event: EventWithSlotCountResponseDto) {
+    this.logger.debug('[EventEditWizard] Prefill event form');
     this.eventForm.patchValue({
       eventName: event.eventName,
       eventDescription: event.eventDescription,
@@ -183,8 +194,11 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   onSubmit() {
+    this.logger.debug('[EventEditWizard] Event form submitted');
+
     this.eventForm.markAllAsTouched();
     if (this.eventForm.invalid) {
+      this.logger.warn('[EventEditWizard] Event form validation failed');
       return;
     }
     const eventRequestDto = new EventRequestDto;
@@ -201,28 +215,32 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
     eventRequestDto.eventType = eventFormRawData.eventType;
 
     if (this.mode == 'CREATE') {
-      this.eventService.createEvent(eventRequestDto).subscribe({
-        next: (res) => {
-          console.log('Event Created Successfully.', res);
+      this.logger.debug('[EventEditWizard] Sending eventService.createEvent request');
+      this.eventService.createEvent(eventRequestDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
           alert("Event Created Sucessfully.");
           this.eventService.triggerRefresh();
           this.closeWizard();
         },
-        error: (err) => {
-          console.error('Event fail to create');
+        error: () => {
+          alert('Create event failed. Please try again. If the problem persists, please contact the administrator.')
         }
       });
     }
     if (this.mode == 'UPDATE' && this.eventId != null) {
-      this.eventService.putEventById(this.eventId, eventRequestDto).subscribe({
-        next: (res) => {
-          console.log('Event Updated Successfully.', res);
+      this.logger.debug('[EventEditWizard] Sending eventService.putEventById request');
+      this.eventService.putEventById(this.eventId, eventRequestDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
           alert("Event Update Sucessfully.");
           this.eventService.triggerRefresh();
           this.closeWizard();
         },
-        error: (err) => {
-          console.error('Event fail to update');
+        error: () => {
+          alert('Update event failed. Please try again. If the problem persists, please contact the administrator.')
         }
       });
     }

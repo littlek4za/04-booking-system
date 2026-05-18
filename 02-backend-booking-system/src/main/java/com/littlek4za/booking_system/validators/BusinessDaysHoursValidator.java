@@ -45,7 +45,8 @@ public class BusinessDaysHoursValidator {
 
     private void validateDay(Integer day) {
         if (day == null || day < 0 || day > 6) {
-            throw new AppException("Invalid day of week, must be within (0-6): " + day, HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
+            throw new AppException("Invalid day of week, must be within (0-6): " + day, HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_CONFIGURATION_INVALID);
         }
     }
 
@@ -58,13 +59,20 @@ public class BusinessDaysHoursValidator {
         for (TimeRange range : ranges) {
             LocalTime open = parseTime(range.getOpen());
             LocalTime close = parseTime(range.getClose());
-
-            if (open == null || close == null) {
-                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
+            if ("24:00".equals(range.getClose())) {
+                close = LocalTime.MAX;
             }
 
-            if (!open.isBefore(close)) {
-                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
+            if (open == null || close == null) {
+                throw new AppException("Open and Close time cannot be null", HttpStatus.BAD_REQUEST,
+                        ErrorCode.SLOT_CONFIGURATION_INVALID);
+            }
+
+            if (close.equals(LocalTime.MAX)) {
+                continue;
+            } else if (!open.isBefore(close)) {
+                throw new AppException("Open time must be before Close time", HttpStatus.BAD_REQUEST,
+                        ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
             times.add(new LocalTime[] { open, close });
         }
@@ -75,7 +83,8 @@ public class BusinessDaysHoursValidator {
         // overlap check
         for (int i = 1; i < times.size(); i++) {
             if (times.get(i)[0].isBefore(times.get(i - 1)[1])) {
-                throw new AppException("Overlapping business hours detected", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_CONFIGURATION_INVALID);
+                throw new AppException("Overlapping business hours detected", HttpStatus.BAD_REQUEST,
+                        ErrorCode.SLOT_CONFIGURATION_INVALID);
             }
         }
     }

@@ -5,14 +5,13 @@ import java.time.Instant;
 import com.littlek4za.booking_system.models.BookingStatus;
 
 public record AttendeeBookingResponseDto(
-    Long id,
-    String username,
-    String lastName,
-    String firstName,
-    String guestLastName,
-    String guestFirstName,
+    Long bookingId,
+    String attendeeUsername,
+    String attendeeLastName,
+    String attendeeFirstName,
+    String guestAttendeeLastName,
+    String guestAttendeeFirstName,
     boolean isGuest,
-    String email,
     Instant bookedStartTime,
     Instant bookedEndTime,
     String bookingToken,

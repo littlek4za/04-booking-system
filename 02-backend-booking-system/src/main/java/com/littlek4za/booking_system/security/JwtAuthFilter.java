@@ -28,7 +28,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return path.startsWith("/api/v1/guest/bookings/view/init")
                 || path.startsWith("/api/v1/guest/bookings/view/access")
                 || path.startsWith("/api/v1/guest/bookings/create/init")
-                || path.startsWith("/api/v1/guest/bookings/create/access");
+                || path.startsWith("/api/v1/guest/bookings/create/access")
+                || path.matches("^/api/v1/invitations/by-token/[^/]+/validate$")
+                || path.matches("^/api/v1/invitations/by-token/[^/]+$")
+                || path.matches("^/api/v1/slots/\\d+/booked-times$");
     }
 
     @Override

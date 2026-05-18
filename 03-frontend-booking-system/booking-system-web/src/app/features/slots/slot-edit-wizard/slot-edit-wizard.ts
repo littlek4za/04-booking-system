@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -8,7 +8,7 @@ import { SlotRequestDto } from '../dtos/slot-request-dto';
 import { dateTimeRangeValidator, divisibleBy5Validator, timeOverlapValidatorForBusiness, timeOverlapValidatorForFlexible, timeRangeValidatorForBusiness, timeRangeValidatorForFlexible } from '@shared/validators/custom-validator';
 import { CommonModule } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
-import { merge, Subject, takeUntil } from 'rxjs';
+import { EMPTY, map, merge, Subject, takeUntil } from 'rxjs';
 import { TimeRange } from '@shared/model/time-range';
 import { SlotService } from '../slot-service';
 import { SlotResponseDto } from '../dtos/slot-response-dto';
@@ -18,6 +18,7 @@ import { TimeZoneService } from '@shared/model/time-zone-service';
 import { TimeZoneOption } from '@shared/model/time-zone-option';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { LoggerService } from '@core/services/logger-service';
 
 
 
@@ -65,6 +66,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   dayNames: string[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   timezones: TimeZoneOption[] = [];
   startTimeOptionForBusinessEvent: string[] = [];
+  endTimeOptionsForBusinessEvent: string[] = [];
 
   // destroy
   private destroy$ = new Subject<void>();
@@ -74,24 +76,27 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   showUpdateWarning: boolean = false;
   private initialIntervalType: string | null = null;
 
-  constructor(private formBuilder: FormBuilder, private slotService: SlotService, private timeZoneService: TimeZoneService) {
+  constructor(private formBuilder: FormBuilder, private slotService: SlotService, private timeZoneService: TimeZoneService, private logger: LoggerService) {
     this.userTimeZone = this.timeZoneService.getUserTimeZone();
     this.timezones = this.timeZoneService.getAllTimeZones();
-    this.starttimeOptionForFixedEvent = this.generateTimeOption(5);
-    this.startTimeOptionForFlexibleEvent = this.generateTimeOption(5);
-    this.startTimeOptionForBusinessEvent = this.generateTimeOption(5);
+    this.starttimeOptionForFixedEvent = this.generateTimeOption(5, false);
+    this.startTimeOptionForFlexibleEvent = this.generateTimeOption(5, false);
+    this.startTimeOptionForBusinessEvent = this.generateTimeOption(5, false);
+    this.endTimeOptionsForBusinessEvent = this.generateTimeOption(5, true);
     this.initSlotForm();
 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    this.logger.debug(`[SlotEditWizard] Mode is set to ${this.mode}`);
     if (changes['slotId'] && this.mode === 'UPDATE' && this.slotId) {
+      this.logger.debug(`[SlotEditWizard] Changes detected for input "slotId"`);
       this.loadSlotForUpdate();
     }
   }
 
   ngOnInit(): void {
-    this.applyEventType(); // require input to load, so place this method in ngoninit is best place, if in constructor, input not loaded
+    this.applyEventType();
     this.actionWhenFormValueChanges();
   }
 
@@ -120,10 +125,12 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       businessAllowOt: new FormControl<boolean | null>(null),
       businessTimeZone: new FormControl<string | null>(null),
     });
+    this.logger.debug(`[SlotEditWizard] Slot form initiated`);
   }
 
   //ngOnInit step 2 applyEventType()
   private applyEventType() {
+    this.logger.debug(`[SlotEditWizard] Slot form apply configuration base on event type`);
     this.resetSlotFormState();
     this.configureCommonFormControls();
     switch (this.eventType) {
@@ -137,7 +144,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         this.configureFormControlsForBusiness();
         break;
       default:
-        console.warn('Unknown event type:', this.eventType);
+        this.logger.error(`[SlotEditWizard] Unknown event type detected`);
         alert('Unexpected Error Occured.');
         this.disableSlotForm(); // or show message
         return;
@@ -218,6 +225,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     if (this.mode === 'CREATE') {
       this.addFlexibleInterval();
     }
+
+    this.logger.debug(`[SlotEditWizard] FlexibleDaysHours form initiated`);
   }
 
   getFlexibleIntervals(): FormArray {
@@ -252,12 +261,15 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
   private watcherForFlexibleInterval(group: FormGroup) {
     merge(
-      group.get('startDate')!.valueChanges,
-      group.get('startTime')!.valueChanges,
-      group.get('endDate')!.valueChanges
+      group.get('startDate')!.valueChanges.pipe(map(value => ({ field: 'startDate', value }))),
+      group.get('startTime')!.valueChanges.pipe(map(value => ({ field: 'startTime', value }))),
+      group.get('endDate')!.valueChanges.pipe(map(value => ({ field: 'startTime', value })))
     )
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateEndTimeOptionsForFlexibleInterval(group));
+      .subscribe(({ field, value }) => {
+        this.logger.debug(`[SlotEditWizard] FormControl '${field}' valuechanged →`, value);
+        this.updateEndTimeOptionsForFlexibleInterval(group)
+      });
   }
 
   updateEndTimeOptionsForFlexibleInterval(group: FormGroup<any>): void {
@@ -327,6 +339,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       }
       this.setupBusinessDayEnabledWatcher(enabledCtrl, intervals, i);
     }
+    this.logger.debug(`[SlotEditWizard] BusinessDaysHours form initiated`);
   }
 
   private setupBusinessDayEnabledWatcher(enabledCtrl: any, intervalsArray: FormArray<any>, i: number) {
@@ -353,8 +366,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     return this.getBusinessDays().at(dayIndex).get('intervals') as FormArray;
   }
 
-  getBusinessInterval(dayIndex: number, intervalIndex: number) {
-    return this.getBusinessDayIntervals(dayIndex).at(intervalIndex);
+  getBusinessInterval(dayIndex: number, intervalIndex: number): FormGroup {
+    return this.getBusinessDayIntervals(dayIndex).at(intervalIndex) as FormGroup;
   }
 
   getBusinessIntervalControl(dayIndex: number, intervalIndex: number, controlName: string) {
@@ -368,8 +381,10 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         close: ['', Validators.required],
         closeTimeOptions: [[]]
       }, {
-        validators: timeRangeValidatorForBusiness(() =>
-          this.slotForm.get('slotIntervalMinutes')?.value)
+        validators: timeRangeValidatorForBusiness(
+          () => this.slotForm.get('slotIntervalMinutes')?.value,
+          () => this.slotForm.get('businessAllowOt')?.value
+        )
       });
 
     this.getBusinessDayIntervals(dayIndex).push(group);
@@ -380,32 +395,56 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
   }
 
+  showBusinessIntervalWarning(group: AbstractControl): boolean {
+    const closeCtrl = group.get('close');
+    const openCtrl = group.get('open')?.value;
+
+    const interval = this.slotForm?.get('slotIntervalMinutes')?.value;
+    const allowOt = this.slotForm?.get('businessAllowOt')?.value;
+
+    return (
+      !!closeCtrl &&
+      (closeCtrl.dirty || closeCtrl.touched) &&
+      (interval == null || allowOt == null || openCtrl == null)
+    );
+  }
+
   private watcherForBusinessInterval(group: FormGroup) {
-    group.get('open')?.valueChanges
+
+    const openChanges = group.get('open')!.valueChanges ?? EMPTY;
+    const businessAllowOtChanges = this.slotForm.get('businessAllowOt')?.valueChanges ?? EMPTY;
+    const slotIntervalMinutesChanges = this.slotForm.get('slotIntervalMinutes')?.valueChanges ?? EMPTY;
+
+    merge(
+      openChanges.pipe(map(value => ({ field: 'open', value }))),
+      businessAllowOtChanges.pipe(map(value => ({ field: 'businessAllowOt', value }))),
+      slotIntervalMinutesChanges.pipe(map(value => ({ field: 'slotIntervalMinutes', value }))),
+    )
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.updateCloseTimeOptionsForBusinessInterval(group));
+      .subscribe(({ field, value }) => {
+        this.logger.debug(`[SlotEditWizard] FormControl '${field}' valuechanged →`, value);
+        this.updateCloseTimeOptionsForBusinessInterval(group)
+      });
 
   }
 
   updateCloseTimeOptionsForBusinessInterval(group: FormGroup<any>): void {
     const startTime = group.get('open')?.value;
+    const startMinutes = this.timeToMinutes(startTime);
+    const allowOt = this.slotForm.getRawValue().businessAllowOt;
+
     const slotIntervalMinutes = this.slotForm.getRawValue().slotIntervalMinutes;
 
-    if (!startTime) return;
+    if (startTime == null) return;
+    if (allowOt == null || slotIntervalMinutes == null) return;
 
-    const closeTimeOptions = this.startTimeOptionForBusinessEvent.map(t => {
-      const startMinutes = this.timeToMinutes(startTime);
+    const closeTimeOptions = this.endTimeOptionsForBusinessEvent.map(t => {
+
       const optionMinutes = this.timeToMinutes(t);
 
-      let isInvalid: boolean;
-
-      if (slotIntervalMinutes) {
-        isInvalid =
-          optionMinutes <= (startMinutes + slotIntervalMinutes - 1);
-      } else {
-        isInvalid =
-          optionMinutes <= startMinutes;
-      }
+      const isInvalid = allowOt
+        ? optionMinutes <= startMinutes
+        : optionMinutes < startMinutes + slotIntervalMinutes
 
       if (isInvalid) {
         return { value: t, disabled: true };
@@ -416,7 +455,16 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     group.patchValue(
       { closeTimeOptions: closeTimeOptions },
       { emitEvent: false }
-    )
+    );
+
+    const currentClose = group.get('close')?.value;
+    const stillValid = closeTimeOptions.find(o => o.value === currentClose && !o.disabled);
+
+    if (!stillValid) {
+      group.get('close')?.setValue(null, { emitEvent: false });
+    }
+
+    group.updateValueAndValidity({ emitEvent: false });
   }
 
   removeBusinessinterval(dayIndex: number, intervalIndex: number) {
@@ -425,7 +473,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
 
   //ngOnInit step 3
-  private generateTimeOption(stepMinutes: number): string[] {
+  private generateTimeOption(stepMinutes: number, include2400: boolean): string[] {
     let timeArray: string[] = [];
     for (let h = 0; h < 24; h++) {
       for (let m = 0; m < 60; m += stepMinutes) {
@@ -434,6 +482,9 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         timeArray.push(`${hh}:${mm}`);
       }
     }
+    if (include2400) {
+      timeArray.push(`24:00`)
+    }
     return timeArray;
   }
 
@@ -441,33 +492,44 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   actionWhenFormValueChanges() {
     this.slotForm.get('intervalType')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onIntervalChange(value));
+      .subscribe(value => {
+        this.logger.debug(`[SlotEditWizard] FormControl 'intervalType' valuechanged →`, value);
+        this.onIntervalChange(value)
+      });
 
     this.slotForm.get('frequencyType')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onFequencyChange(value));
+      .subscribe(value => {
+        this.logger.debug(`[SlotEditWizard] FormControl 'frequencyType' valuechanged →`, value);
+        this.onFequencyChange(value)
+      });
 
     this.slotForm.get('noMaxBookingsPerIdentity')!.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.onNoMaxBookingsPerIdentityChanges(value));
+      .subscribe(value => {
+        this.logger.debug(`[SlotEditWizard] FormControl 'noMaxBookingsPerIdentity' valuechanged →`, value);
+        this.onNoMaxBookingsPerIdentityChanges(value)
+      });
 
     // Fixed Form usage - patch date
     this.slotForm.get('startDate')?.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(date => {
+      .subscribe(value => {
+        this.logger.debug(`[SlotEditWizard] FormControl 'startDate' valuechanged →`, value);
         if (!this.slotForm.get('endDate')?.value) {
-          this.slotForm.patchValue({ endDate: date });
+          this.slotForm.patchValue({ endDate: value });
         }
       });
 
     // Fixed Form usage - update endTimeOption
     merge(
-      this.slotForm.get('startDate')!.valueChanges,
-      this.slotForm.get('endDate')!.valueChanges,
-      this.slotForm.get('startTime')!.valueChanges
+      this.slotForm.get('startDate')!.valueChanges.pipe(map(value => ({ field: 'startDate', value }))),
+      this.slotForm.get('endDate')!.valueChanges.pipe(map(value => ({ field: 'endDate', value }))),
+      this.slotForm.get('startTime')!.valueChanges.pipe(map(value => ({ field: 'startTime', value }))),
     )
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe(({ field, value }) => {
+        this.logger.debug(`[SlotEditWizard] FormControl '${field}' valuechanged →`, value);
         this.updateEndTimeOptionsForFixedEvent();
       });
 
@@ -475,7 +537,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     // Business Form usage - update Validity and endTimeOption
     this.slotForm.get('slotIntervalMinutes')?.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe((value) => {
+        this.logger.debug(`[SlotEditWizard] FormControl 'slotIntervalMinutes' valuechanged →`, value);
         if (this.eventType === EventTypeModel.FLEXIBLE) {
           this.getFlexibleIntervals().controls.forEach((ctrl) => {
             const group = ctrl as FormGroup;
@@ -575,17 +638,17 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   // Update 
   private loadSlotForUpdate() {
     if (this.slotId) {
+      this.logger.debug(`[SlotEditWizard] Sending slotService.getSlotByIdAndEventId request`);
       this.slotService.getSlotByIdAndEventId(this.eventId, this.slotId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
-            console.log('GET Slot successfully', res);
             this.slotForUpdate = res;
             this.prefillFormForUpdate(this.slotForUpdate);
             this.setupUpdateTimeWarningChecks();
           },
-          error: (err) => {
-            console.log("GET Slot failed");
+          error: () => {
+            alert('Fail to load slot info. Please try again. If the problem persists, please contact the administrator.');
           }
         });
     }
@@ -734,7 +797,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
               },
               {
                 validators: timeRangeValidatorForBusiness(
-                  () => this.slotForm.get('slotIntervalMinutes')?.value
+                  () => this.slotForm.get('slotIntervalMinutes')?.value,
+                  () => this.slotForm.get('businessAllowOt')?.value
                 )
               }
             )
@@ -745,7 +809,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
           group.patchValue({
             open: item.open,
             close: item.close
-          },{emitEvent: true});
+          }, { emitEvent: true });
 
           group.markAllAsTouched();
         });
@@ -789,6 +853,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         this.slotForm.get(field)?.valueChanges
           .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
           .subscribe(value => {
+            this.logger.debug(`[SlotEditWizard] FormControl '${field}' valuechanged →`, value);
             this.checkFixedWarning();
           });
       });
@@ -797,22 +862,37 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     if (this.eventType === EventTypeModel.FLEXIBLE) {
       this.slotForm.get('slotIntervalMinutes')?.valueChanges
         .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
-        .subscribe(() => this.checkFlexibleWarning());
+        .subscribe((value) => {
+          this.logger.debug(`[SlotEditWizard] FormControl 'slotIntervalMinutes' valuechanged →`, value);
+          this.checkFlexibleWarning()
+        });
       this.slotForm.get('intervalType')!.valueChanges
         .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
-        .subscribe(value => this.checkFlexibleWarning());
+        .subscribe(value => {
+          this.logger.debug(`[SlotEditWizard] FormControl 'intervalType' valuechanged →`, value);
+          this.checkFlexibleWarning()
+        });
       this.flexibleDaysHoursForm.valueChanges
         .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
-        .subscribe(() => this.checkFlexibleWarning());
+        .subscribe((value) => {
+          this.logger.debug(`[SlotEditWizard] flexibleDaysHoursForm valuechanged →`, value);
+          this.checkFlexibleWarning()
+        });
     }
 
     if (this.eventType === EventTypeModel.BUSINESS) {
       this.slotForm.get('slotIntervalMinutes')?.valueChanges
         .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
-        .subscribe(() => this.checkBusinessWarning());
+        .subscribe((value) => {
+          this.logger.debug(`[SlotEditWizard] FormControl 'slotIntervalMinutes' valuechanged →`, value);
+          this.checkBusinessWarning()
+        });
       this.businessDaysHoursForm.valueChanges
         .pipe(takeUntil(this.destroy$), takeUntil(this.warningChecksDestroy$))
-        .subscribe(() => this.checkBusinessWarning());
+        .subscribe((value) => {
+          this.logger.debug(`[SlotEditWizard] businessDaysHoursForm valuechanged →`, value);
+          this.checkBusinessWarning()
+        });
     }
   }
 
@@ -924,11 +1004,13 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   }
 
   onSubmit() {
+    this.logger.debug('[SlotEditWizard] Form submitted');
     let isAllValid = true;
 
     this.slotForm.markAllAsTouched();
     if (this.slotForm.invalid) {
-      logFormErrors(this.slotForm);
+      this.logger.warn('[SlotEditWizard] Slot form invalid');
+      logFormErrors(this.slotForm, this.logger);
       isAllValid = false;
     }
 
@@ -938,7 +1020,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         group.updateValueAndValidity();
       });
       if (this.businessDaysHoursForm.invalid) {
-        logFormErrors(this.businessDaysHoursForm);
+        this.logger.warn('[SlotEditWizard] businessDaysHours form invalid');
+        logFormErrors(this.businessDaysHoursForm, this.logger);
         isAllValid = false;
       }
     }
@@ -946,58 +1029,56 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     if (this.eventType == EventTypeModel.FLEXIBLE) {
       this.flexibleDaysHoursForm.markAllAsTouched();
       if (this.flexibleDaysHoursForm.invalid) {
-        logFormErrors(this.flexibleDaysHoursForm);
+        this.logger.warn('[SlotEditWizard] flexibleDaysHours form invalid');
+        logFormErrors(this.flexibleDaysHoursForm, this.logger);
         isAllValid = false;
       }
     }
 
     if (!isAllValid) {
-      console.warn('Form Submission Field Invalid');
       return;
     }
 
     const slotRequestDto = this.buildSlotRequestDto();
 
-    console.log('Before submite slotRequestDto', slotRequestDto);
-
     if (this.mode == 'CREATE') {
+      this.logger.debug('[SlotEditWizard] Sending slotService.createSlotByEventId request');
       this.slotService.createSlotByEventId(slotRequestDto, this.eventId).subscribe({
         next: (res) => {
-          console.log('POST Request success', res);
           alert('Slot Created Succesfully.');
-          this.slotService.triggerRefresh(this.eventId);
+          this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           this.closeWizard();
         },
-        error: (err) => {
-          console.error('Slot fail to create');
+        error: () => {
+          alert('Fail to create slot. Please try again. If the problem persists, please contact the administrator.');
         }
       })
     } else if (this.mode == 'UPDATE') {
 
       if (this.slotId == null) {
-        console.error('slotId is required in UPDATE mode');
+        this.logger.debug('[SlotEditWizard] No slotId detected');
         return;
       }
-
+      this.logger.debug('[SlotEditWizard] Sending slotService.putSlotByIdAndEventId request',slotRequestDto);
       this.slotService.putSlotByIdAndEventId(this.eventId, this.slotId, slotRequestDto).subscribe({
-        next: (res) => {
-          console.log('POST Request success', res);
+        next: () => {
           alert('Slot Updated Succesfully.');
-          this.slotService.triggerRefresh(this.eventId);
+          this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           this.closeWizard();
         },
-        error: (err) => {
-          console.error('Slot fail to update');
+        error: () => {
+          alert('Fail to update slot. Please try again. If the problem persists, please contact the administrator.');
         }
       })
     } else {
-      console.error('Mode only support create and update. Please check internal code.');
+      this.logger.warn('[SlotEditWizard] Unsupported mode type encountered');
       alert('Internal Error Occur.');
       this.closeWizard();
     }
   }
 
   private buildSlotRequestDto(): SlotRequestDto {
+    this.logger.warn('[SlotEditWizard] Building slotRequestDto');
     const slotRequestDto = new SlotRequestDto();
     const rawSlotFormData = this.slotForm.getRawValue();
 
@@ -1014,6 +1095,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       case EventTypeModel.BUSINESS:
         return this.buildBusinessDto(slotRequestDto, rawSlotFormData);
       default:
+        this.logger.warn('[SlotEditWizard] Unsupported event type encountered')
         throw new Error('Unsupported event type');
     }
   }

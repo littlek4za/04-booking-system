@@ -1,16 +1,16 @@
 import { EventResponseDto } from "@features/events/dtos/event-response-dto";
 import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
 
-export class BookingResponseDto {
+export class OrganizerBookingResponseDto {
 
-    id!: number;
-    username?: string;
-    lastName?: string;
-    firstName?: string;
-    guestLastName? : string;
-    guestFirstName?: string;
+    bookingId!: number;
+    attendeeUsername?: string;
+    attendeeLastName?: string;
+    attendeeFirstName?: string;
+    guestAttendeeLastName? : string;
+    guestAttendeeFirstName?: string;
     isGuest! : boolean;
-    email!: string;
+    attendeeEmail!: string;
     slot!: SlotResponseDto;
     bookedStartTime!: string;
     bookedEndTime!: string;

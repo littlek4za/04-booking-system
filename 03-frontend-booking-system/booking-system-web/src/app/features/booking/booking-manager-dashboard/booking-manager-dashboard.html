@@ -10,7 +10,7 @@
     <br>
     Slot Name: {{slotName}}
     <br><br>
-    Booking List ({{ bookingListBySlotId().length}})
+    Booking List ({{ organizerBookingListBySlotId().length}})
 </h6>
 <table table class="table table-hover align-middle">
     <thead>
@@ -28,17 +28,17 @@
         </tr>
     </thead>
     <tbody>
-        @for (booking of bookingListBySlotId(); track booking.id ; ; let i = $index) {
+        @for (booking of organizerBookingListBySlotId(); track booking.bookingId ; ; let i = $index) {
         <tr>
             <th scope="row">{{i+1}}</th>
             @if (booking.isGuest) {
-            <td>{{booking.guestFirstName}}</td>
-            <td>{{booking.guestLastName}}</td>
+            <td>{{booking.guestAttendeeFirstName}}</td>
+            <td>{{booking.guestAttendeeLastName}}</td>
             } @else {
-            <td>{{booking.firstName}}</td>
-            <td>{{booking.lastName}}</td>
+            <td>{{booking.attendeeFirstName}}</td>
+            <td>{{booking.attendeeLastName}}</td>
             }
-            <td>{{booking.email}}</td>
+            <td>{{booking.attendeeEmail}}</td>
             <td>{{booking.isGuest === true ? 'No' : 'Yes'}}</td>
             <td>
                 @if ((booking.bookedStartTime | date:'yyyyMMdd') === (booking.bookedEndTime | date:'yyyyMMdd')) {
@@ -82,7 +82,7 @@
             <td [ngClass]="statusClassMap[booking.bookingStatus]">{{booking.bookingStatus}}</td>
             <td>
                 <button type="button" class="btn btn-sm btn-danger"
-                    (click)="comfirmDeleteBooking(booking.slot.id, booking.id)">
+                    (click)="comfirmDeleteBooking(booking.slot.id, booking.bookingId)">
                     Delete Booking
                 </button>
             </td>

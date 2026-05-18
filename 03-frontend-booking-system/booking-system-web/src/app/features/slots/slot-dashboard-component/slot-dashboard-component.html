@@ -131,7 +131,7 @@
 @if(showBookingManagerDashboard === true && slotId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName"
+    <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName" [eventId]="eventId"
         (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
 </div>
 }

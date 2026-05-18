@@ -1,0 +1,58 @@
+export class ErrorCode {
+
+    // Guest
+    static readonly GUEST_TOKEN_INVALID = "GUEST_TOKEN_INVALID";
+    static readonly GUEST_TOKEN_EXPIRED = "GUEST_TOKEN_EXPIRED";
+    static readonly CAPTCHA_INVALID = "CAPTCHA_INVALID";
+    static readonly CAPTCHA_REQUIRED = "CAPTCHA_REQUIRED";
+    static readonly USERNAME_ALREADY_REGISTERED = "USERNAME_ALREADY_REGISTERED";
+    static readonly EMAIL_ALREADY_REGISTERED = "EMAIL_ALREADY_REGISTERED";
+
+    // Auth
+    static readonly FORBIDDEN = "FORBIDDEN";
+    static readonly UNAUTHORIZED = "UNAUTHORIZED";
+    static readonly ACCESS_DENIED = "ACCESS_DENIED";
+    static readonly TOKEN_INVALID = "TOKEN_INVALID";
+    static readonly USER_NOT_FOUND = "USER_NOT_FOUND";
+    static readonly INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
+    static readonly TOKEN_TYPE_INVALID = "TOKEN_TYPE_INVALID";
+
+    // Validation
+    static readonly FIELD_VALIDATION_FAILED = "FIELD_VALIDATION_FAILED";
+
+    // SYSTEM
+    static readonly INVALID_STATE = "INVALID_STATE";
+    static readonly INTERNAL_ERROR = "INTERNAL_ERROR";
+    static readonly INVALID_CAPTCHA = "INVALID_CAPTCHA";
+
+    // Invitation
+    static readonly INVITATION_NOT_FOUND = "INVITATION_NOT_FOUND";
+    static readonly INVITATION_EXPIRED = "INVITATION_EXPIRED";
+    static readonly INVITATION_MAX_USAGE_REACHED = "INVITATION_MAX_USAGE_REACHED";
+    static readonly INVITATION_USER_USAGE_LIMIT_REACHED = "INVITATION_USER_USAGE_LIMIT_REACHED";
+
+    // Event
+    static readonly EVENT_NOT_FOUND = "EVENT_NOT_FOUND";
+    static readonly EVENT_TYPE_INVALID = "EVENT_TYPE_INVALID";
+    static readonly EVENT_TYPE_CHANGE_NOT_ALLOWED = "EVENT_TYPE_CHANGE_NOT_ALLOWED";
+    static readonly EVENT_HAS_ACTIVE_BOOKINGS = "EVENT_HAS_ACTIVE_BOOKINGS";
+
+    // Slot
+    static readonly SLOT_NOT_FOUND = "SLOT_NOT_FOUND";
+    static readonly SLOT_INCLUDE_MODE_INVALID = "SLOT_INCLUDE_MODE_INVALID";
+    static readonly SLOT_FULL = "SLOT_FULL";
+    static readonly SLOT_TIME_ALREADY_BOOKED = "SLOT_TIME_ALREADY_BOOKED";
+    static readonly SLOT_HAS_ACTIVE_BOOKINGS = "SLOT_HAS_ACTIVE_BOOKINGS";
+
+    // Booking
+    static readonly BOOKING_NOT_FOUND = "BOOKING_NOT_FOUND";
+    static readonly BOOKING_REQUEST_INVALID = "BOOKING_REQUEST_INVALID";
+    static readonly EVENT_BOOKING_LIMIT_REACHED = "EVENT_BOOKING_LIMIT_REACHED";
+    static readonly SLOT_BOOKING_LIMIT_REACHED = "SLOT_BOOKING_LIMIT_REACHED";
+
+    // Mismatch
+    static readonly SLOT_EVENT_MISMATCH = "SLOT_EVENT_MISMATCH";
+    static readonly SLOT_INVITATION_MISMATCH = "SLOT_INVITATION_MISMATCH";
+    static readonly SLOT_CONFIGURATION_INVALID = "SLOT_CONFIGURATION_INVALID";
+    static readonly SLOT_UPDATE_NOT_ALLOWED = "SLOT_UPDATE_NOT_ALLOWED";
+}

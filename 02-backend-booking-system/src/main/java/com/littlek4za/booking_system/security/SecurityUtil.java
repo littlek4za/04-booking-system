@@ -69,6 +69,25 @@ public class SecurityUtil {
         return requirePrincipal().getEmail();
     }
 
+    public String requireBookingToken() {
+
+        GuestPrincipal guestPrincipal = requireGuestPrincipal();
+
+        if (guestPrincipal.getTokenType() != TokenType.GUEST_BOOKING_VIEW) {
+            throw new AppException(
+                    "Guest booking view access required",
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
+        }
+
+        String bookingToken = guestPrincipal.getBookingToken();
+
+        if (bookingToken == null || bookingToken.isBlank()) {
+            throw new AppException("Booking token required", HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN);
+        }
+        return bookingToken;
+    }
+
     // getter
     public Long getUserIdOrNull() {
         AuthPrincipal principal = getCurrentPrincipal();
@@ -93,7 +112,7 @@ public class SecurityUtil {
     public boolean isGuest() {
         return getCurrentPrincipal() instanceof GuestPrincipal;
     }
-    
+
     public boolean isGuestBookingView() {
         AuthPrincipal principal = getCurrentPrincipal();
         return principal != null
