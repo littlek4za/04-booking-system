@@ -5,13 +5,11 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 
 import jakarta.persistence.LockModeType;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 import java.util.Optional;
