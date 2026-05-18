@@ -138,7 +138,6 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
         }
       },
       error: () => {
-        alert('Failed to load event. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }
@@ -225,7 +224,6 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
           this.closeWizard();
         },
         error: () => {
-          alert('Create event failed. Please try again. If the problem persists, please contact the administrator.')
         }
       });
     }
@@ -240,7 +238,6 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
           this.closeWizard();
         },
         error: () => {
-          alert('Update event failed. Please try again. If the problem persists, please contact the administrator.')
         }
       });
     }

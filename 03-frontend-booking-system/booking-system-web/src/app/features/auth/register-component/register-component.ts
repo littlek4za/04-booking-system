@@ -77,7 +77,7 @@ export class RegisterComponent {
     signupRequestDto.lastName = this.registerForm.value.lastName;
     this.logger.debug('[RegisterComponent] Sending AuthService.register request');
     this.authService.register(signupRequestDto).subscribe({
-      next: (response) => {
+      next: () => {
         alert("Registration Success! Please proceed to log in");
 
         this.logger.info('[RegisterComponent] Navigating to /login');
@@ -90,7 +90,7 @@ export class RegisterComponent {
         }
 
       },
-      error: (err) => {
+      error: () => {
       },
     });
   }

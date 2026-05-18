@@ -144,7 +144,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         }
 
         // risk record
-        Invitation invitation = invitationRepository.findById(requestDto.invitationId())
+        Invitation invitation = invitationRepository.findByIdWithSlots(requestDto.invitationId())
                 .orElseThrow(() -> {
                     riskService.recordAttemptForCreate(requestDto.email(), clientIp);
 

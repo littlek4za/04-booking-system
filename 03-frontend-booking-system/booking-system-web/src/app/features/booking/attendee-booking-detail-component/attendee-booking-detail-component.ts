@@ -46,7 +46,6 @@ export class AttendeeBookingDetailComponent implements OnInit, OnDestroy {
           this.attendeeBookingDto.set(res);
         },
         error: () => {
-          alert("Retrieve booking info failed");
         }
       });
   }
@@ -63,8 +62,7 @@ export class AttendeeBookingDetailComponent implements OnInit, OnDestroy {
               alert("Cancel booking sucessfull");
               this.router.navigate(['/attendeeAccess']);
             },
-            error: (err) => {
-              alert("Cancel unsuccessful, please contact admin");
+            error: () => {
             },
           })
       }

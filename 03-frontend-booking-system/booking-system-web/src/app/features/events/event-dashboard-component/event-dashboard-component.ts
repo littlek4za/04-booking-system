@@ -61,7 +61,6 @@ export class EventDashboardComponent {
         }
       },
       error: () => {
-        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }
@@ -69,11 +68,10 @@ export class EventDashboardComponent {
   private deleteEventById(eventId: number) {
     this.logger.debug('[EventDashboardComponent] Sending eventService.deleteEventById request');
     this.eventService.deleteEventById(eventId).subscribe({
-      next: (res) => {
+      next: () => {
         this.eventService.triggerRefresh();
       },
-      error: (err) => {
-        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
+      error: () => {
       }
     });
   }

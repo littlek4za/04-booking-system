@@ -84,7 +84,6 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
           this.eventName = res.eventName;
         },
         error: () => {
-          alert('Fail to load event info. Please try again. If the problem persists, please contact the administrator.');
         }
       });
   }
@@ -107,7 +106,6 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
         }
       },
       error: () => {
-        alert('An error occurred. Please try again. If the problem persists, please contact the administrator.');
       }   
     });
 
@@ -123,7 +121,6 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
           this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
         },
         error: () => {
-          alert('Fail to delete slot. Please try again. If the problem persists, please contact the administrator.');
         }
       });
   }

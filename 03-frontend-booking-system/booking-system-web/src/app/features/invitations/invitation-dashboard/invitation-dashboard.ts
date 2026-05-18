@@ -64,7 +64,6 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
             this.invitationListByEventIdAndSlotId.set(res);
           },
           error: () => {
-            alert("Invitation list failed to load. Please try again. If the problem persists, please contact the administrator.");
           }
         })
       } else {
@@ -94,7 +93,6 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
         this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
       },
       error: () => {
-        alert('Delete invitation failed. Please try again. If the problem persists, please contact the administrator.');
       }
     });
   }

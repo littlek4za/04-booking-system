@@ -5,11 +5,13 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 
 import jakarta.persistence.LockModeType;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -95,5 +97,14 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
                         """)
         Set<Invitation> findInvitationsApplicableToSlot(@Param("eventId") Long eventId,
                         @Param("slotId") Long slotId, @Param("allAndFuture") SlotIncludeMode allAndFuture);
+
+        @Query("""
+                        SELECT i
+                        FROM Invitation i
+                        LEFT JOIN FETCH i.slotSet s
+                        WHERE i.id = :invitationId
+
+                        """)                   
+        Optional<Invitation> findByIdWithSlots(@Param("invitationId") Long invitationId);
 
 }

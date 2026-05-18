@@ -5,5 +5,5 @@ export const environment = {
     production: true,
     backendApiUrl:"http://localhost:8080/api",
     logLevel: LogLevel.Error,
-    captchaSiteKey: '6LdkcLUsAAAAAJMLxLQMGoW3hZ0acjtL7-RdotBu',
+    captchaSiteKey: '6LdRM_AsAAAAACUDOSxU2jsCT_Li5FMwnoBuYzNZ',
 };

@@ -245,7 +245,6 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
               this.singleSlot.set(res);
             },
             error: () => {
-              alert("Slot data fail to load. Please try again. If the problem persists, please contact the administrator.");
             }
           });
       } else { // slot id not provided, get slotList

@@ -56,7 +56,6 @@ export class BookingManagerDashboard implements OnChanges {
           }
         },
         error: () => {
-          alert("Delete unsucessful, please contact admin");
         },
       });
     }

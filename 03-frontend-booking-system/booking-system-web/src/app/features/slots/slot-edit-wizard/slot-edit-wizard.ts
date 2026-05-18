@@ -648,7 +648,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
             this.setupUpdateTimeWarningChecks();
           },
           error: () => {
-            alert('Fail to load slot info. Please try again. If the problem persists, please contact the administrator.');
           }
         });
     }
@@ -1050,7 +1049,6 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
           this.closeWizard();
         },
         error: () => {
-          alert('Fail to create slot. Please try again. If the problem persists, please contact the administrator.');
         }
       })
     } else if (this.mode == 'UPDATE') {
@@ -1067,12 +1065,11 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
           this.closeWizard();
         },
         error: () => {
-          alert('Fail to update slot. Please try again. If the problem persists, please contact the administrator.');
         }
       })
     } else {
       this.logger.warn('[SlotEditWizard] Unsupported mode type encountered');
-      alert('Internal Error Occur.');
+      alert('Internal Error Occur. Please try again.');
       this.closeWizard();
     }
   }

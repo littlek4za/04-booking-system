@@ -63,7 +63,6 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
             this.prefillInvitationFormForSingleSlotUsage();
           },
           error: () => {
-            alert('Fail to load slot info. Please try again. If the problem persists, please contact the administrator.')
           }
         })
       return;
@@ -270,7 +269,6 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
         this.closeInvitationWizard();
       },
       error: () => {
-        alert('Create invitation failed. Please try again. If the problem persists, please contact the administrator.');
       }
     })
 

@@ -36,10 +36,11 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
   bookingInfo: AttendeeBookingResponseDto | null = null;
 
   // Recaptcha Field
-  showCaptcha = false;
-  private accessInProgress = false;
+  showCaptcha: boolean = false;
+  private accessInProgress: boolean = false;
   private captchaWidgetId: number | null = null;
   captchaToken: string | null = null;
+  isSubmitInProgress: boolean = false;
 
   // for Recaptcha auto submit
   private pendingEmail: string | null = null;
@@ -103,7 +104,7 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
           this.pendingBookingToken = bookingToken;
 
           if (res.captchaRequired) {
-            this.logger.debug('[BookingAccessComponent] CAPTCHA required')
+            this.logger.debug('[BookingAccessComponent] CAPTCHA required');
             this.showCaptcha = true;
             this.cdr.detectChanges();
             setTimeout(() => this.renderCaptcha());
@@ -113,13 +114,13 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
             this.logger.warn('[BookingAccessComponent] Invalid booking access attempt');
             alert("Booking not found(init)");
             this.clearCaptchaState();
+            this.isSubmitInProgress = false;
             return;
           }
           this.issueToken(email, bookingToken, null);
         },
         error: () => {
-          this.logger.warn('[BookingAccessComponent] initGuestAccess failed');
-          alert("An error occurred. Please try again. If the problem persists, please contact the administrator.");
+          this.isSubmitInProgress = false;
         }
       });
   }
@@ -158,12 +159,14 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
 
     if (!this.captchaContainer?.nativeElement) {
       this.logger.warn('[BookingAccessComponent] CAPTCHA container is not available');
+      this.isSubmitInProgress = false;
       return;
     }
 
     if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
       this.logger.warn('[BookingAccessComponent] CAPTCHA script is not ready');
       alert('Captcha is still loading. Please try again in a moment.');
+      this.isSubmitInProgress = false;
       return;
     }
 
@@ -209,26 +212,33 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.authService.storeGuestToken(res);
           this.clearCaptchaState();
+          this.isSubmitInProgress = false;
           this.router.navigate([`/bookingView/${bookingToken}`]);
         },
         error: () => {
           this.clearCaptchaState();
+          this.isSubmitInProgress = false;
         }
       })
   }
 
 
   onSubmit() {
+    if(this.isSubmitInProgress) return;
+
     this.logger.debug('[BookingAccessComponent] Booking token validation form submitted');
+
     this.bookingTokenValidationForm.markAllAsTouched();
+
     if (this.bookingTokenValidationForm.invalid) {
       this.logger.warn('[BookingAccessComponent] Booking token validation form validation failed');
       return;
     }
 
+    this.isSubmitInProgress = true;
+
     const bookingToken = this.bookingTokenValidationForm.value.bookingToken;
     const email = this.bookingTokenValidationForm.value.email;
-
 
     this.pendingEmail = email;
     this.pendingBookingToken = bookingToken;

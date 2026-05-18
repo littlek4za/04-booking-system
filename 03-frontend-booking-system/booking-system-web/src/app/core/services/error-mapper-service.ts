@@ -166,7 +166,7 @@ export class ErrorMapperService {
 
       default:
         console.warn(`Unknown error code: ${errorCode}`)
-        return "An unexpected error occurred.";
+        return "An unexpected error occurred. Please try again later";
     }
   }
 
@@ -187,7 +187,7 @@ export class ErrorMapperService {
           return 'Something went wrong. Please try again later.';
         }
 
-        return 'An unexpected error occurred.';
+        return 'An unexpected error occurred. Please try again later';
     }
   }
 

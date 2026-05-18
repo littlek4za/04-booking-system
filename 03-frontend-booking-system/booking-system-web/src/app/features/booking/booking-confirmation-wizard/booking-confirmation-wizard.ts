@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
@@ -29,6 +29,8 @@ declare var grecaptcha: any;
 })
 export class BookingConfirmationWizard implements OnInit, OnDestroy {
 
+  @ViewChild('captchaContainer') private captchaContainer?: ElementRef<HTMLElement>;
+
   // component IO
   @Output() close = new EventEmitter<void>();
   @Input() slot!: SlotResponseDto;
@@ -48,9 +50,13 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
   showCalendar: boolean = false;
 
   // Recaptcha Field
+  private captchaSiteKey = environment.captchaSiteKey;
   private captchaWidgetId: number | null = null;
+  private accessInProgress: boolean = false;
   captchaToken: string | null = null;
-  isBookingInProgress: boolean = false;
+  isSubmitInProgress: boolean = false;
+  showCaptcha: boolean = false;
+
   // for Recaptcha auto submit
   private pendingEmail: string | null = null
 
@@ -61,13 +67,14 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit(): void {
     this.authTokenPayload = this.authService.getAuthTokenInfo();
     this.initGuestForm();
-    if(this.loggedInUser){
+    if (this.loggedInUser) {
       this.applyLoggedInUserRules();
     }
     this.populateFormBaseOnEventType();
@@ -128,28 +135,40 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
   }
 
   private renderCaptcha(bookingRequestDto: BookingRequestDto) {
-
     this.logger.debug('[BookingConfirmationWizard] Rendering CAPTCHA');
 
     if (this.captchaWidgetId !== null) {
-      grecaptcha.reset(this.captchaWidgetId);
+      this.resetCaptcha();
       return;
     }
 
-    this.captchaWidgetId = grecaptcha.render('captcha-container', {
-      'sitekey': environment.captchaSiteKey,
+    if (!this.captchaContainer?.nativeElement) {
+      this.logger.warn('[BookingConfirmationWizard] CAPTCHA container is not available');
+      this.isSubmitInProgress = false;
+      return;
+    }
+
+    if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
+      this.logger.warn('[BookingConfirmationWizard] CAPTCHA script is not ready');
+      this.isSubmitInProgress = false;
+      alert('Captcha is still loading. Please try again in a moment.');
+      return;
+    }
+
+    this.captchaWidgetId = grecaptcha.render(this.captchaContainer.nativeElement, {
+      'sitekey': this.captchaSiteKey,
       'callback': (response: string) => {
         this.logger.debug('[BookingConfirmationWizard] CAPTCHA solved');
 
+        if (!this.showCaptcha) return;
+        if (this.accessInProgress) return;
+
         this.captchaToken = response;
 
-        // AUTO CONTINUE HERE captcha->issuetoken
         if (!this.captchaToken) return;
         if (!this.pendingEmail) return;
 
         if (this.pendingEmail) {
-          this.isBookingInProgress = true;
-          this.cdr.detectChanges();
           this.logger.debug('[BookingConfirmationWizard] Proceeding after CAPTCHA, issuing guest token');
           this.issueGuestBookingCreateAccessToken(
             bookingRequestDto,
@@ -162,22 +181,48 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
 
       },
       'expiry-callback': () => {
-        this.captchaToken = null;
+        this.ngZone.run(() => {
+          this.captchaToken = null;
+        });
       }
     });
+  }
+
+  private resetCaptcha() {
+    if (this.captchaWidgetId === null || typeof grecaptcha === 'undefined') {
+      return;
+    }
+
+    try {
+      grecaptcha.reset(this.captchaWidgetId);
+    } catch {
+      this.logger.warn('[BookingAccessComponent] CAPTCHA reset failed');
+    }
+  }
+
+  private clearCaptchaState() {
+    this.logger.debug('[BookingAccessComponent] Clear and hide captcha');
+    this.showCaptcha = false;
+    this.pendingEmail = null;
+    this.captchaToken = null;
+    this.accessInProgress = false;
+
+    this.resetCaptcha();
+    this.cdr.detectChanges();
   }
 
   bookSlot(slot: SlotResponseDto) {
 
     this.logger.debug('[BookingConfirmationWizard] Guest form submitted');
 
-    if (this.isBookingInProgress) return;
-    
+    if (this.isSubmitInProgress) return;
+
     this.guestForm.markAllAsTouched();
     if (this.guestForm.invalid) {
       this.logger.warn('[BookingConfirmationWizard] Guest form validation failed');
       return;
     }
+    this.isSubmitInProgress = true;
 
     const bookingRequestDto = this.buildBookingRequestDto();
 
@@ -188,26 +233,32 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
 
       let requestDto = new GuestBookingCreateInitRequestDto();
       requestDto.email = this.guestForm?.value.email;
+
+      this.pendingEmail = this.guestForm?.value.email;
+
       this.logger.debug('[BookingConfirmationWizard] Guest detected, proceed to init guest access');
+      this.logger.debug('[BookingConfirmationWizard] Sending bookingService.initGuestBookingCreateAccess request');
       this.bookingService.initGuestBookingCreateAccess(requestDto)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (res) => {
             this.pendingEmail = this.guestForm?.value.email;
+
             if (res.captchaRequired) {
-              this.logger.debug('[BookingConfirmationWizard] CAPTCHA required')
-              this.renderCaptcha(bookingRequestDto);
+              this.logger.debug('[BookingConfirmationWizard] CAPTCHA required');
+              this.showCaptcha = true;
+              this.cdr.detectChanges();
+              setTimeout(() => this.renderCaptcha(bookingRequestDto));
               return;
             }
 
             if (this.pendingEmail) {
-              this.isBookingInProgress = true;
               this.logger.debug('[BookingConfirmationWizard] Guest access valid, issuing guest token');
               this.issueGuestBookingCreateAccessToken(bookingRequestDto, this.pendingEmail, null, this.invitation.id, this.slot.id);
             }
           },
-          error: (err) => {
-            this.isBookingInProgress = false;
+          error: () => {
+            this.isSubmitInProgress = false;
           }
         })
     }
@@ -235,6 +286,7 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
   }
 
   private createBooking(bookingRequestDto: BookingRequestDto) {
+
     this.logger.debug('[BookingConfirmationWizard] Sending bookingService.createBooking request');
     this.bookingService.createBooking(bookingRequestDto, this.slot.id)
       .pipe(takeUntil(this.destroy$))
@@ -242,17 +294,20 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
         next: (res) => {
           this.organizerBookingResponseDto = res;
           alert('Booking created successfully');
-          this.isBookingInProgress = false;
+          this.isSubmitInProgress = false;
           this.closeWizard();
           this.router.navigate(['/invitation']);
         },
         error: () => {
-          this.isBookingInProgress = false;
+          this.isSubmitInProgress = false;
         },
       })
   }
 
   private issueGuestBookingCreateAccessToken(bookingRequestDto: BookingRequestDto, email: string, captchaToken: string | null, invitationId: number, slotId: number) {
+    if (this.accessInProgress) return;
+    this.accessInProgress = true;
+
     let requestDto = new GuestBookingCreateAccessRequestDto();
     requestDto.email = email;
     requestDto.captchaToken = captchaToken;
@@ -265,21 +320,12 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.authService.storeGuestToken(res);
+          this.clearCaptchaState()
           this.createBooking(bookingRequestDto);
-          this.captchaToken = null;
-          this.pendingEmail = null;
-          if (this.captchaWidgetId !== null) {
-            grecaptcha.reset(this.captchaWidgetId);
-          }
         },
-        error: (err) => {
-          alert("Access denied");
-          this.captchaToken = null;
-          this.pendingEmail = null;
-          this.isBookingInProgress = false;
-          if (this.captchaWidgetId !== null) {
-            grecaptcha.reset(this.captchaWidgetId);
-          }
+        error: () => {
+          this.isSubmitInProgress = false;
+          this.clearCaptchaState();
         }
       })
   }

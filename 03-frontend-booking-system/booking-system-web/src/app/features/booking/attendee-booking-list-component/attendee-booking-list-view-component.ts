@@ -47,7 +47,6 @@ export class AttendeeBookingListViewComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: () => {
-          alert('Get booking list failed');
         }
       })
   }
@@ -62,7 +61,6 @@ export class AttendeeBookingListViewComponent implements OnInit, OnDestroy {
             this.initBookingList();
           },
           error: () => {
-            alert("Delete unsuccessful, please contact admin");
           },
         })
     }

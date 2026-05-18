@@ -65,10 +65,10 @@ export class LoginComponent implements OnInit {
     loginRequestDto.password = this.loginForm.value.password;
     this.logger.debug('[LoginComponent] Sending AuthService.login request');
     this.authService.login(loginRequestDto).subscribe({
-      next: (response) => {
+      next: () => {
         this.router.navigateByUrl(this.successLoginReturnUrl);
       },
-      error: (err) => {
+      error: () => {
       }
     });
   }

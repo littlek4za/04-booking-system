@@ -83,7 +83,6 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
           }
         },
         error: () => {
-          alert("Token validation error. Please try again. If the problem persists, please contact the administrator.");
         }
       })
   };
