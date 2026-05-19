@@ -1,0 +1,11 @@
+// Mvn clean and build jar (skip test)
+mvn clean package -DskipTests
+
+// Create image by dockerfile from directory /
+docker build -t booking-system-backend .
+
+// Run image with default settings (application-dev.properties) port forward
+docker run -p 8080:8080 booking-system-backend
+
+// Run image with env settings (application-prod.properties)
+docker run --env-file .env -p 8080:8080 booking-system-backend
