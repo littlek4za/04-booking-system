@@ -22,7 +22,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
   @Input() slotId!: number;
   @Input() eventName!: string | null;
   @Output() close = new EventEmitter<void>();
-  invitationUrl = `http://localhost:4300/invitation`
+  invitationUrl = `${window.location.origin}/invitation`
 
   // signal from service
   invitationListByEventId = toSignal(this.invitationService.invitationListByEventId$, { initialValue: [] as InvitationResponseDto[] });
