@@ -115,12 +115,14 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
             alert("Booking not found(init)");
             this.clearCaptchaState();
             this.isSubmitInProgress = false;
+            this.cdr.detectChanges();
             return;
           }
           this.issueToken(email, bookingToken, null);
         },
         error: () => {
           this.isSubmitInProgress = false;
+          this.cdr.detectChanges();
         }
       });
   }
@@ -160,6 +162,7 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
     if (!this.captchaContainer?.nativeElement) {
       this.logger.warn('[BookingAccessComponent] CAPTCHA container is not available');
       this.isSubmitInProgress = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -167,6 +170,7 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
       this.logger.warn('[BookingAccessComponent] CAPTCHA script is not ready');
       alert('Captcha is still loading. Please try again in a moment.');
       this.isSubmitInProgress = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -213,18 +217,20 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
           this.authService.storeGuestToken(res);
           this.clearCaptchaState();
           this.isSubmitInProgress = false;
+          this.cdr.detectChanges();
           this.router.navigate([`/bookingView/${bookingToken}`]);
         },
         error: () => {
           this.clearCaptchaState();
           this.isSubmitInProgress = false;
+          this.cdr.detectChanges();
         }
       })
   }
 
 
   onSubmit() {
-    if(this.isSubmitInProgress) return;
+    if (this.isSubmitInProgress) return;
 
     this.logger.debug('[BookingAccessComponent] Booking token validation form submitted');
 
@@ -236,6 +242,7 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
     }
 
     this.isSubmitInProgress = true;
+    this.cdr.detectChanges();
 
     const bookingToken = this.bookingTokenValidationForm.value.bookingToken;
     const email = this.bookingTokenValidationForm.value.email;
