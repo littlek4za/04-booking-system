@@ -1,137 +1,525 @@
-<div class="d-flex justify-content-between align-items-center mb-3 p-2">
-    <h4 class="mb-0">Slots Manager</h4>
-    <div class="ms-auto">
-        <button type="button" class="btn btn-success me-2" (click)="openCreateSlotWizard()">
-            <i class="fa-solid fa-plus me-1"></i> Create Slot
-        </button>
-        <button type="button" class="btn btn-secondary" [routerLink]="['/eventDashboard']">
-            <i class="fa-solid fa-undo me-1"></i> Back to Event Manager
-        </button>
+<div
+  class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4 p-3 bg-light rounded-3 shadow-sm border">
+
+  <!-- LEFT: Title + Event Info -->
+  <div class="d-flex flex-column align-items-start gap-1 min-w-0">
+
+    <!-- Title -->
+    <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="fa-solid fa-calendar-check text-success"></i>
+      Slots Manager
+    </h4>
+
+    <!-- Event Name -->
+    <div class="fw-semibold text-dark text-truncate w-100 d-flex align-items-center gap-1">
+      <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1.5 fw-semibold">
+        Event: {{ eventName() }}
+      </span>
+      @if(eventType() === EventType.FIXED) {
+      <span
+        class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+        Fixed
+      </span>
+      }
+      @if(eventType() === EventType.FLEXIBLE) {
+      <span
+        class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+        Flexible
+      </span>
+      }
+      @if(eventType() === EventType.BUSINESS) {
+      <span
+        class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+        Business
+      </span>
+      }
     </div>
+
+  </div>
+
+  <!-- RIGHT SIDE: Action Control Toolbar -->
+  <div
+    class="d-flex align-items-center gap-2 w-100 w-md-auto justify-content-between justify-content-md-end mt-2 mt-md-0">
+
+    <!-- Mobile-only toolbar top border (Hidden on desktop) -->
+    <div class="w-100 d-block d-md-none position-absolute border-top"
+      style="transform: translateY(-24px); opacity: 0.5;"></div>
+
+    <!-- Grouping controls together -->
+    <div class="d-flex align-items-center gap-2">
+      <!-- Sort Dropdown Component -->
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
+          data-bs-toggle="dropdown" [title]="activeSort() === 'LATEST' ? 'Sort: Latest' : 'Sort: Earliest'">
+
+          <i class="fa-solid fa-arrow-down-short-wide"></i>
+
+          <span class="d-none d-md-inline">
+            Sort: {{ activeSort() === 'LATEST' ? 'Latest' : 'Earliest' }}
+          </span>
+
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEventsByTime('LATEST')">
+              Latest Activity
+              @if(activeSort() === 'LATEST'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEventsByTime('EARLIEST')">
+              Earliest Activity
+              @if(activeSort() === 'EARLIEST'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Clear Controls Button -->
+      @if ( activeSort() !== 'LATEST') {
+      <button class="btn btn-sm btn-link text-muted small text-decoration-none px-1"
+        (click)="sortEventsByTime('LATEST')">
+        Clear
+      </button>
+      }
+    </div>
+
+    <!-- Desktop Vertical Divider -->
+    <div class="vr mx-1 d-none d-md-block" style="height: 24px;"></div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex align-items-center gap-2 ms-auto ms-md-0">
+      <button type="button"
+        class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+        (click)="openCreateSlotWizard()">
+        <i class="fa-solid fa-plus"></i>
+        <span class="d-inline">Create Slot</span>
+      </button>
+
+      <button type="button"
+        class="btn btn-secondary btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+        [routerLink]="['/eventDashboard']">
+        <i class="fa-solid fa-arrow-left-long"></i>
+        <span class="d-none d-md-inline">Back to Event Manager</span>
+        <span class="d-inline d-md-none">Back</span>
+      </button>
+    </div>
+
+  </div>
 </div>
+
+<!-- Desktop View - Table -->
 <div class="table-responsive d-none d-md-block">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Slot Name</th>
-                <th scope="col">Description</th>
-                @if(eventType === EventType.FIXED){
-                <th scope="col">Number of Bookings / <br>Maximum Bookings Allowed</th>
-                } @else {
-                <th scope="col">Number of Bookings</th>
-                }
 
-                @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
-                <th scope="col">Attendee Slot Booking Interval</th>
-                }
-                <th scope="col">Action</th>
-                <th scope="col">Booking Manager</th>
-                <th scope="col">Invitations</th>
-                <th scope="col">Last Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (slot of slotList(); track slot.id; let i = $index) {
-            <tr>
-                <td scope="row">{{i+1}}</td>
-                <td>{{slot.slotName}}</td>
-                <td>{{slot.slotDescription}}</td>
-                @if(eventType == EventType.FIXED){
-                <td>{{slot.bookingsCount}}/{{slot.maxBookPerInterval}}</td>
-                } @else {
-                <td>{{slot.bookingsCount}}</td>
-                }
+  <div class="list-group list-group-flush shadow-sm rounded-3 bg-white border">
 
-                @if(eventType == EventType.FLEXIBLE || eventType == EventType.BUSINESS){
-                <td>{{formatDuration(slot.slotIntervalMinutes)}}</td>
-                }
-                <td>
-                    <div class="d-flex flex-column flex-md-row gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary"
-                            (click)="openCalendar(slot.id)">View Calendar</button>
-                        <button type="button" class="btn btn-sm btn-warning"
-                            (click)="openUpdateSlotWizard(slot.id)">Update</button>
-                        <button type="button" class="btn btn-sm btn-danger"
-                            (click)="confirmDeleteSlot(slot.id)">Delete</button>
-                    </div>
-                </td>
-                <td>
-                    <div class="d-flex flex-column gap-1">
-                        <span class="badge bg-light text-dark">
-                            {{slot.bookingsCount}} {{slot.bookingsCount <= 1 ? "booking" : "bookings" }}</span>
-                                <button type="button" class="btn btn-sm btn-outline-dark"
-                                    (click)="openBookingManagerDashboard(slot.id, slot.slotName)">
-                                    Manage {{slot.bookingsCount <= 1 ? "Booking" : "Bookings" }} </button>
-                    </div>
-                </td>
-                <td>
-                    <div class="d-flex flex-column gap-2">
-                        <button type="button" class="btn btn-sm btn-success" (click)="openInvitationWizard(slot.id)">
-                            Create Invitation for this slot
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-dark"
-                            (click)="openInvitationDashboard(slot.id)">
-                            View Invitation for this slot
-                        </button>
-                    </div>
-                </td>
-                <td>
-                    <div class="fw-semibold">
-                        {{slot.updatedAt | date:'dd MMM yyyy'}}
-                    </div>
-                    <div class="text-muted small">
-                        {{slot.updatedAt | date:'hh:mm a'}}
-                    </div>
-                </td>
-            </tr>
-            }
-            @empty {
-            <tr>
-                <td colspan="9" class="text-center">No slot found.</td>
-            </tr>
-            }
-        </tbody>
-    </table>
+    @for (slot of slotList(); track slot.id; let i = $index) {
+    <div class="list-group-item p-3 d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center justify-content-between gap-3 gap-xl-4">
+
+      <!-- Column 1: Info -->
+      <div style="flex: 2; min-width: 220px;">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold px-2">
+            #{{i+1}}
+          </span>
+          <h6 class="mb-0 text-dark fw-semibold"
+            style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+            data-bs-toggle="tooltip" title="{{slot.slotName}}">
+            {{ slot.slotName }}
+          </h6>
+        </div>
+        <p class="text-muted small mb-0"
+          style="display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;"
+          data-bs-toggle="tooltip" title="{{slot.slotDescription}}">
+          {{ slot.slotDescription || 'No description provided.' }}
+        </p>
+      </div>
+
+      <!-- Column 2: Status Badges -->
+      <div class="text-xl-center border-start-xl border-end-xl px-xl-3 py-2 py-xl-0" style="flex: 1; min-width: 160px;">
+        <div class="mb-1">
+          @if(eventType() === EventType.FIXED) {
+          <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill fw-semibold">
+            <i class="fa-solid fa-user-check me-1"></i> {{slot.bookingsCount}} / {{slot.maxBookPerInterval}} Filled
+          </span>
+          } @else {
+          <span class="badge bg-light text-dark border px-3 py-1 rounded-pill fw-semibold">
+            <i class="fa-solid fa-user-group me-1"></i> {{slot.bookingsCount}} {{slot.bookingsCount == 1 ? "Booking" :
+            "Bookings" }}
+          </span>
+          }
+        </div>
+        @if(eventType() === EventType.FLEXIBLE || eventType() === EventType.BUSINESS) {
+        <small class="text-muted d-block mt-1">
+          <i class="fa-regular fa-hourglass-half me-1"></i> Interval: {{formatDuration(slot.slotIntervalMinutes)}}
+        </small>
+        }
+        @if(eventType() === EventType.FIXED) {
+
+        <div class="small text-muted mt-2 lh-sm">
+
+          <!-- Start -->
+          <div class="d-flex align-items-start justify-content-xl-center gap-1">
+            <i class="fa-solid fa-play text-success mt-1"></i>
+
+            <div class="text-start">
+              <div class="fw-semibold text-dark">
+                {{slot.slotStartTime | date:'dd MMM yyyy'}}
+              </div>
+
+              <div>
+                {{slot.slotStartTime | date:'hh:mm a'}}
+              </div>
+            </div>
+          </div>
+
+          <!-- End -->
+          <div class="d-flex align-items-start justify-content-xl-center gap-1 mt-2">
+            <i class="fa-solid fa-flag-checkered text-danger mt-1"></i>
+
+            <div class="text-start">
+              <div class="fw-semibold text-dark">
+                {{slot.slotEndTime | date:'dd MMM yyyy'}}
+              </div>
+
+              <div>
+                {{slot.slotEndTime | date:'hh:mm a'}}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        }
+      </div>
+
+      <!-- Column 3: Action Section -->
+      <div style="flex: 3.5; min-width: 320px;"
+        class="d-flex flex-column flex-xxl-row align-items-stretch gap-2 my-2 my-xl-0">
+
+        <!-- Action: Manage Bookings -->
+        <div class="flex-grow-1 text-center">
+          <button type="button"
+            class="btn btn-sm btn-dark w-100 h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
+            (click)="openBookingManagerDashboard(slot.id, slot.slotName)">
+            <i class="fa-solid fa-users-gear me-1"></i>
+            <span>Manage Bookings</span>
+          </button>
+        </div>
+
+        <!-- Action Group: Invitations -->
+        <div class="flex-grow-1" style="min-width: 160px;">
+          <div class="btn-group w-100 h-100 shadow-sm">
+            <button type="button"
+              class="btn btn-sm btn-outline-success text-wrap h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
+              (click)="openInvitationWizard(slot.id)" title="Create Invitation">
+              <i class="fa-solid fa-plus me-1"></i>
+              <span>Create Invitation</span>
+            </button>
+            <button type="button"
+              class="btn btn-sm btn-outline-secondary text-wrap h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
+              (click)="openInvitationDashboard(slot.id)" title="View Invitations">
+              <i class="fa-solid fa-eye me-1"></i>
+              <span>View Invitations</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action: Calendar -->
+        <div class="flex-grow-1 text-center">
+          <button type="button"
+            class="btn btn-sm btn-outline-primary w-100 h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
+            (click)="openCalendar(slot.id)">
+            <i class="fa-regular fa-calendar-days me-1"></i>
+            <span>Calendar</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Column 4: Metadata & System Modifications -->
+      <div style="flex: 1.3; min-width: 150px;"
+        class="d-flex align-items-center justify-content-between justify-content-xl-end gap-3 ps-xl-2 border-start-xl pt-2 pt-xl-0">
+
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-regular fa-clock fs-8 text-muted"></i>
+          <div class="text-start text-xl-end lh-sm">
+            <div class="fw-semibold text-dark small" style="font-size: 0.8rem;">
+              Updated:
+            </div>
+            <div class="fw-semibold text-dark small" style="font-size: 0.8rem;">
+              {{slot.updatedAt | date:'dd MMM yyyy'}}
+            </div>
+            <div class="text-muted small" style="font-size: 0.75rem;">
+              {{slot.updatedAt | date:'hh:mm a'}}
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-1 flex-shrink-0">
+          <button type="button" class="btn btn-sm btn-light text-warning px-2" (click)="openUpdateSlotWizard(slot.id)"
+            title="Update Slot">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-light text-danger px-2" (click)="confirmDeleteSlot(slot.id)"
+            title="Delete Slot">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    } @empty {
+    <div class="text-center text-muted py-5 bg-light rounded-3">
+      <i class="fa-solid fa-inbox fa-2x mb-2 text-muted opacity-50"></i>
+      <p class="mb-0">No slot configurations found for this event.</p>
+    </div>
+    }
+
+  </div>
 </div>
 
+<!-- Mobile View - Slots Cards -->
+<div class="d-md-none">
+  @for (slot of slotList(); track slot.id; let i = $index) {
+
+  <!-- Main Mobile Card Wrapper -->
+  <div class="card p-3 mb-4 shadow-sm border border-secondary-subtle border-top border-4 border-success">
+
+    <!-- 1. Header: Title, index, and event type badge -->
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+      <div class="flex-grow-1">
+        <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold px-2">
+          <small class="text-muted d-block">Slot #{{ i + 1 }}</small>
+        </span>
+        <h5 class="fw-bold text-dark mb-1" style="font-size: 1.1rem; line-height: 1.3;">
+          {{ slot.slotName }}
+        </h5>
+      </div>
+
+      <!-- Conditional Type Status Badge -->
+      <div class="align-self-start">
+        @if(eventType() === EventType.FIXED) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+          Fixed
+        </span>
+        }
+        @if(eventType() === EventType.FLEXIBLE) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+          Flexible
+        </span>
+        }
+        @if(eventType() === EventType.BUSINESS) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+          Business
+        </span>
+        }
+      </div>
+    </div>
+
+    <!-- 2. Description Section -->
+    <div class="mb-3">
+      <small class="text-muted d-block text-uppercase fw-bold mb-1"
+        style="font-size: 0.65rem; letter-spacing: 0.8px;">Description</small>
+      <p class="text-secondary small mb-0 line-clamp-3"
+        style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+        {{ slot.slotDescription || 'No description provided.' }}
+      </p>
+    </div>
+
+    <!-- 3. Meta Section: Capacity & Interval / Time Range -->
+    <div class="bg-light rounded-3 p-3 border border-light-subtle mb-2">
+      <div class="row g-2 align-items-stretch">
+
+        <!-- Capacity / Filled Status (Left) -->
+        <div
+          class="col-6 border-end border-secondary-subtle text-center d-flex flex-column justify-content-center pe-2">
+          <small class="text-muted d-block text-uppercase fw-bold mb-1"
+            style="font-size: 0.65rem; letter-spacing: 0.5px;">Bookings</small>
+
+          @if(eventType() === EventType.FIXED) {
+          <span class="fw-bold text-primary small">{{slot.bookingsCount}} / {{slot.maxBookPerInterval}} Filled</span>
+          } @else {
+          <span class="fw-bold text-dark small">
+            {{slot.bookingsCount}} {{slot.bookingsCount == 1 ? "Booking" : "Bookings" }}
+          </span>
+          }
+        </div>
+
+        <!-- Interval Status / Time Range (Right) -->
+        <div class="col-6 ps-3 d-flex flex-column justify-content-center">
+
+
+          @if(eventType() === EventType.FLEXIBLE || eventType() === EventType.BUSINESS) {
+          <small class="text-muted text-uppercase fw-bold mb-1"
+            style="font-size: 0.65rem; letter-spacing: 0.5px;">Interval Rate</small>
+          <div class="small fw-semibold text-secondary lh-sm">
+            <i class="fa-regular fa-hourglass-half me-1"></i> {{formatDuration(slot.slotIntervalMinutes)}}
+          </div>
+          } @else {
+          <small class="text-muted text-uppercase fw-bold mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+            Time Range
+          </small>
+
+          <div class="small text-secondary d-flex flex-column gap-1">
+
+            <!-- Start -->
+            <div class="d-flex align-items-start gap-2">
+              <i class="fa-solid fa-play text-success mt-1"></i>
+
+              <div class="lh-sm">
+                <div class="fw-semibold">
+                  {{slot.slotStartTime | date:'dd MMM yyyy'}}
+                </div>
+
+                <div class="text-muted small">
+                  {{slot.slotStartTime | date:'hh:mm a'}}
+                </div>
+              </div>
+            </div>
+
+            <!-- End -->
+            <div class="d-flex align-items-start gap-2">
+              <i class="fa-solid fa-flag-checkered text-danger mt-1"></i>
+
+              <div class="lh-sm">
+                <div class="fw-semibold">
+                  {{slot.slotEndTime | date:'dd MMM yyyy'}}
+                </div>
+
+                <div class="text-muted small">
+                  {{slot.slotEndTime | date:'hh:mm a'}}
+                </div>
+              </div>
+            </div>
+
+          </div>
+          }
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 4. Actions Block -->
+    <div class="pt-2 border-top border-light-subtle">
+
+      <!-- Primary Action: Manage Bookings -->
+      <div class="mb-2">
+        <button type="button"
+          class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-1"
+          style="font-size: 0.95rem; letter-spacing: 0.3px;"
+          (click)="openBookingManagerDashboard(slot.id, slot.slotName)">
+          <i class="fa-solid fa-users-gear"></i> Manage Bookings
+        </button>
+      </div>
+
+      <!-- Core Slot Action: View Calendar -->
+      <div class="mb-2">
+        <button type="button"
+          class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+          (click)="openCalendar(slot.id)">
+          <i class="fa-regular fa-calendar-days"></i> Calendar Workspace
+        </button>
+      </div>
+
+      <!-- Invitation Group (Side-by-side) -->
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <button type="button"
+            class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openInvitationWizard(slot.id)" title="Create Invitation">
+            <i class="fa-solid fa-plus"></i> Create Invite
+          </button>
+        </div>
+        <div class="col-6">
+          <button type="button"
+            class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openInvitationDashboard(slot.id)" title="View Invitations">
+            <i class="fa-solid fa-eye"></i> Invitations
+          </button>
+        </div>
+      </div>
+
+      <!-- Settings / Modification Group (Side-by-side) -->
+      <div class="row g-2">
+        <div class="col-6">
+          <button type="button"
+            class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openUpdateSlotWizard(slot.id)">
+            <i class="fa-solid fa-pen"></i> Edit Slot
+          </button>
+        </div>
+        <div class="col-6">
+          <button type="button"
+            class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="confirmDeleteSlot(slot.id)">
+            <i class="fa-solid fa-trash"></i> Delete Slot
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 5. Footer: Timestamp -->
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-light-subtle text-muted"
+      style="font-size: 0.75rem;">
+      <span><i class="fa-regular fa-clock me-1"></i> Updated: {{ slot.updatedAt | date:'dd MMM yyyy' }}</span>
+      <span>{{ slot.updatedAt | date:'hh:mm a' }}</span>
+    </div>
+
+  </div>
+  } @empty {
+  <div class="text-center text-muted py-5 bg-light rounded-3 border border-dashed">
+    <i class="fa-solid fa-inbox fa-2x mb-2 text-muted opacity-50"></i>
+    <p class="mb-0">No slot configurations found for this event.</p>
+  </div>
+  }
+</div>
 
 @if (openCalendarView === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-full-calendar-view [eventId]="eventId!" [eventType]="eventType!" [slotId]="slotId" mode="VIEW"
-        (close)="closeCalendar()"></app-full-calendar-view>
+  <app-full-calendar-view [eventId]="eventId" [eventType]="eventType()" [slotId]="slotId" mode="VIEW"
+    (close)="closeCalendar()"></app-full-calendar-view>
 </div>
 }
 
-@if (showInvitationWizard === true && slotId && eventId && eventType) {
+@if (showInvitationWizard === true && slotId && eventId && eventType()) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-invitation-edit-wizard [eventId]="eventId" [eventType]="eventType" [slotId]="slotId" mode="CREATE"
-        (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
+  <app-invitation-edit-wizard [eventId]="eventId" [eventType]="eventType()" [slotId]="slotId" mode="CREATE"
+    (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
 </div>
 }
 
 @if (showInvitationDashboard === true && slotId != null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId" [eventName]="eventName"
-        (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+  <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId" [eventName]="eventName()"
+    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }
 
 @if(showSlotWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-slot-edit-wizard [eventId]="eventId" [eventType]="eventType" [mode]="modeSlotWizard" [slotId]="slotId"
-        (close)="closeSlotWizard()"></app-slot-edit-wizard>
+  <app-slot-edit-wizard [eventId]="eventId" [eventType]="eventType()" [mode]="modeSlotWizard" [slotId]="slotId"
+    (close)="closeSlotWizard()"></app-slot-edit-wizard>
 </div>
 }
 
 @if(showBookingManagerDashboard === true && slotId !== null) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-    <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName" [eventId]="eventId"
-        (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
+  <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName()" [eventId]="eventId"
+    (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
 </div>
 }

@@ -22,44 +22,38 @@
   z-index: 1050 !important;
 }
 
-table {
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-}
 
-th {
-  background-color: #f8f9fa;
-}
-
-tbody tr:hover {
-  background-color: #f1f3f5;
-  cursor: pointer;
-}
-
-.card {
-  border: 0;
-  border-radius: 12px;
-}
-
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
+/* Mobile Bottom Sheet Overlay */
 @media (max-width: 767.98px) {
-  .mobile-event-card .card-body {
-    padding: 1rem;
+  .pop-out-wizard {
+    top: auto !important;              /* Removes vertical centering */
+    bottom: 0 !important;            /* Anchors the modal to the bottom of the screen */
+    left: 0 !important;
+    transform: none !important;
+    
+    width: 100% !important;
+    height: 96vh !important;         /* Leaves a 8vh gap at the top to display the dark backdrop */
+    max-height: 96vh !important;
+    
+    /* Rounded top corners like a native iOS/Android bottom sheet */
+    border-radius: 20px 20px 0 0 !important; 
+    
+    padding: 24px 16px 16px 16px !important; /* Top padding leaves space for the drag-handle */
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15) !important; /* Casts shadow upwards */
   }
-
-  .mobile-card-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+  /* Renders a native drag-handle bar at the top center of the overlay */
+  .pop-out-wizard::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 5px;
+    background-color: rgba(0, 0, 0, 0.18);
+    border-radius: 3px;
+    margin: -12px auto 16px auto;     /* Centers and positions the handle */
   }
-
-  .mobile-card-actions-grid .btn {
-    width: 100%;
+  /* Ensure the dark background backdrop is visible in the top gap */
+  .modal-backdrop {
+    display: block !important;
+    opacity: 0.5 !important;
   }
 }
-

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { EventEditWizard } from '../event-edit-wizard/event-edit-wizard';
 import { EventService } from '../event-service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -9,6 +9,8 @@ import { EventTypeModel } from '../dtos/event-type-model';
 import { InvitationEditWizard } from "@features/invitations/invitation-edit-wizard/invitation-edit-wizard";
 import { InvitationDashboard } from "@features/invitations/invitation-dashboard/invitation-dashboard";
 import { LoggerService } from '@core/services/logger-service';
+import { EventResponseDto } from '../dtos/event-response-dto';
+import { EventWithSlotCountResponseDto } from '../dtos/event-with-slot-count-response-dto';
 
 @Component({
   standalone: true,
@@ -35,8 +37,45 @@ export class EventDashboardComponent {
   updateEventName: string | null = null;
   eventId: number | null = null;
   eventType: EventTypeModel | null = null;
+  EventTypeModel = EventTypeModel;
 
-  eventList = toSignal(this.eventService.eventList$, { initialValue: [] });
+  allEvents = toSignal(this.eventService.eventList$, { initialValue: [] });
+  activeSort = signal<'LATEST' | 'EARLIEST'>('LATEST');
+  activeFilter = signal<EventTypeModel | null>(null);
+
+  eventList = computed(() => {
+    let list = [...this.allEvents()];
+
+    const filterType = this.activeFilter();
+
+    if (filterType == EventTypeModel.FIXED) {
+      list = list.filter(e => e.eventType === EventTypeModel.FIXED);
+    }
+    if (filterType == EventTypeModel.FLEXIBLE) {
+      list = list.filter(e => e.eventType === EventTypeModel.FLEXIBLE);
+    }
+    if (filterType == EventTypeModel.BUSINESS) {
+      list = list.filter(e => e.eventType === EventTypeModel.BUSINESS);
+    }
+
+    const sortType = this.activeSort();
+
+    if (sortType === 'LATEST') {
+      list.sort((a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+    }
+
+    if (sortType === 'EARLIEST') {
+      list.sort((a, b) =>
+        new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+      );
+    }
+
+    return list;
+  })
+
+  constructor() {}
 
   confirmDeleteEvent(eventId: number, eventSlotCount: number) {
 
@@ -121,6 +160,14 @@ export class EventDashboardComponent {
 
   closeInvitationWizard() {
     this.showInvitationWizard = false;
+  }
+
+  sortEventsByTime(type: 'LATEST' | 'EARLIEST') {
+    this.activeSort.set(type);
+  }
+
+  filterEventsByEventType(eventType: EventTypeModel | null) {
+    this.activeFilter.set(eventType);
   }
 
 }

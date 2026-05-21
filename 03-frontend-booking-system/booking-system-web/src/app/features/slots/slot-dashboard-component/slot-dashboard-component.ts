@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, Input, OnDestroy, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SlotService } from '../slot-service';
@@ -27,7 +27,10 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   updateSlotWizard: boolean = false;
   slotList = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
   eventId!: number;
-  eventType!: EventTypeModel;
+  eventType = signal<EventTypeModel | null>(null);
+  eventName = signal<string | null>(null);
+  eventDescription = signal<string | null>(null);
+
   slotId: number | null = null;
   modeSlotWizard!: 'CREATE' | 'UPDATE';
   openCalendarView: boolean = false;
@@ -41,17 +44,18 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   // IO for component
   slotName: string | null = null;
-  eventName: string | null = null;
+
 
   // for destroy usage
   private destroy$ = new Subject<void>();
+
+  activeSort = signal<'LATEST' | 'EARLIEST'>('LATEST');
 
 
   constructor(private route: ActivatedRoute, private eventService: EventService, private logger: LoggerService) { }
 
   ngOnInit(): void {
     this.refreshSlotListWithEventId();
-    this.subscribeEventType();
   }
 
   ngOnDestroy(): void {
@@ -69,19 +73,23 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
             this.logger.debug(`[SlotDashboardComponent] ParmMap eventId detected`);
             this.logger.debug(`[SlotDashboardComponent] Sending slotService.triggerRefreshForSlotListByEventId request`);
             this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
+            this.getEventInfo();
           }
         }
       );
   }
 
-  private subscribeEventType() {
+  private getEventInfo() {
     this.logger.debug(`[SlotDashboardComponent] Sending eventService.getEventById request`);
     this.eventService.getEventById(this.eventId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.eventType = res.eventType;
-          this.eventName = res.eventName;
+          this.eventType.set(res.eventType);
+          this.eventName.set(res.eventName);
+          if (res.eventDescription) {
+            this.eventDescription.set(res.eventDescription);
+          }
         },
         error: () => {
         }
@@ -106,7 +114,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
         }
       },
       error: () => {
-      }   
+      }
     });
 
   }
@@ -193,4 +201,9 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   closeInvitationDashboard() {
     this.showInvitationDashboard = false;
   }
+
+  sortEventsByTime(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
+
 }

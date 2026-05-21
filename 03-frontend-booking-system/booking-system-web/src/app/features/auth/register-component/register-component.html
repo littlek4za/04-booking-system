@@ -1,4 +1,4 @@
-<div class="full-vh">
+<div class="full-vh d-flex flex-column justify-content-center align-items-center p-3">
     <div class="card p-4 shadow-sm m-3" style="width: 100%; max-width: 450px;">
         <h3 class="text-center mb-4">Register</h3>
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
@@ -93,8 +93,8 @@
             <!-- Agree Checkbox -->
 
             <div class="form-check mb-3">
-                <input class="form-check-input form-check-input-sm" type="checkbox" value="" formControlName="isAgree">
                 <label class="form-check-label small">
+                    <input class="form-check-input form-check-input-sm" type="checkbox" value="" formControlName="isAgree">
                     Agree to terms and conditions
                 </label>
                 @if (registerForm.controls['isAgree'].invalid && registerForm.controls['isAgree'].touched){
@@ -106,7 +106,7 @@
 
             <!-- Register Button & Link -->
             <div class="text-center mb-3">
-                <a (click)="goLogin()" class="text-decoration-none">
+                <a routerLink="/login" class="text-decoration-none" style="cursor: pointer;">
                     Already have an account? Login
                 </a>
             </div>

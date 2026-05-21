@@ -33,7 +33,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
   @Output() close = new EventEmitter<void>();
   @Input() eventId!: number;
-  @Input() eventType!: string;
+  @Input() eventType: string | null = null;
   @Input() mode!: 'CREATE' | 'UPDATE';
   @Input() slotId: number | null = null;
 
@@ -133,6 +133,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
     this.logger.debug(`[SlotEditWizard] Slot form apply configuration base on event type`);
     this.resetSlotFormState();
     this.configureCommonFormControls();
+    if (!this.eventType) return;
     switch (this.eventType) {
       case EventTypeModel.FIXED:
         this.configureFormControlsForFixed();
