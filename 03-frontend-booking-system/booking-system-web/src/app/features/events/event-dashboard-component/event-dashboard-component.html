@@ -1,162 +1,389 @@
-<div class="d-flex justify-content-between align-items-center mb-3 p-2">
-  <h4 class="mb-0">Events Manager</h4>
-  <button type="button" class="btn btn-success" (click)="openCreateEventWizard()">
-    <i class="fa-solid fa-plus me-1"></i> Create Event
-  </button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 p-2 bg-light rounded-3 shadow-sm border">
+
+  <!-- Left Side: Title and Quick Status Context -->
+  <div>
+    <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="fa-solid fa-calendar-check text-success"></i> Events Manager
+    </h4>
+
+  </div>
+
+  <!-- Right Side: Action Control Toolbar -->
+  <div class="d-flex align-items-center gap-2 w-100 w-md-auto ms-md-auto justify-content-end">
+
+    <!-- Filter Dropdown Component -->
+    <div class="dropdown">
+      <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2"
+        [class.btn-primary-subtle]="activeFilter() !== null" [class.btn-outline-secondary]="activeFilter() === null"
+        data-bs-toggle="dropdown" [title]="activeFilter() === null ? 'Filter: All' : 'Filter: ' + activeFilter()">
+
+        <i class="fa-solid fa-filter"></i>
+
+        <!-- On mobile, this text disappears -->
+        <span class="d-none d-md-inline">
+          Filter: {{ activeFilter() === null ? 'All' : activeFilter() }}
+        </span>
+
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="filterEventsByEventType(null)">
+            All
+            @if(activeFilter() === null){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+        <li>
+          <hr class="dropdown-divider">
+        </li>
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="filterEventsByEventType(EventTypeModel.FIXED)">
+            Fixed Type
+            @if(activeFilter() === EventTypeModel.FIXED){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="filterEventsByEventType(EventTypeModel.FLEXIBLE)">
+            Flexible Type
+            @if(activeFilter() === EventTypeModel.FLEXIBLE){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="filterEventsByEventType(EventTypeModel.BUSINESS)">
+            Business Type
+            @if(activeFilter() === EventTypeModel.BUSINESS){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Sort Dropdown Component -->
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
+        data-bs-toggle="dropdown" [title]="activeSort() === 'LATEST' ? 'Sort: Latest' : 'Sort: Earliest'">
+
+        <i class="fa-solid fa-arrow-down-short-wide"></i>
+
+        <!-- Text hidden on mobile, visible on desktop -->
+        <span class="d-none d-md-inline">
+          Sort: {{ activeSort() === 'LATEST' ? 'Latest' : 'Earliest' }}
+        </span>
+
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="sortEventsByTime('LATEST')">
+            Latest Activity
+            @if(activeSort() === 'LATEST'){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+        <li>
+          <button class="dropdown-item d-flex justify-content-between align-items-center"
+            (click)="sortEventsByTime('EARLIEST')">
+            Earliest Activity
+            @if(activeSort() === 'EARLIEST'){
+            <i class="fa-solid fa-check small text-primary"></i>
+            }
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Clear Controls Button -->
+    @if (activeFilter() !== null || activeSort() !== 'LATEST') {
+    <button class="btn btn-sm btn-link text-muted small text-decoration-none px-1"
+      (click)="filterEventsByEventType(null); sortEventsByTime('LATEST')">
+      Clear
+    </button>
+    }
+
+    <div class="vr mx-1" style="height: 24px;"></div>
+
+    <!-- Primary Action: Create Event Button -->
+    <button type="button"
+      class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+      (click)="openCreateEventWizard()">
+      <i class="fa-solid fa-plus"></i>
+      <span>Create Event</span>
+    </button>
+
+  </div>
 </div>
-<div class="table-responsive d-none d-md-block">
-  <table class="table table-hover align-middle">
-    <thead>
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Event</th>
-        <th class="d-none d-md-table-cell">Description</th>
-        <th scope="col">Location Address</th>
-        <th scope="col">Event Type</th>
-        <th scope="col">Action</th>
-        <th scope="col">Slot Manager</th>
-        <th scope="col">Invitations</th>
-        <th class="d-none d-md-table-cell">Last Updated</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (event of (eventList()); track event.id; let i = $index) {
-      <tr>
-        <th scope="row">{{i+1}}</th>
-        <td>{{event.eventName}}</td>
-        <td class="d-none d-md-table-cell">{{event.eventDescription}}</td>
-        <td>
-          <div>{{ event.eventLocationAddress }}</div>
-          @if (event.includePosition) {
-          <div class="mt-1">
-            <a [href]="'https://www.google.com/maps/place/'+ event.latitude + ',' + event.longitude" target="_blank"
-              class="text-decoration-none text-primary small">
-              <i class="fa-solid fa-map-location-dot me-1"></i>
-              Map
+
+<!-- Desktop View: Grid Cards -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 d-none d-md-flex p-1">
+  @for (event of (eventList()); track event.id; let i = $index) {
+  <div class="col">
+    <div class="card h-100 shadow-sm border-0 border-top border-4 border-success">
+      <div class="card-body d-flex flex-column">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="card-title text-truncate mb-0" [title]="event.eventName">
+            {{ event.eventName }}
+          </h5>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+            {{ event.eventType }}
+          </span>
+        </div>
+
+        <!-- Description (Kept fluid to push details and actions to the card base) -->
+        <p class="card-text text-muted small flex-grow-1 line-clamp-3 mb-3">
+          {{ event.eventDescription || 'No description provided.' }}
+        </p>
+
+        <!-- The Divider (This container push ensures the line stays perfectly level across all cards) -->
+        <div class="mt-auto">
+          <hr class="text-muted opacity-25 my-3">
+        </div>
+
+        <!-- Meta Section (Capacity & Location) -->
+        <div class="row text-center mb-3 g-2 align-items-stretch" style="min-height: 85px;">
+          <!-- Capacity -->
+          <div class="col-6 border-end">
+            <div class="d-flex flex-column h-100 justify-content-start">
+              <span class="d-block small text-muted mb-2">Available Slot</span>
+              <div class="my-auto">
+                <span class="fw-bold text-dark d-block">{{ event.slotCount }} {{event.slotCount == 1 ? "Slot" : "Slots"}}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div class="col-6">
+            <div class="d-flex flex-column h-100 justify-content-start">
+              <!-- Title Row -->
+              <div class="d-flex justify-content-center align-items-center gap-1 mb-2">
+                <span class="small text-muted">Location</span>
+                @if (event.includePosition) {
+                <a [href]="'https://www.google.com/maps/place/' + event.latitude + ',' + event.longitude"
+                  target="_blank" class="text-decoration-none text-primary small">
+                  <i class="fa-solid fa-map-location-dot"></i>
+                </a>
+                }
+              </div>
+
+              <!-- Address text with 3-line max constraint and auto ellipsis -->
+              <div class="my-auto px-2">
+                <div class="small fw-semibold lh-sm text-break"
+                  style="display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
+                  [title]="event.eventLocationAddress">
+                  {{ event.eventLocationAddress }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Footer Block -->
+        <div>
+
+          <!-- 1. Manage Slots (important row, emphasized - keeps desktop py-3 size) -->
+          <div class="mb-2">
+            <a class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2"
+              [routerLink]="['/eventDashboard', event.id, 'slots']">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Manage Slots</span>
             </a>
           </div>
-          }
-        </td>
-        <td>{{event.eventType}}</td>
-        <td>
-          <div class="d-flex flex-column flex-md-row gap-2">
-            <button class="btn btn-sm btn-outline-primary" (click)="openCalendar(event.id, event.eventType)">View
-              Calendar</button>
-            <button class="btn btn-sm btn-warning" (click)="openUpdateEventWizard(event.id)">Update</button>
-            <button class="btn btn-sm btn-danger"
-              (click)="confirmDeleteEvent(event.id, event.slotCount)">Delete</button>
-          </div>
-        </td>
-        <td>
-          <div class="d-flex flex-column gap-1">
-            <span class="badge bg-light text-dark">
-              {{event.slotCount}} {{event.slotCount <= 1 ? 'slot' : 'slots' }} </span>
-                <a class="btn btn-sm btn-outline-dark" [routerLink]="['/eventDashboard', event.id, 'slots']">
-                  Manage {{event.slotCount <= 1 ? 'Slot' : 'Slots' }} </a>
-          </div>
-        </td>
-        <td>
-          <div class="d-flex flex-column gap-2">
-            <button type="button" class="btn btn-sm btn-success"
-              (click)="openInvitationWizard(event.id, event.eventType)">
-              Create Invitation
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-dark"
-              (click)="openInvitationDashboard(event.id,event.eventName)">
-              View Invitation
+
+          <!-- 2. Calendar -->
+          <div class="mb-2">
+            <button
+              class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+              (click)="openCalendar(event.id, event.eventType)">
+              <i class="fa-solid fa-calendar-days"></i><span>Calendar</span>
             </button>
           </div>
-        </td>
-        <td class="d-none d-md-table-cell">
-          <div class="fw-semibold">
-            {{event.updatedAt | date:'dd MMM yyyy'}}
+          <!-- 3. Invitations -->
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <button
+                class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+                (click)="openInvitationWizard(event.id, event.eventType)">
+                <i class="fa-solid fa-plus"></i><span>Create Invitation</span>
+              </button>
+            </div>
+            <div class="col-6">
+              <button
+                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+                (click)="openInvitationDashboard(event.id, event.eventName)">
+                <i class="fa-solid fa-envelope-open-text"></i><span>View Invitations</span>
+              </button>
+            </div>
           </div>
-          <div class="text-muted small">
-            {{event.updatedAt | date:'hh:mm a'}}
+
+          <!-- 4. Footer (Updated + Actions) -->
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+
+            <small class="text-muted">
+              <i class="fa-regular fa-clock me-1"></i>
+              Updated: {{ event.updatedAt | date:'dd MMM yyyy hh:mm a' }}
+            </small>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-light text-warning" (click)="openUpdateEventWizard(event.id)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+
+              <button class="btn btn-sm btn-light text-danger" (click)="confirmDeleteEvent(event.id, event.slotCount)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+
           </div>
-        </td>
-      </tr>
-      } @empty {
-      <tr>
-        <td colspan="9" class="text-center">No event found.</td>
-      </tr>
-      }
-    </tbody>
-  </table>
-</div>
 
-<!-- mobile card -->
-<div class="d-md-none">
-  @for (event of (eventList()); track event.id; let i = $index) {
-  <div class="card mobile-event-card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-        <div class="flex-grow-1">
-          <h5 class="card-title mb-1">{{ event.eventName }}</h5>
-          <small class="text-muted d-block">#{{ i + 1 }}</small>
         </div>
-        <span class="badge bg-primary">{{ event.eventType }}</span>
-      </div>
 
-      <div class="mb-2">
-        <small class="text-muted d-block">Description</small>
-        <div>{{ event.eventDescription || '-' }}</div>
-      </div>
-
-      <div class="mb-2">
-        <small class="text-muted d-block">Location</small>
-        <div>{{ event.eventLocationAddress }}</div>
-
-        @if (event.includePosition) {
-        <a [href]="'https://www.google.com/maps/place/' + event.latitude + ',' + event.longitude" target="_blank"
-          class="text-decoration-none text-primary small d-inline-block mt-1">
-          <i class="fa-solid fa-map-location-dot me-1"></i>
-          View on map
-        </a>
-        }
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <small class="text-muted d-block">Slots</small>
-          <span class="badge bg-light text-dark">
-            {{ event.slotCount }} {{ event.slotCount <= 1 ? 'slot' : 'slots' }} </span>
-        </div>
-        <div class="text-end">
-          <small class="text-muted d-block">Last Updated</small>
-          <small>{{ event.updatedAt | date:'yyyy-MM-dd HH:mm' }}</small>
-        </div>
-      </div>
-
-      <div class="mobile-card-actions-grid">
-        <button class="btn btn-sm btn-outline-primary" (click)="openCalendar(event.id, event.eventType)">
-          View Calendar
-        </button>
-
-        <a class="btn btn-sm btn-outline-dark" [routerLink]="['/eventDashboard', event.id, 'slots']">
-          Manage Slot
-        </a>
-
-        <button class="btn btn-sm btn-outline-primary" (click)="openInvitationDashboard(event.id, event.eventName)">
-          View Invitation
-        </button>
-
-        <button class="btn btn-sm btn-success" (click)="openInvitationWizard(event.id, event.eventType)">
-          Create Invitation
-        </button>
-
-        <button class="btn btn-sm btn-warning" (click)="openUpdateEventWizard(event.id)">
-          Update
-        </button>
-
-        <button class="btn btn-sm btn-danger" (click)="confirmDeleteEvent(event.id, event.slotCount)">
-          Delete
-        </button>
       </div>
     </div>
   </div>
   } @empty {
-  <div class="text-center text-muted py-4">No event found.</div>
+  <div class="text-center py-5 text-muted">
+    No events found
+  </div>
+  }
+</div>
+
+<!-- Movile View -->
+<div class="d-md-none">
+  @for (event of (eventList()); track event.id; let i = $index) {
+
+  <!-- Main Mobile Card Wrapper -->
+  <div class="card p-3 mb-4 shadow-sm border border-secondary-subtle border-top border-4 border-success">
+    <!-- 1. Header: Title, index, and event type badge -->
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+      <div class="flex-grow-1">
+        <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold px-2">
+          <small class="text-muted d-block">Event #{{ i + 1 }}</small>
+        </span>
+        <h5 class="fw-bold text-dark mb-1" style="font-size: 1.1rem; line-height: 1.3;">
+          {{ event.eventName }}
+        </h5>
+      </div>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 align-self-start">
+        {{ event.eventType }}
+      </span>
+    </div>
+    <!-- 2. Description Section -->
+    <div class="mb-3">
+      <small class="text-muted d-block text-uppercase fw-bold mb-1"
+        style="font-size: 0.65rem; letter-spacing: 0.8px;">Description</small>
+      <p class="text-secondary small mb-0 line-clamp-3">
+        {{ event.eventDescription || 'No description provided.' }}
+      </p>
+    </div>
+    <!-- 3. Meta Section: Capacity & Location -->
+    <div class="bg-light rounded-3 p-3 border border-light-subtle mb-2">
+      <div class="row g-2 align-items-stretch">
+
+        <!-- Capacity -->
+        <div class="col-5 border-end border-secondary-subtle text-center d-flex flex-column justify-content-center">
+          <small class="text-muted d-block text-uppercase fw-bold mb-1"
+            style="font-size: 0.65rem; letter-spacing: 0.5px;">Available Slot</small>
+          <span class="fw-bold text-dark fs-6">{{ event.slotCount }} Slots</span>
+        </div>
+        <!-- Location -->
+        <div class="col-7 ps-3 d-flex flex-column justify-content-center">
+          <div class="d-flex align-items-center gap-1 mb-0">
+            <small class="text-muted text-uppercase fw-bold"
+              style="font-size: 0.65rem; letter-spacing: 0.5px;">Location</small>
+            @if (event.includePosition) {
+            <a [href]="'https://www.google.com/maps/place/' + event.latitude + ',' + event.longitude" target="_blank"
+              class="text-decoration-none text-primary small lh-1">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </a>
+            }
+          </div>
+          <!-- Showing full address -->
+          <div class="small fw-semibold text-secondary lh-sm text-break"
+            style="display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;"
+            data-bs-toggle="tooltip"
+            title="{{event.eventLocationAddress}}">
+            {{ event.eventLocationAddress }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 4. Actions Block -->
+    <div class="pt-2 border-top border-light-subtle">
+
+      <!-- Manage Slots -->
+      <div class="mb-2">
+        <a class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-1"
+          style="font-size: 0.95rem; letter-spacing: 0.3px;" [routerLink]="['/eventDashboard', event.id, 'slots']">
+          <i class="fa-solid fa-sliders"></i> Manage Slots
+        </a>
+      </div>
+      <!-- View Calendar -->
+      <div class="mb-2">
+        <button
+          class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+          (click)="openCalendar(event.id, event.eventType)">
+          <i class="fa-solid fa-calendar-days"></i> View Calendar
+        </button>
+      </div>
+      <!-- Invitation -->
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <button
+            class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openInvitationWizard(event.id, event.eventType)">
+            <i class="fa-solid fa-plus"></i> Create Invite
+          </button>
+        </div>
+        <div class="col-6">
+          <button
+            class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openInvitationDashboard(event.id, event.eventName)">
+            <i class="fa-solid fa-envelope-open-text"></i> Invitations
+          </button>
+        </div>
+      </div>
+      <!-- Settings / Modification Group -->
+      <div class="row g-2">
+        <div class="col-6">
+          <button
+            class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+            (click)="openUpdateEventWizard(event.id)">
+            <i class="fa-solid fa-pen"></i> Edit Event
+          </button>
+        </div>
+        <div class="col-6">
+          <button
+            class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+            (click)="confirmDeleteEvent(event.id, event.slotCount)">
+            <i class="fa-solid fa-trash"></i> Delete Event
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- 5. Footer: Timestamp -->
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-light-subtle text-muted"
+      style="font-size: 0.75rem;">
+      <span><i class="fa-regular fa-clock me-1"></i> Updated: {{ event.updatedAt | date:'dd MMM yyyy' }}</span>
+      <span>{{ event.updatedAt | date:'hh:mm a' }}</span>
+    </div>
+  </div>
+  } @empty {
+  <div class="text-center text-muted py-4 bg-light rounded-3 border border-dashed">
+    <i class="fa-regular fa-folder-open d-block fs-3 mb-2 text-secondary"></i>
+    No events found.
+  </div>
   }
 </div>
 

@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LoginRequestDto } from '../dtos/login-request-dto';
 import { AuthService } from '../auth-service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-login-component',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login-component.html',
   styleUrl: './login-component.css',
 })
@@ -37,18 +37,18 @@ export class LoginComponent implements OnInit {
     this.logger.debug('[LoginComponent] Login form initialized');
   }
 
-  goRegister() {
-    this.logger.info('[LoginComponent] Navigating to /register');
+  // Handle in HTML <a> directly
+  // goRegister() {
+  //   this.logger.info('[LoginComponent] Navigating to /register');
 
-    if (this.successLoginReturnUrl && this.successLoginReturnUrl !== '/roleSelect') {
-      this.router.navigate(['/register'], {
-        queryParams: { returnUrl: this.successLoginReturnUrl }
-      });
-    } else {
-      this.router.navigate(['/register']);
-    }
-
-  }
+  //   if (this.successLoginReturnUrl && this.successLoginReturnUrl !== '/roleSelect') {
+  //     this.router.navigate(['/register'], {
+  //       queryParams: { returnUrl: this.successLoginReturnUrl }
+  //     });
+  //   } else {
+  //     this.router.navigate(['/register']);
+  //   }
+  // }
 
   onSubmit() {
     this.logger.debug('[LoginComponent] Login form submitted');

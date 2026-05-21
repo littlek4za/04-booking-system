@@ -26,12 +26,9 @@
 }
 
 body {
-  padding-top: 56px; /* Prevent content from being hidden under navbar */
+  padding-top: 58px; /* Prevent content from being hidden under navbar */
 }
 
 .full-vh {
-  min-height: calc(100vh - 56px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  min-height: calc(100dvh - 58px);
 }

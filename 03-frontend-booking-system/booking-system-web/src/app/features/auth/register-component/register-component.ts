@@ -3,12 +3,12 @@ import { AuthService } from '../auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { passwordMatchedValidator } from '../../../shared/validators/custom-validator';
 import { SignupRequestDto } from '../dtos/signup-request-dto';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/services/logger-service';
 
 @Component({
   selector: 'app-register-component',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register-component.html',
   styleUrl: './register-component.css',
 })
@@ -80,7 +80,6 @@ export class RegisterComponent {
       next: () => {
         alert("Registration Success! Please proceed to log in");
 
-        this.logger.info('[RegisterComponent] Navigating to /login');
         if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login') {
           this.router.navigate(['/login'], {
             queryParams: { returnUrl: this.successRegisterReturnUrl }
@@ -95,10 +94,6 @@ export class RegisterComponent {
     });
   }
 
-  goLogin() {
-    this.logger.info('[RegisterComponent] Navigating to /login');
-    this.router.navigate(['/login']);
-  }
 }
 
 

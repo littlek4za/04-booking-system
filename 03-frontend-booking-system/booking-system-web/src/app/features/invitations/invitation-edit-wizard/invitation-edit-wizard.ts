@@ -25,7 +25,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   @Input() mode!: 'CREATE';
   @Input() eventId!: number;
-  @Input() eventType!: EventTypeModel;
+  @Input() eventType: EventTypeModel | null = null;
   @Input() slotId: number | null = null;
   @Output() close = new EventEmitter<void>;
 
