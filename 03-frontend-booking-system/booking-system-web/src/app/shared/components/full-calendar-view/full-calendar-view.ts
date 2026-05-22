@@ -20,6 +20,7 @@ import { BookingService } from '@features/booking/booking-service';
 import { OrganizerBookingResponseDto } from '@features/booking/dtos/booking-response-dto';
 import { SlotBookedTimeResponseDto } from '@features/booking/dtos/slot-booked-time-response-dto';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-full-calendar-view',
@@ -165,9 +166,12 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     }
   };
 
-  constructor(timeZoneService: TimeZoneService) {
-    this.timeZoneOption = timeZoneService.getAllTimeZones();
-    this.selectedTimeZone.set(timeZoneService.getUserTimeZone());
+  constructor(
+    private timeZoneService: TimeZoneService,
+    private notificationService:NotificationService
+  ) {
+    this.timeZoneOption = this.timeZoneService.getAllTimeZones();
+    this.selectedTimeZone.set(this.timeZoneService.getUserTimeZone());
     // initialized the selectedslot everytime there is changes
     effect(() => {
       const slots = this.normalizedSlots();
@@ -324,7 +328,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         ? moment.tz(info.event.end, timeZone).format('YYYY-MM-DD hh:mm a Z')
         : 'N/A';
 
-      alert(
+      this.notificationService.info(
         `Event Name: TO ADD LATER\n` +
         `Slot Name: ${info.event.title}\n` +
         `Id: ${info.event.id}\n` +
@@ -598,7 +602,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
     this.logger.debug('[FullCalendarView] Setup calendar event click option for EDIT mode');
     this.calendarApi.setOption('eventClick', (info) => {
       if (info.event.extendedProps['isSlotBooked']) {
-        alert('Booked by others');
+        this.notificationService.warning('Booked by others');
         return;
       }
       const start = info.event.start;

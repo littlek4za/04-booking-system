@@ -2,20 +2,21 @@ import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
 import { AuthService } from '../../features/auth/auth-service';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
 
-  constructor(private router: Router, private authService: AuthService, private logger: LoggerService) { }
+  constructor(private router: Router, private authService: AuthService, private logger: LoggerService, private notificationService:NotificationService) { }
 
   canActivate(route: ActivatedRouteSnapshot): boolean {
     this.logger.debug('[AuthGuard] Calling canActivate');
     const session = this.authService.getSession();
 
     if (!session) {
-      alert('Please login to continue');
+      this.notificationService.warning('Please login to continue');
       this.router.navigate(['/login']);
       this.logger.debug('[AuthGuard] canActivate result: Rejected, No User Session');
       return false;
@@ -35,7 +36,7 @@ export class AuthGuard implements CanActivate {
       const hasRole = userRoles.some(role => allowedRoles.includes(role));
       
       if (!hasRole) {
-        alert('You are not authorized for this page');
+        this.notificationService.error('You are not authorized for this page');
         this.router.navigate(['/welcome']);
         this.logger.debug('[AuthGuard] canActivate result: Rejected, User Role does not match');
         return false;

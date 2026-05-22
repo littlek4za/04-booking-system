@@ -12,6 +12,7 @@ import { InvitationEditWizard } from '@features/invitations/invitation-edit-wiza
 import { Subject, takeUntil } from 'rxjs';
 import { InvitationDashboard } from '@features/invitations/invitation-dashboard/invitation-dashboard';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   standalone: true,
@@ -52,7 +53,12 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   activeSort = signal<'LATEST' | 'EARLIEST'>('LATEST');
 
 
-  constructor(private route: ActivatedRoute, private eventService: EventService, private logger: LoggerService) { }
+  constructor(
+    private route: ActivatedRoute, 
+    private eventService: EventService, 
+    private logger: LoggerService,
+    private notificationService:NotificationService
+  ) { }
 
   ngOnInit(): void {
     this.refreshSlotListWithEventId();
@@ -101,7 +107,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
     this.slotService.slotDeleteValidation(this.eventId, slotId).subscribe({
       next: (res) => {
         if (res.canDelete == false) {
-          alert(
+          this.notificationService.warning(
             `This slot cannot be deleted because there are active booking(s):\n\n` +
             `• Upcoming booking(s): ${res.upcomingBookingCount}\n` +
             `• Ongoing booking(s): ${res.ongoingBookingCount}\n\n` +

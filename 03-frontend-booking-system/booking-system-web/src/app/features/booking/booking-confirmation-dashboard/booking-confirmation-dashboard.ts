@@ -10,6 +10,7 @@ import { BookingConfirmationWizard } from '../booking-confirmation-wizard/bookin
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-booking-confirmation-dashboard',
@@ -43,7 +44,8 @@ export class BookingConfirmationDashboard {
     private route: ActivatedRoute, 
     private router: Router, 
     private authService: AuthService,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private notificationService:NotificationService
   ) {}
 
   ngOnInit() {
@@ -53,7 +55,7 @@ export class BookingConfirmationDashboard {
 
   validateToken(token: string | null) {
     if (token == null) {
-      alert("No Token defined");
+      this.notificationService.error("No invitation token detected, please try again. If problem persist, please contact administrator");
       this.logger.warn(`[BookingConfirmationDashboard] No invitation token detected in URL`);
       this.router.navigate(['/invitation']);
       return;
@@ -64,7 +66,7 @@ export class BookingConfirmationDashboard {
         next: (res) => {
           if (res.valid == false) {
             this.logger.warn(`[BookingConfirmationDashboard] Invitation invalid, reason:`, res.reason);
-            alert(res.reason);
+            this.notificationService.warning(res.reason);
             this.router.navigate(['/invitation']);
           }
           else if (res.requiredLogin == false) {
@@ -73,7 +75,7 @@ export class BookingConfirmationDashboard {
           }
           else if (res.requiredLogin && !this.authService.hasUserValidToken()) {
             this.logger.debug(`[BookingConfirmationDashboard] Login required for invitation access`);
-            alert("redirecting to login page");
+            this.notificationService.info("redirecting to login page");
             const currentUrl = this.router.url;
             this.router.navigate(['/login'], {
               queryParams: { returnUrl: currentUrl }
@@ -85,7 +87,7 @@ export class BookingConfirmationDashboard {
           }
           else {
             this.logger.warn("[BookingConfirmationDashboard] Unexpected invitation validation response:",res);
-            alert("Unexpected invitation status. Please contact administrator.");
+            this.notificationService.error("Unexpected error occur. Please contact administrator.");
           }
         },
         error: () => {

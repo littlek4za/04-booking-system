@@ -19,6 +19,7 @@ import { TimeZoneOption } from '@shared/model/time-zone-option';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 
 
@@ -76,7 +77,13 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   showUpdateWarning: boolean = false;
   private initialIntervalType: string | null = null;
 
-  constructor(private formBuilder: FormBuilder, private slotService: SlotService, private timeZoneService: TimeZoneService, private logger: LoggerService) {
+  constructor(
+    private formBuilder: FormBuilder, 
+    private slotService: SlotService, 
+    private timeZoneService: TimeZoneService, 
+    private logger: LoggerService,
+    private notificationService:NotificationService
+  ) {
     this.userTimeZone = this.timeZoneService.getUserTimeZone();
     this.timezones = this.timeZoneService.getAllTimeZones();
     this.starttimeOptionForFixedEvent = this.generateTimeOption(5, false);
@@ -146,7 +153,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
         break;
       default:
         this.logger.error(`[SlotEditWizard] Unknown event type detected`);
-        alert('Unexpected Error Occured.');
+        this.notificationService.error('Unexpected Error Occured. Please try again. If problem persists, please contact administrator');
         this.disableSlotForm(); // or show message
         return;
     }
@@ -1045,7 +1052,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       this.logger.debug('[SlotEditWizard] Sending slotService.createSlotByEventId request');
       this.slotService.createSlotByEventId(slotRequestDto, this.eventId).subscribe({
         next: (res) => {
-          alert('Slot Created Succesfully.');
+          this.notificationService.success('Slot Created Succesfully.');
           this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           this.closeWizard();
         },
@@ -1061,7 +1068,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       this.logger.debug('[SlotEditWizard] Sending slotService.putSlotByIdAndEventId request',slotRequestDto);
       this.slotService.putSlotByIdAndEventId(this.eventId, this.slotId, slotRequestDto).subscribe({
         next: () => {
-          alert('Slot Updated Succesfully.');
+          this.notificationService.success('Slot Updated Succesfully.');
           this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           this.closeWizard();
         },
@@ -1070,7 +1077,7 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
       })
     } else {
       this.logger.warn('[SlotEditWizard] Unsupported mode type encountered');
-      alert('Internal Error Occur. Please try again.');
+      this.notificationService.error('Internal Error Occur. Please try again. If problem persists, please contact administrator');
       this.closeWizard();
     }
   }

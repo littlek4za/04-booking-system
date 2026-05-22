@@ -23,6 +23,7 @@
   "private": true,
   "packageManager": "npm@10.9.0",
   "dependencies": {
+    "@angular/animations": "^21.1.2",
     "@angular/cdk": "^21.1.0",
     "@angular/common": "^21.0.0",
     "@angular/compiler": "^21.0.0",
@@ -42,6 +43,7 @@
     "leaflet": "^1.9.4",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.43",
+    "ngx-toastr": "^20.0.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

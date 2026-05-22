@@ -4,6 +4,7 @@ import { LoginRequestDto } from '../dtos/login-request-dto';
 import { AuthService } from '../auth-service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService as NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-login-component',
@@ -16,7 +17,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   showPassword: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private logger: LoggerService) { }
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private logger: LoggerService, private notificationService: NotificationService) { }
 
   successLoginReturnUrl: string = '/roleSelect';
 
