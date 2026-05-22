@@ -160,6 +160,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
                 SELECT b
                 FROM Booking b
+                LEFT JOIN FETCH b.user
+                WHERE b.id = :bookingId
+                AND b.isDeleted = true
+            """) 
+    Optional<Booking> findByIdAndIsDeletedTrueWithUser(@Param("bookingId") Long bookingId);
+
+    @Query("""
+                SELECT b
+                FROM Booking b
                 JOIN FETCH b.user
                 WHERE b.user.id = :userId
                 AND b.isDeleted = false

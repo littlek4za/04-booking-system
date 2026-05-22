@@ -3,13 +3,13 @@ import { inject } from "@angular/core";
 import { AuthService } from "../../features/auth/auth-service";
 import { catchError, throwError } from "rxjs";
 import { ErrorMapperService } from "@core/services/error-mapper-service";
-import { GlobalErrorService } from "@core/services/global-error-service";
 import { LoggerService } from "@core/services/logger-service";
+import { NotificationService } from "@core/services/notification-service";
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const errorMapperService = inject(ErrorMapperService);
-    const globalErrorService = inject(GlobalErrorService);
+    const notificationService = inject(NotificationService);
     const logger = inject(LoggerService);
 
     return next(req).pipe(
@@ -24,7 +24,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
                 return throwError(() => err);
             }
 
-            globalErrorService.show(errorMapperService.toMessage(appError, err.status));
+            notificationService.error(errorMapperService.toMessage(appError, err.status));
             return throwError(() => err);
         })
     );

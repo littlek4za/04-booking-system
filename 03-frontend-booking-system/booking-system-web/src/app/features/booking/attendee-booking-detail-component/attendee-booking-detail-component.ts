@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../booking-service';
 import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-attendee-booking-detail-component',
@@ -20,7 +21,8 @@ export class AttendeeBookingDetailComponent implements OnInit, OnDestroy {
   constructor(private route: ActivatedRoute,
     private bookingService: BookingService,
     private router: Router,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private notificationService:NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -58,8 +60,8 @@ export class AttendeeBookingDetailComponent implements OnInit, OnDestroy {
         this.logger.debug('[AttendeeBookingDetailComponent] Sending bookingService.softDeleteBookingAsAttendee request');
         this.bookingService.softDeleteBookingAsAttendee(booking.bookingId)
           .subscribe({
-            next: (res) => {
-              alert("Cancel booking sucessfull");
+            next: () => {
+              this.notificationService.success("Cancel booking sucessful");
               this.router.navigate(['/attendeeAccess']);
             },
             error: () => {

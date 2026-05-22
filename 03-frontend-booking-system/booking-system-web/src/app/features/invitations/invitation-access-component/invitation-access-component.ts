@@ -6,6 +6,7 @@ import { AuthService } from '@features/auth/auth-service';
 import { InvitationValidationResponseDto } from '../dtos/invitation-validation-response-dto';
 import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-invitation-access-component',
@@ -26,7 +27,9 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
     private invitationService: InvitationService,
     private authService: AuthService,
     private router: Router,
-    private logger: LoggerService) { }
+    private logger: LoggerService,
+    private notificationService:NotificationService
+  ) { }
 
   ngOnInit() {
     this.initTokenValidationForm();
@@ -61,25 +64,25 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.invitationInfo = res;
           if (res.valid == false) {
-            alert(res.reason);
+            this.notificationService.warning(res.reason);
           }
           else if (res.requiredLogin == false) {
-            alert("redirecting to booking page");
+            this.notificationService.info("redirecting to booking page");
             this.router.navigate([`/bookingConfirmation/${token}`]);
           }
           else if (res.requiredLogin && !this.authService.hasUserValidToken()) {
-            alert("redirecting to login page");
+            this.notificationService.info("redirecting to login page");
             const currentUrl = this.router.url;
             this.router.navigate(['/login'], {
               queryParams: { returnUrl: currentUrl }
             });
           }
           else if (res.requiredLogin && this.authService.hasUserValidToken()) {
-            alert("redirecting to booking page");
+            this.notificationService.info("redirecting to booking page");
             this.router.navigate([`/bookingConfirmation/${token}`]);
           } else {
             this.logger.warn(`[InvitationAccessComponent] Unexpected invitation validation response`);
-            alert("Unexpected invitation status. Please try again. If the problem persists, please contact the administrator.");
+            this.notificationService.error("Unexpected invitation status. Please try again. If the problem persists, please contact the administrator.");
           }
         },
         error: () => {

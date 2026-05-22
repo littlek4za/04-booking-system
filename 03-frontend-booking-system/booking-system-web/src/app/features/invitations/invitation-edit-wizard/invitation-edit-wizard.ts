@@ -11,6 +11,7 @@ import { maxUsagePerIdentityExceedMaxUsage } from '@shared/validators/custom-val
 import { InvitationService } from '../invitation-service';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-invitation-edit-wizard',
@@ -42,7 +43,10 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private invitationService: InvitationService) {
+  constructor(
+    private invitationService: InvitationService,
+    private notificationService:NotificationService
+  ) {
     this.initInvitationForm();
   }
 
@@ -264,7 +268,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
     this.logger.debug('[InvitationEditWizard] Sending invitationService.createInvitation request');
     this.invitationService.createInvitation(invitationRequestDto, this.eventId).subscribe({
       next: () => {
-        alert("Create invitation success");
+        this.notificationService.success("Create invitation success");
         this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
         this.closeInvitationWizard();
       },

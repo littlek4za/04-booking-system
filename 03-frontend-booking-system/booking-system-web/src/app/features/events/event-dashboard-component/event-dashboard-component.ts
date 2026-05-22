@@ -11,6 +11,7 @@ import { InvitationDashboard } from "@features/invitations/invitation-dashboard/
 import { LoggerService } from '@core/services/logger-service';
 import { EventResponseDto } from '../dtos/event-response-dto';
 import { EventWithSlotCountResponseDto } from '../dtos/event-with-slot-count-response-dto';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   standalone: true,
@@ -75,7 +76,7 @@ export class EventDashboardComponent {
     return list;
   })
 
-  constructor() {}
+  constructor(private notificationService:NotificationService) {}
 
   confirmDeleteEvent(eventId: number, eventSlotCount: number) {
 
@@ -83,7 +84,7 @@ export class EventDashboardComponent {
       next: (res) => {
         if (res.canDelete == false) {
           this.logger.debug('[EventDashboardComponent] Event delete validation: not allowed delete');
-          alert(
+          this.notificationService.warning(
             `This event cannot be deleted because there are active booking(s):\n\n` +
             `• Upcoming booking(s): ${res.upcomingBookingCount}\n` +
             `• Ongoing booking(s): ${res.ongoingBookingCount}\n\n` +

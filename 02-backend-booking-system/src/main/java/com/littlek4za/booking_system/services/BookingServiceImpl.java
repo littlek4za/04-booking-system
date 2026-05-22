@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +35,7 @@ import com.littlek4za.booking_system.repos.InvitationUsageRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
+import com.littlek4za.booking_system.services.event.BookingMailEvent;
 import com.littlek4za.booking_system.utils.DtoMapper;
 import com.littlek4za.booking_system.validators.BookingValidator;
 import com.littlek4za.booking_system.validators.InvitationValidator;
@@ -53,15 +55,17 @@ public class BookingServiceImpl implements BookingService {
     private final DtoMapper dtoMapper;
     private final BookingValidator bookingValidator;
     private final InvitationValidator invitationValidator;
-    private final EmailService emailService;
     private final RiskService riskService;
+
+    // to trigger email after transactional finish
+    private final ApplicationEventPublisher eventPublisher;
 
     public BookingServiceImpl(SecurityUtil securityUtil, UserRepository userRepository, SlotRepository slotRepository,
             InvitationRepository invitationRepository, BookingRepository bookingRepository,
             EventRepository eventRepository,
             InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper,
             BookingValidator bookingValidator, InvitationValidator invitationValidator,
-            EmailService emailService, RiskService riskService) {
+            RiskService riskService, ApplicationEventPublisher eventPublisher) {
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.slotRepository = slotRepository;
@@ -72,8 +76,8 @@ public class BookingServiceImpl implements BookingService {
         this.dtoMapper = dtoMapper;
         this.bookingValidator = bookingValidator;
         this.invitationValidator = invitationValidator;
-        this.emailService = emailService;
         this.riskService = riskService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -130,7 +134,7 @@ public class BookingServiceImpl implements BookingService {
 
         OrganizerBookingResponseDto organizerBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
 
-        emailService.sendBookingConfirmationDetails(organizerBookingResponseDto);
+        eventPublisher.publishEvent(BookingMailEvent.forConfirmation(organizerBookingResponseDto));
 
         if (isGuestBookingCreate) {
             riskService.resetEmailIpForCreate(dto.email(), clientIp);
@@ -318,7 +322,7 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         if (shouldSendCancellationEmail) {
-            emailService.sendBookingCancelledDetails(booking);
+           eventPublisher.publishEvent(BookingMailEvent.forCancellation(bookingId));
         }
 
         return dtoMapper.toOrganizerBookingResponseDto(booking);

@@ -9,6 +9,7 @@ import { includePositionValidator } from '@shared/validators/custom-validator';
 import { EventWithSlotCountResponseDto } from '../dtos/event-with-slot-count-response-dto';
 import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-event-edit-wizard',
@@ -30,7 +31,11 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private eventService: EventService, private logger: LoggerService) {
+  constructor(
+    private eventService: EventService, 
+    private logger: LoggerService,
+    private notificationService:NotificationService
+  ) {
     this.initEventForm();
   }
 
@@ -219,7 +224,7 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert("Event Created Sucessfully.");
+          this.notificationService.success("Event Created Sucessfully.");
           this.eventService.triggerRefresh();
           this.closeWizard();
         },
@@ -233,7 +238,7 @@ export class EventEditWizard implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert("Event Update Sucessfully.");
+          this.notificationService.success("Event Update Sucessfully.");
           this.eventService.triggerRefresh();
           this.closeWizard();
         },

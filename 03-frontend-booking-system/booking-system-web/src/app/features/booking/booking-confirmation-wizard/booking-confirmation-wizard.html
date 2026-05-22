@@ -53,9 +53,13 @@
             <p><strong>Start:</strong> {{slot.slotStartTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
             <p><strong>End:</strong> {{slot.slotEndTime | date:'yyyy-MM-dd HH:mm:ss z'}}</p>
             } @else {
-            <p><strong>Start:</strong> {{guestForm.get('choosenStartTime')?.value | date:'yyyy-MM-dd HH:mm:ss
-                z':timeZone}}</p>
-            <p><strong>End:</strong> {{guestForm.get('choosenEndTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}
+            <p>
+                <strong>Start:</strong>
+                {{guestForm.get('choosenStartTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}
+            </p>
+            <p>
+                <strong>End:</strong>
+                {{guestForm.get('choosenEndTime')?.value | date:'yyyy-MM-dd HH:mm:ss z':timeZone}}
             </p>
 
             @if (guestForm.hasError('startOrEndTimeOutOfRange') &&
@@ -141,15 +145,13 @@
 
     }
     <!--Submit-->
-    <div [hidden]="!showCaptcha">
-
-            <div #captchaContainer></div>
-           
-    </div>
+    @if(showCaptcha()){
+    <div #captchaContainer></div>
+    }
 
 
     <div class="text-end">
-        <button class="btn btn-primary" (click)="bookSlot(slot)" [disabled]="isSubmitInProgress">
+        <button class="btn btn-primary" (click)="bookSlot(slot)" [disabled]="isSubmitInProgress()">
             <i class="fa fa-check me-1"></i>Book Slot
         </button>
     </div>

@@ -11,6 +11,7 @@ import { GuestAccessTokenDto } from './dtos/guest-access-token-dto';
 import { TokenType } from './model/token-type';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +24,7 @@ export class AuthService {
   authStatus$ = this.authStatus.asObservable();
 
 
-  constructor(private httpClient: HttpClient, private router: Router, private logger: LoggerService) {
+  constructor(private httpClient: HttpClient, private router: Router, private logger: LoggerService, private notificationService:NotificationService) {
     this.authStatus.next(this.hasUserValidToken());
   }
 
@@ -138,14 +139,14 @@ export class AuthService {
   logout(): void {
     this.logger.info('[AuthService] User logout triggered');
     this.clearSession();
-    alert("Logout Successfully.");
+    this.notificationService.success("Logout Successfully.");
     this.router.navigate(['/welcome']);
   }
 
   logoutByExpiry(): void {
     this.logger.warn('[AuthService] Session expired logout triggered');
     this.clearSession();
-    alert("Your session has expired. Please log in again.");
+    this.notificationService.warning("Your session has expired. Please log in again.");
     setTimeout(() => {
       this.router.navigate(['/login']);
     }, 0);

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, NgZone, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, NgZone, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../booking-service';
@@ -9,6 +9,7 @@ import { GuestBookingViewAccessRequestDto } from '../dtos/guest-booking-view-acc
 import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
 import { LoggerService } from '@core/services/logger-service';
 import { environment } from '../../../../environments/environment';
+import { NotificationService } from '@core/services/notification-service';
 
 declare var grecaptcha: any;
 
@@ -22,7 +23,12 @@ declare var grecaptcha: any;
 export class BookingAccessComponent implements OnInit, OnDestroy {
 
   private captchaSiteKey = environment.captchaSiteKey;
-  @ViewChild('captchaContainer') private captchaContainer?: ElementRef<HTMLElement>;
+
+  @ViewChild('captchaContainer') set captchaContainer(element: ElementRef<HTMLElement> | undefined) {
+    if (element && this.showCaptcha() && this.captchaWidgetId === null) {
+      this.renderCaptcha(element.nativeElement);
+    }
+  };
 
   private authService = inject(AuthService);
 
@@ -36,11 +42,11 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
   bookingInfo: AttendeeBookingResponseDto | null = null;
 
   // Recaptcha Field
-  showCaptcha: boolean = false;
+  showCaptcha = signal<boolean>(false);
   private accessInProgress: boolean = false;
   private captchaWidgetId: number | null = null;
   captchaToken: string | null = null;
-  isSubmitInProgress: boolean = false;
+  isSubmitInProgress = signal<boolean>(false);
 
   // for Recaptcha auto submit
   private pendingEmail: string | null = null;
@@ -55,7 +61,9 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
     private router: Router,
     private logger: LoggerService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef) { }
+    // private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService
+  ) { }
 
   ngOnInit(): void {
     this.initbookingTokenValidationForm();
@@ -105,36 +113,41 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
 
           if (res.captchaRequired) {
             this.logger.debug('[BookingAccessComponent] CAPTCHA required');
-            this.showCaptcha = true;
-            this.cdr.detectChanges();
-            setTimeout(() => this.renderCaptcha());
+            setTimeout(() => {
+              this.showCaptcha.set(true);
+            });
+            // this.cdr.detectChanges();
+            // setTimeout(() => this.renderCaptcha());
             return;
           }
           if (res.valid !== true) {
             this.logger.warn('[BookingAccessComponent] Invalid booking access attempt');
-            alert("Booking not found(init)");
+            this.notificationService.error("Booking not found(init)");
             this.clearCaptchaState();
-            this.isSubmitInProgress = false;
+            this.isSubmitInProgress.set(false);
+            // this.cdr.detectChanges();
             return;
           }
           this.issueToken(email, bookingToken, null);
         },
         error: () => {
-          this.isSubmitInProgress = false;
+          this.isSubmitInProgress.set(false);
+          // this.cdr.detectChanges();
         }
       });
   }
 
   clearCaptchaState() {
     this.logger.debug('[BookingAccessComponent] Clear and hide captcha');
-    this.showCaptcha = false;
+    this.showCaptcha.set(false);
     this.pendingBookingToken = null;
     this.pendingEmail = null;
     this.captchaToken = null;
     this.accessInProgress = false;
 
     this.resetCaptcha();
-    this.cdr.detectChanges();
+    // this.cdr.detectChanges();
+    this.captchaWidgetId = null;
   }
 
   private resetCaptcha() {
@@ -149,46 +162,52 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
     }
   }
 
-  private renderCaptcha() {
+  private renderCaptcha(containerElement: HTMLElement) {
     this.logger.debug('[BookingAccessComponent] Rendering CAPTCHA');
 
-    if (this.captchaWidgetId !== null) {
-      this.resetCaptcha();
-      return;
-    }
+    // if (this.captchaWidgetId !== null) {
+    //   this.resetCaptcha();
+    //   return;
+    // }
 
-    if (!this.captchaContainer?.nativeElement) {
-      this.logger.warn('[BookingAccessComponent] CAPTCHA container is not available');
-      this.isSubmitInProgress = false;
-      return;
-    }
+    // if (!this.captchaContainer?.nativeElement) {
+    //   this.logger.warn('[BookingAccessComponent] CAPTCHA container is not available');
+    //   this.isSubmitInProgress = false;
+    //   // this.cdr.detectChanges();
+    //   return;
+    // }
 
     if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
       this.logger.warn('[BookingAccessComponent] CAPTCHA script is not ready');
-      alert('Captcha is still loading. Please try again in a moment.');
-      this.isSubmitInProgress = false;
+      this.notificationService.warning('Captcha is still loading. Please try again in a moment.');
+      this.isSubmitInProgress.set(false);
+      // this.cdr.detectChanges();
       return;
     }
 
-    this.captchaWidgetId = grecaptcha.render(this.captchaContainer.nativeElement, {
+    this.captchaWidgetId = grecaptcha.render(containerElement, {
       'sitekey': this.captchaSiteKey,
       'callback': (response: string) => {
-        this.logger.debug('[BookingAccessComponent] CAPTCHA solved');
+        this.ngZone.run(() => {
+          this.logger.debug('[BookingAccessComponent] CAPTCHA solved');
 
-        if (!this.showCaptcha) return;
-        if (this.accessInProgress) return;
+          if (!this.showCaptcha()) return;
+          if (this.accessInProgress) return;
 
-        this.captchaToken = response;
+          this.captchaToken = response;
 
-        if (!this.captchaToken) return;
-        if (!this.pendingEmail || !this.pendingBookingToken) return;
+          if (!this.captchaToken) return;
+          if (!this.pendingEmail || !this.pendingBookingToken) return;
 
-        this.logger.debug('[BookingAccessComponent] Proceeding after CAPTCHA, issuing guest token');
-        this.issueToken(this.pendingEmail, this.pendingBookingToken, this.captchaToken);
+          this.logger.debug('[BookingAccessComponent] Proceeding after CAPTCHA, issuing guest token');
+          this.issueToken(this.pendingEmail, this.pendingBookingToken, this.captchaToken);
+        });
       },
       'expiry-callback': () => {
         this.ngZone.run(() => {
           this.captchaToken = null;
+          this.isSubmitInProgress.set(false);
+          // this.cdr.detectChanges();
         });
       }
     });
@@ -212,19 +231,21 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.authService.storeGuestToken(res);
           this.clearCaptchaState();
-          this.isSubmitInProgress = false;
+          this.isSubmitInProgress.set(false);
+          // this.cdr.detectChanges();
           this.router.navigate([`/bookingView/${bookingToken}`]);
         },
         error: () => {
           this.clearCaptchaState();
-          this.isSubmitInProgress = false;
+          this.isSubmitInProgress.set(false);
+          // this.cdr.detectChanges();
         }
       })
   }
 
 
   onSubmit() {
-    if(this.isSubmitInProgress) return;
+    if (this.isSubmitInProgress() == true) return;
 
     this.logger.debug('[BookingAccessComponent] Booking token validation form submitted');
 
@@ -235,7 +256,8 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isSubmitInProgress = true;
+    this.isSubmitInProgress.set(true);
+    // this.cdr.detectChanges();
 
     const bookingToken = this.bookingTokenValidationForm.value.bookingToken;
     const email = this.bookingTokenValidationForm.value.email;

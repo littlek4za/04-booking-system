@@ -6,6 +6,7 @@ import { SlotIncludeMode } from '../dtos/slot-include-mode';
 import { InvitationResponseDto } from '../dtos/invitation-response-dto';
 import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-invitation-dashboard',
@@ -46,7 +47,11 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
   // for destroy usage
   private destroy$ = new Subject<void>();
 
-  constructor(private clipboard: Clipboard, private logger: LoggerService) { }
+  constructor(
+    private clipboard: Clipboard, 
+    private logger: LoggerService,
+    private notificationService:NotificationService
+  ) { }
 
   ngOnChanges(changes: SimpleChanges): void {
 
@@ -80,7 +85,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
 
   shareInvitation(accessToken: string) {
     this.clipboard.copy(`${this.invitationUrl}/${accessToken}`);
-    alert('Invitation link copied to clipboard!');
+    this.notificationService.success('Invitation link copied to clipboard!');
   }
 
   deleteInvitation(invitationId: number) {
@@ -89,7 +94,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
     .pipe(takeUntil(this.destroy$))
     .subscribe({
       next: () => {
-        alert('Invitation delete succeed');
+        this.notificationService.success('Invitation delete succeed');
         this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
       },
       error: () => {

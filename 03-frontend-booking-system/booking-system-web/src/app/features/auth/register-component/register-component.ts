@@ -5,6 +5,7 @@ import { passwordMatchedValidator } from '../../../shared/validators/custom-vali
 import { SignupRequestDto } from '../dtos/signup-request-dto';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/services/logger-service';
+import { NotificationService } from '@core/services/notification-service';
 
 @Component({
   selector: 'app-register-component',
@@ -20,7 +21,7 @@ export class RegisterComponent {
 
   successRegisterReturnUrl: string = '/login';
 
-  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private logger: LoggerService) { }
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute, private logger: LoggerService, private notificationService:NotificationService) { }
 
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -78,7 +79,7 @@ export class RegisterComponent {
     this.logger.debug('[RegisterComponent] Sending AuthService.register request');
     this.authService.register(signupRequestDto).subscribe({
       next: () => {
-        alert("Registration Success! Please proceed to log in");
+        this.notificationService.success("Registration Success! Please proceed to log in");
 
         if (this.successRegisterReturnUrl && this.successRegisterReturnUrl !== '/login') {
           this.router.navigate(['/login'], {
