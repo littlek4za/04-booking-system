@@ -1,108 +1,275 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">Invitation Manager</h5>
+    <div class="d-flex flex-column gap-2">
+        <h5 class="mb-0 fw-bold text-dark gap-2">
+            <i class="fa-solid fa-envelope-open-text text-success"></i> Invitation Manager
+        </h5>
+
+        <!-- Event Name -->
+        <div class="fw-semibold text-dark text-truncate d-flex align-items-center gap-1">
+            <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1.5 fw-semibold">
+                Event: {{ event.eventName }}
+            </span>
+            @if(event.eventType === EventTypeModel.FIXED) {
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+                Fixed
+            </span>
+            }
+            @if(event.eventType === EventTypeModel.FLEXIBLE) {
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+                Flexible
+            </span>
+            }
+            @if(event.eventType === EventTypeModel.BUSINESS) {
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
+                Business
+            </span>
+            }
+        </div>
+    </div>
+
     <button class="btn btn-outline-secondary" (click)="closeDashboard()">
         Close
     </button>
 </div>
 
-<h6 class="mb-2 text-muted">
-    Event Name: {{eventName}}
-    <br><br>
-    Invitation List ({{ invitationList().length}})  
-</h6>
-<table class="table table-hover align-middle">
-    <thead>
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">Invitation Code</th>
-            <th scope="col">Slots for booking</th>
-            <th scope="col">Validity</th>
-            <th scope="col">Invitation Usage</th>
-            <th scope="col">Invitation Usage limit</th>
-            <th scope="col">Invitation Usage limit per identity</th>
-            <th scope="col">Event booking limit per identity</th>
-            <th scope="col">Slot booking limit per identity</th>
-            <th scope="col">Access requirement</th>
-            <th scope="col">Slot Selection Mode</th>
-            <th scope="col">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (invitation of invitationList(); track invitation.id; let i = $index) {
-        <tr>
-            <th scope="row">{{i+1}}</th>
-            <!-- Invitation Code -->
-            <td>{{invitation.accessToken}}</td>
-            <!-- Slots for booking -->
-            <td>{{getSlotNames(invitation)}}</td>
-            <!-- Validity -->
-            @if (invitation.expiresAt >= "9999-12-31T23:59:59Z") {
-            <td>No Expiry</td>
-            } @else {
-            <td>{{invitation.expiresAt}}</td>
-            }
-            <!-- Invitation Usage -->
-            <td>{{invitation.usedCount}}</td>
-            <!-- Invitation Usage limit -->
-            @if (invitation.maxUsage == null) {
-            <td>∞</td>
-            } @else {
-            <td>{{invitation.maxUsage}}</td>
-            }
-            <!-- Invitation Usage limit per identity -->
-            @if (invitation.maxUsagePerIdentity == null) {
-            <td>∞</td>
-            } @else {
-            <td>{{invitation.maxUsagePerIdentity}}</td>
-            }
-            <!-- Event booking limit per identity -->
-            @if (invitation.event.maxBookingsPerIdentity == null) {
-            <td>No Limit</td>
-            } @else {
-            <td>{{invitation.event.maxBookingsPerIdentity}}</td>
-            }
-            <!-- Slot booking limit per identity -->
-            <td>
-                @if(invitation.slotList.length === 1){
-                @for (slot of invitation.slotList; track $index) {
-                    @if(slot.maxBookingsPerIdentity != null){
-                        <div>{{slot.maxBookingsPerIdentity}}</div>
+<div class="table-responsive d-none d-xl-block">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Invitation Code</th>
+                <th scope="col">Slots for booking</th>
+                <th scope="col">Expiry</th>
+                <th scope="col">Invitation Usage Count</th>
+                <th scope="col">Invitation Usage Limit</th>
+                <th scope="col">Invitation Usage Limit/User</th>
+                <th scope="col">Event Booking Limit/User</th>
+                <th scope="col">Slot Booking Limits/User</th>
+                <th scope="col">Access</th>
+                <th scope="col">Selection Mode</th>
+                <th scope="col" class="text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (invitation of invitationList(); track invitation.id; let i = $index) {
+            <tr>
+                <th scope="row">{{i+1}}</th>
+                <td><code class="fw-bold">{{invitation.accessToken}}</code></td>
+                <td style="max-width: 150px;">
+                    <div class="ps-2 text-muted">
+                        @if(invitation.slotList.length > 1){
+                        @for (slotList of invitation.slotList; track $index) {
+                        <div class="text-truncate d-block" style="max-width: 150px;" [title]="slotList.slotName">
+                            <span
+                                class="badge rounded-pill bg-dark-subtle text-dark border border-secondary-subtle small">
+                                {{$index + 1}}
+                            </span>
+                            {{slotList.slotName}}
+                        </div>
+                        }
+                        } @else {
+                        @for (slotList of invitation.slotList; track $index) {
+                        <div class="text-truncate d-block" style="max-width: 150px;" [title]="slotList.slotName">
+                            {{slotList.slotName}}
+                        </div>
+                        }
+                        }
+                    </div>
+                </td>
+                <td>
+                    @if (invitation.expiresAt >= "9999-12-31T23:59:59Z") {
+                    <span class="badge bg-secondary">No Expiry</span>
                     } @else {
-                        <div>∞</div>
+                    <span class="badge bg-secondary">After {{invitation.expiresAt | date:'dd-MM-yyyy'}}</span>
                     }
-                }
-                }@else {
-                @for (slot of invitation.slotList; track $index) {
-                @if (slot.maxBookingsPerIdentity !== null) {
-                <div>{{slot.slotName}} -> {{slot.maxBookingsPerIdentity}}</div>
-                }@else {
-                <div>{{slot.slotName}} -> ∞</div>
-                }
-                }
-                }
-            </td>
-            @if (invitation.requiredLogin == true) {
-            <td>Guest required register to book</td>
-            } @else {
-            <td>Anonymous Guest allowed to book</td>
+                </td>
+
+                <td>{{invitation.usedCount}}</td>
+
+                <td>{{invitation.maxUsage ?? '∞'}}</td>
+
+                <td>{{invitation.maxUsagePerIdentity ?? '∞'}}</td>
+
+                <td>{{invitation.event.maxBookingsPerIdentity ?? 'No Limit'}}</td>
+
+                <td style="max-width: 150px;">
+                    @if (invitation.slotList.length === 1) {
+                    <span class="fw-semibold">
+                        {{ invitation.slotList.at(0)?.maxBookingsPerIdentity ?? '∞' }}
+                    </span>
+                    } @else {
+                    @for (slot of invitation.slotList; track $index) {
+                    <div class="d-flex align-items-center gap-1">
+
+                        <small class="text-muted text-truncate d-block" style="max-width: 110px;"
+                            [title]="slot.slotName">
+                            {{ slot.slotName }}
+                        </small>
+
+                        <span class="text-muted">→</span>
+
+                        <span class="fw-semibold">
+                            {{ slot.maxBookingsPerIdentity ?? '∞' }}
+                        </span>
+
+                    </div>
+                    }
+                    }
+
+                </td>
+
+                <td>
+                    <span class="badge" [ngClass]="invitation.requiredLogin ? 'bg-primary' : 'bg-success'">
+                        {{invitation.requiredLogin ? 'Login required' : 'Guest allowed'}}
+                    </span>
+                </td>
+
+                <td>
+                    {{invitation.slotIncludeMode == SlotIncludeMode.ALL_AND_FUTURE ? 'All slots' : 'Selected slots'}}
+                </td>
+
+                <td>
+                    <div class="d-flex gap-1 justify-content-end">
+                        <button type="button" class="btn btn-sm btn-outline-success"
+                            (click)="shareViaWhatsapp(invitation.accessToken)" title="Share via WhatsApp">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                            (click)="copyLink(invitation.accessToken)" title="Copy Link">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-dark"
+                            (click)="copyCode(invitation.accessToken)" title="Copy Code">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                            (click)="deleteInvitation(invitation.id)" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
             }
+        </tbody>
+    </table>
+</div>
 
-            @if (invitation.slotIncludeMode == SlotIncludeMode.ALL_AND_FUTURE) {
-            <td>All slot of the event</td>
-            } @else {
-            <td>Selected slot</td>
-            }
 
-            <td>
-                <button type="button" class="btn btn-info" (click)="shareInvitation(invitation.accessToken)">
-                    Share
-                </button>
-                <button type="button" class="btn btn-danger" (click)="deleteInvitation(invitation.id)">
-                    Delete
-                </button>
-            </td>
+<div class="d-xl-none">
+    @for (invitation of invitationList(); track invitation.id; let i = $index) {
+    <div class="card mb-3 shadow-sm border-start border-4 border-secondary-subtle">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+            <span class="fw-bold text-secondary">#{{i+1}} - Code: <code>{{invitation.accessToken}}</code></span>
+            <span class="badge" [ngClass]="invitation.requiredLogin ? 'bg-primary' : 'bg-success'">
+                {{invitation.requiredLogin ? 'Login Required' : 'Guest'}}
+            </span>
+        </div>
 
-        </tr>
-        }
-    </tbody>
-</table>
+        <div class="card-body p-3 fs-7">
+            <div class="row g-2">
+                <div class="col-12">
+                    <strong>Slots:</strong>
+                    <div class="ps-2 text-muted">
+                        @if(invitation.slotList.length > 1){
+                        @for (slotList of invitation.slotList; track $index) {
+                        <span class="text-muted d-block" [title]="slotList.slotName">
+                            <span
+                                class="badge rounded-pill bg-dark-subtle text-dark border border-secondary-subtle small">
+                                {{$index + 1}}
+                            </span>
+                            {{slotList.slotName}}
+                        </span>
+                        }
+                        } @else {
+                        @for (slotList of invitation.slotList; track $index) {
+                        <span class="text-muted d-block" [title]="slotList.slotName">
+                            {{slotList.slotName}}
+                        </span>
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="col-6">
+                    <strong>Expiry:</strong>
+                    <span class="text-muted">
+                        {{invitation.expiresAt >= "9999-12-31T23:59:59Z" ? 'No Expiry' : 'After ' +
+                        (invitation.expiresAt |
+                        date:'dd-MM-yyyy')}}
+                    </span>
+                </div>
+                <div class="col-6">
+                    <strong>Selection:</strong>
+                    <span class="text-muted">
+                        {{invitation.slotIncludeMode == SlotIncludeMode.ALL_AND_FUTURE ? 'All and Future' :
+                        'Selected'}}</span>
+                </div>
+
+                <hr class="my-1 opacity-25">
+
+                <div class="col-6"><strong>Usage Count:</strong> {{invitation.usedCount}}</div>
+                <div class="col-6"><strong>Usage Limit:</strong> {{invitation.maxUsage ?? '∞'}}</div>
+                <div class="col-6"><strong>Usage Limit / User:</strong> {{invitation.maxUsagePerIdentity ?? '∞'}}</div>
+                <div class="col-6">
+                    <strong>Event Limit / User:</strong>
+                    {{invitation.event.maxBookingsPerIdentity ?? '∞'}}
+                </div>
+                <div class="col-12">
+                    <strong>Slot Limit / User:</strong>
+
+                    @if(invitation.slotList.length > 1){
+                    <div class="ps-2 text-muted">
+                        @for (slot of invitation.slotList; track $index) {
+                        <div>
+                            <span
+                                class="badge rounded-pill bg-dark-subtle text-dark border border-secondary-subtle small">
+                                {{$index + 1}}
+                            </span>
+                            {{slot.slotName}}:
+                            <span class="fw-bold text-dark">
+                                {{slot.maxBookingsPerIdentity ?? '∞'}}
+                            </span>
+                        </div>
+                        }
+                    </div>
+                    } @else {
+                    @for (slot of invitation.slotList; track $index) {
+
+                    {{slot.maxBookingsPerIdentity ?? '∞'}}
+
+                    }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer bg-white d-flex gap-2 justify-content-between py-2">
+            <button type="button"
+                class="btn btn-sm btn-success d-flex align-items-center justify-content-center gap-2 flex-grow-1 py-2 text-center"
+                (click)="shareViaWhatsapp(invitation.accessToken)">
+                <i class="fa-brands fa-whatsapp fs-6"></i>
+                <span class="small fw-semibold">Share</span>
+            </button>
+
+            <button type="button"
+                class="btn btn-sm btn-primary d-flex align-items-center justify-content-center gap-2 flex-grow-1 py-2 text-center"
+                (click)="copyLink(invitation.accessToken)">
+                <i class="fa-solid fa-link fs-6"></i>
+                <span class="small fw-semibold text-nowrap">Link</span>
+            </button>
+
+            <button type="button"
+                class="btn btn-sm btn-dark d-flex align-items-center justify-content-center gap-2 flex-grow-1 py-2 text-center"
+                (click)="copyCode(invitation.accessToken)">
+                <i class="fa-solid fa-copy fs-6"></i>
+                <span class="small fw-semibold text-nowrap">Code</span>
+            </button>
+
+            <button type="button"
+                class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2"
+                (click)="deleteInvitation(invitation.id)" title="Delete">
+                <i class="fa-solid fa-trash fs-6"></i>
+            </button>
+        </div>
+    </div>
+    }
+</div>

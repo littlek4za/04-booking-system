@@ -1,3 +1,4 @@
+@if(step() === 'FORM'){
 @if (showCalendar){
 <div class="calendar-step-wrapper"> <!-- disables background -->
     <div class="calendar-content shadow rounded bg-white p-3">
@@ -156,3 +157,11 @@
         </button>
     </div>
 </div>
+}
+
+@if (step() === 'SUCCESS' ) {
+@if (attendeeBookingResponseDto) {
+<app-attendee-booking-success-detail-wizard
+    [attendeeBookingResponseDto]="attendeeBookingResponseDto" (close)="closeWizard()"></app-attendee-booking-success-detail-wizard>
+}
+}

@@ -4,8 +4,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   
-  width: 95%;
-  max-width: 1200px;
+  width: 95vw;
+  max-width: none;
 
   max-height: 90vh;         
   overflow-y: auto;          

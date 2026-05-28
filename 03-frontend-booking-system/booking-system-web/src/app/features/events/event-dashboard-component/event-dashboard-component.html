@@ -1,125 +1,273 @@
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 p-2 bg-light rounded-3 shadow-sm border">
+<div
+  class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 p-2 bg-light rounded-3 shadow-sm border">
 
   <!-- Left Side: Title and Quick Status Context -->
-  <div>
+  <div class="d-flex flex-column align-items-start gap-1">
     <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-      <i class="fa-solid fa-calendar-check text-success"></i> Events Manager
+      <i class="fa-solid fa-calendar-check text-success"></i>
+      Events Manager
     </h4>
-
   </div>
 
   <!-- Right Side: Action Control Toolbar -->
-  <div class="d-flex align-items-center gap-2 w-100 w-md-auto ms-md-auto justify-content-end">
+  <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto ms-md-auto justify-content-end">
 
-    <!-- Filter Dropdown Component -->
-    <div class="dropdown">
-      <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2"
-        [class.btn-primary-subtle]="activeFilter() !== null" [class.btn-outline-secondary]="activeFilter() === null"
-        data-bs-toggle="dropdown" [title]="activeFilter() === null ? 'Filter: All' : 'Filter: ' + activeFilter()">
-
-        <i class="fa-solid fa-filter"></i>
-
-        <!-- On mobile, this text disappears -->
-        <span class="d-none d-md-inline">
-          Filter: {{ activeFilter() === null ? 'All' : activeFilter() }}
+    <!-- wrap group -->
+    <div class="d-flex align-items-center gap-2">
+      <!-- Search -->
+      <div class="input-group input-group-sm flex-grow-1">
+        <span class="input-group-text">
+          <i class="fa-solid fa-magnifying-glass"></i>
         </span>
 
+        <input type="search" class="form-control" placeholder="Search events..." [value]="searchText()"
+          (input)="searchEvents($any($event.target).value)">
+      </div>
+
+
+      <!-- Event Type Filter Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2"
+          [class.btn-primary-subtle]="activeEventTypeFilter() !== null"
+          [class.btn-outline-secondary]="activeEventTypeFilter() === null" data-bs-toggle="dropdown"
+          [title]="activeEventTypeFilter() === null ? 'Type: All' : 'Type: ' + activeEventTypeFilter()">
+
+          <i class="fa-solid fa-filter"></i>
+
+          <span class="d-none d-md-inline">
+            Type: {{ activeEventTypeFilter() === null ? 'All' : activeEventTypeFilter() }}
+          </span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsByEventType(null)">
+              All Types
+              @if(activeEventTypeFilter() === null){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsByEventType(EventTypeModel.FIXED)">
+              Fixed Type
+              @if(activeEventTypeFilter() === EventTypeModel.FIXED){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsByEventType(EventTypeModel.FLEXIBLE)">
+              Flexible Type
+              @if(activeEventTypeFilter() === EventTypeModel.FLEXIBLE){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsByEventType(EventTypeModel.BUSINESS)">
+              Business Type
+              @if(activeEventTypeFilter() === EventTypeModel.BUSINESS){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slot Filter Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2"
+          [class.btn-primary-subtle]="activeSlotFilter() !== 'ALL'"
+          [class.btn-outline-secondary]="activeSlotFilter() === 'ALL'" data-bs-toggle="dropdown"
+          [title]="'Slots: ' + activeSlotFilter()">
+
+          <i class="fa-solid fa-layer-group"></i>
+
+          <span class="d-none d-md-inline">
+            Slots:
+            {{
+            activeSlotFilter() === 'ALL'
+            ? 'All'
+            : activeSlotFilter() === 'HAS_SLOT'
+            ? 'Has Slots'
+            : 'No Slots'
+            }}
+          </span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsBySlot('ALL')">
+              All Slots
+              @if(activeSlotFilter() === 'ALL'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsBySlot('HAS_SLOT')">
+              Has Slots
+              @if(activeSlotFilter() === 'HAS_SLOT'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="filterEventsBySlot('NO_SLOT')">
+              No Slots
+              @if(activeSlotFilter() === 'NO_SLOT'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Sort Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
+          [class.btn-primary-subtle]="activeSortMode() !== 'LATEST'"
+          [class.btn-outline-secondary]="activeSortMode() === 'LATEST'" data-bs-toggle="dropdown"
+          [title]="'Sort: ' + activeSortMode()">
+
+          <i class="fa-solid fa-arrow-down-short-wide"></i>
+
+          <span class="d-none d-md-inline">
+            Sort:
+            {{
+            activeSortMode() === 'LATEST'
+            ? 'Latest'
+            : activeSortMode() === 'EARLIEST'
+            ? 'Earliest'
+            : activeSortMode() === 'NAME_ASC'
+            ? 'Name Ascending'
+            : activeSortMode() === 'NAME_DSC'
+            ? 'Name Descending'
+            : activeSortMode() === 'SLOT_HIGH'
+            ? 'Most Slots'
+            : 'Fewest Slots'
+            }}
+          </span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('LATEST')">
+              Latest Update
+              @if(activeSortMode() === 'LATEST'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('EARLIEST')">
+              Earliest Update
+              @if(activeSortMode() === 'EARLIEST'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('NAME_ASC')">
+              Name Ascending
+              @if(activeSortMode() === 'NAME_ASC'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('NAME_DSC')">
+              Name Descending
+              @if(activeSortMode() === 'NAME_DSC'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('SLOT_HIGH')">
+              Most Slots
+              @if(activeSortMode() === 'SLOT_HIGH'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('SLOT_LOW')">
+              Fewest Slots
+              @if(activeSortMode() === 'SLOT_LOW'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Clear Controls Button -->
+      @if (
+      searchText() ||
+      activeEventTypeFilter() !== null ||
+      activeSlotFilter() !== 'ALL' ||
+      activeSortMode() !== 'LATEST'
+      ) {
+      <button class="btn btn-sm btn-link text-muted small text-decoration-none px-1"
+        (click)="searchEvents(''); filterEventsByEventType(null); filterEventsBySlot('ALL'); sortEvents('LATEST')">
+        Clear
       </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="filterEventsByEventType(null)">
-            All
-            @if(activeFilter() === null){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="filterEventsByEventType(EventTypeModel.FIXED)">
-            Fixed Type
-            @if(activeFilter() === EventTypeModel.FIXED){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="filterEventsByEventType(EventTypeModel.FLEXIBLE)">
-            Flexible Type
-            @if(activeFilter() === EventTypeModel.FLEXIBLE){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="filterEventsByEventType(EventTypeModel.BUSINESS)">
-            Business Type
-            @if(activeFilter() === EventTypeModel.BUSINESS){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-      </ul>
+      }
     </div>
 
-    <!-- Sort Dropdown Component -->
-    <div class="dropdown">
-      <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
-        data-bs-toggle="dropdown" [title]="activeSort() === 'LATEST' ? 'Sort: Latest' : 'Sort: Earliest'">
+    <!-- wrap group -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="vr mx-1 d-none d-md-block" style="height: 24px;"></div>
 
-        <i class="fa-solid fa-arrow-down-short-wide"></i>
-
-        <!-- Text hidden on mobile, visible on desktop -->
-        <span class="d-none d-md-inline">
-          Sort: {{ activeSort() === 'LATEST' ? 'Latest' : 'Earliest' }}
-        </span>
-
+      <!-- Primary Action: Create Event Button -->
+      <button type="button"
+        class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+        (click)="openCreateEventWizard()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Create Event</span>
       </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="sortEventsByTime('LATEST')">
-            Latest Activity
-            @if(activeSort() === 'LATEST'){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-        <li>
-          <button class="dropdown-item d-flex justify-content-between align-items-center"
-            (click)="sortEventsByTime('EARLIEST')">
-            Earliest Activity
-            @if(activeSort() === 'EARLIEST'){
-            <i class="fa-solid fa-check small text-primary"></i>
-            }
-          </button>
-        </li>
-      </ul>
     </div>
-
-    <!-- Clear Controls Button -->
-    @if (activeFilter() !== null || activeSort() !== 'LATEST') {
-    <button class="btn btn-sm btn-link text-muted small text-decoration-none px-1"
-      (click)="filterEventsByEventType(null); sortEventsByTime('LATEST')">
-      Clear
-    </button>
-    }
-
-    <div class="vr mx-1" style="height: 24px;"></div>
-
-    <!-- Primary Action: Create Event Button -->
-    <button type="button"
-      class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
-      (click)="openCreateEventWizard()">
-      <i class="fa-solid fa-plus"></i>
-      <span>Create Event</span>
-    </button>
 
   </div>
 </div>
@@ -158,7 +306,8 @@
             <div class="d-flex flex-column h-100 justify-content-start">
               <span class="d-block small text-muted mb-2">Available Slot</span>
               <div class="my-auto">
-                <span class="fw-bold text-dark d-block">{{ event.slotCount }} {{event.slotCount == 1 ? "Slot" : "Slots"}}</span>
+                <span class="fw-bold text-dark d-block">{{ event.slotCount }} {{event.slotCount == 1 ? "Slot" :
+                  "Slots"}}</span>
               </div>
             </div>
           </div>
@@ -196,7 +345,7 @@
           <div class="mb-2">
             <a class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2"
               [routerLink]="['/eventDashboard', event.id, 'slots']">
-              <i class="fa-solid fa-sliders"></i>
+              <i class="fa-solid fa-sliders me-1"></i>
               <span>Manage Slots</span>
             </a>
           </div>
@@ -206,7 +355,7 @@
             <button
               class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
               (click)="openCalendar(event.id, event.eventType)">
-              <i class="fa-solid fa-calendar-days"></i><span>Calendar</span>
+              <i class="fa-solid fa-calendar-days me-1"></i><span> View Calendar</span>
             </button>
           </div>
           <!-- 3. Invitations -->
@@ -215,14 +364,14 @@
               <button
                 class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
                 (click)="openInvitationWizard(event.id, event.eventType)">
-                <i class="fa-solid fa-plus"></i><span>Create Invitation</span>
+                <i class="fa-solid fa-plus me-1"></i><span>Create Invitation</span>
               </button>
             </div>
             <div class="col-6">
               <button
-                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
-                (click)="openInvitationDashboard(event.id, event.eventName)">
-                <i class="fa-solid fa-envelope-open-text"></i><span>View Invitations</span>
+                class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
+                (click)="openInvitationDashboard(event)">
+                <i class="fa-solid fa-envelope-open-text me-1"></i><span>View Invitations</span>
               </button>
             </div>
           </div>
@@ -253,8 +402,11 @@
     </div>
   </div>
   } @empty {
-  <div class="text-center py-5 text-muted">
-    No events found
+  <div class="col-12 w-100">
+    <div class="text-center text-muted py-5 bg-light rounded-3 border">
+      <i class="fa-solid fa-inbox fa-2x mb-2 text-muted opacity-50"></i>
+      <p class="mb-0">No events found.</p>
+    </div>
   </div>
   }
 </div>
@@ -268,8 +420,8 @@
     <!-- 1. Header: Title, index, and event type badge -->
     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
       <div class="flex-grow-1">
-        <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold px-2">
-          <small class="text-muted d-block">Event #{{ i + 1 }}</small>
+        <span class="badge bg-dark-subtle text-dark fw-bold px-2">
+          <small class="text-muted d-block">EVENT #{{ i + 1 }}</small>
         </span>
         <h5 class="fw-bold text-dark mb-1" style="font-size: 1.1rem; line-height: 1.3;">
           {{ event.eventName }}
@@ -312,8 +464,7 @@
           <!-- Showing full address -->
           <div class="small fw-semibold text-secondary lh-sm text-break"
             style="display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;"
-            data-bs-toggle="tooltip"
-            title="{{event.eventLocationAddress}}">
+            data-bs-toggle="tooltip" title="{{event.eventLocationAddress}}">
             {{ event.eventLocationAddress }}
           </div>
         </div>
@@ -326,7 +477,7 @@
       <div class="mb-2">
         <a class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-1"
           style="font-size: 0.95rem; letter-spacing: 0.3px;" [routerLink]="['/eventDashboard', event.id, 'slots']">
-          <i class="fa-solid fa-sliders"></i> Manage Slots
+          <i class="fa-solid fa-sliders me-1"></i>Manage Slots
         </a>
       </div>
       <!-- View Calendar -->
@@ -334,7 +485,7 @@
         <button
           class="btn btn-sm btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
           (click)="openCalendar(event.id, event.eventType)">
-          <i class="fa-solid fa-calendar-days"></i> View Calendar
+          <i class="fa-solid fa-calendar-days me-1"></i>View Calendar
         </button>
       </div>
       <!-- Invitation -->
@@ -343,14 +494,14 @@
           <button
             class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
             (click)="openInvitationWizard(event.id, event.eventType)">
-            <i class="fa-solid fa-plus"></i> Create Invite
+            <i class="fa-solid fa-plus me-1"></i>Create Invite
           </button>
         </div>
         <div class="col-6">
           <button
-            class="btn btn-sm btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
-            (click)="openInvitationDashboard(event.id, event.eventName)">
-            <i class="fa-solid fa-envelope-open-text"></i> Invitations
+            class="btn btn-sm btn-outline-success w-100 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold"
+            (click)="openInvitationDashboard(event)">
+            <i class="fa-solid fa-envelope-open-text me-1"></i>View Invitations
           </button>
         </div>
       </div>
@@ -360,14 +511,14 @@
           <button
             class="btn btn-sm btn-outline-warning w-100 py-2 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
             (click)="openUpdateEventWizard(event.id)">
-            <i class="fa-solid fa-pen"></i> Edit Event
+            <i class="fa-solid fa-pen me-1"></i>Edit Event
           </button>
         </div>
         <div class="col-6">
           <button
             class="btn btn-sm btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center gap-1.5 fw-semibold"
             (click)="confirmDeleteEvent(event.id, event.slotCount)">
-            <i class="fa-solid fa-trash"></i> Delete Event
+            <i class="fa-solid fa-trash me-1"></i>Delete Event
           </button>
         </div>
       </div>
@@ -381,25 +532,27 @@
   </div>
   } @empty {
   <div class="text-center text-muted py-4 bg-light rounded-3 border border-dashed">
-    <i class="fa-regular fa-folder-open d-block fs-3 mb-2 text-secondary"></i>
-    No events found.
+    <div class="d-flex flex-column align-items-center justify-content-center">
+      <i class="fa-solid fa-inbox fa-2x mb-2 text-muted opacity-50"></i>
+      <span>No events found.</span>
+    </div>
   </div>
   }
 </div>
 
 
-@if (showCalendarView === true && eventId != null && eventType != null) {
+@if (showCalendarView === true && updateEventId) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-full-calendar-view [eventId]="eventId" [eventType]="eventType" [slotId]="null" mode="VIEW"
+  <app-full-calendar-view [eventId]="updateEventId" [eventType]="updateEventType" [slotId]="null" mode="VIEW"
     (close)="closeCalendar()"></app-full-calendar-view>
 </div>
 }
 
-@if (showInvitationWizard === true) {
+@if (showInvitationWizard === true && updateEventId) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-invitation-edit-wizard [eventId]="eventId!" [eventType]="eventType!" mode="CREATE"
+  <app-invitation-edit-wizard [eventId]="updateEventId" [eventType]="updateEventType" mode="CREATE"
     (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
 </div>
 }
@@ -412,10 +565,9 @@
 </div>
 }
 
-@if (showInvitationDashboard === true && updateEventId !== null) {
+@if (showInvitationDashboard === true && updateEvent) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-invitation-dashboard [eventId]="updateEventId" [eventName]="updateEventName"
-    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+  <app-invitation-dashboard [event]="updateEvent" (close)="closeInvitationDashboard()"></app-invitation-dashboard>
 </div>
 }

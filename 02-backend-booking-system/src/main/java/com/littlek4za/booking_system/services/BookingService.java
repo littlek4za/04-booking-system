@@ -9,7 +9,7 @@ import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 
 public interface BookingService {
 
-    OrganizerBookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId, String clientIp);
+    AttendeeBookingResponseDto createBooking(BookingRequestDto bookingRequestDto, Long slotId, String clientIp);
 
     List<OrganizerBookingResponseDto> getOrganizerBookingsBySlotId(Long slotId);
 

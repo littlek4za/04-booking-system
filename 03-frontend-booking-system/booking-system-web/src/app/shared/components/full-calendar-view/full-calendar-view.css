@@ -29,6 +29,8 @@
     opacity: 1;
     z-index: 5;
     border: 1px solid #000000;
+    white-space: nowrap;
+    overflow: hidden;
     display: flex;
     align-items: center;
 
@@ -38,6 +40,8 @@
     opacity: 1;
     z-index: 5;
     border: 1px solid #000000;
+    white-space: nowrap;
+    overflow: hidden;
     display: flex;
     align-items: center;
 

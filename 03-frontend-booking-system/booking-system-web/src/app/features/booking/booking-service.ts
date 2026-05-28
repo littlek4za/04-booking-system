@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BookingRequestDto } from './dtos/booking-request-dto';
 import { BehaviorSubject, catchError, filter, Observable, of, switchMap, tap, throwError } from 'rxjs';
-import { OrganizerBookingResponseDto } from './dtos/booking-response-dto';
+import { OrganizerBookingResponseDto } from './dtos/organizer-booking-response-dto';
 import { GuestBookingViewInitRequestDto } from './dtos/guest-booking-view-init-request-dto';
 import { GuestBookingViewInitResponseDto } from './dtos/guest-booking-view-init-response-dto';
 import { GuestBookingViewAccessRequestDto } from './dtos/guest-booking-view-access-request-dto';
@@ -55,9 +55,9 @@ export class BookingService {
 
   constructor(private httpClient: HttpClient) { }
 
-  createBooking(bookingRequestDto: BookingRequestDto, slotId: number): Observable<OrganizerBookingResponseDto> {
+  createBooking(bookingRequestDto: BookingRequestDto, slotId: number): Observable<AttendeeBookingResponseDto> {
     const url = `${this.backendApiUrl}/v1/slots/${slotId}/bookings`;
-    return this.httpClient.post<OrganizerBookingResponseDto>(`${url}`, bookingRequestDto).pipe(
+    return this.httpClient.post<AttendeeBookingResponseDto>(`${url}`, bookingRequestDto).pipe(
       tap(() => {
         this.logger.info('[BookingService] Create booking successful');
       }),

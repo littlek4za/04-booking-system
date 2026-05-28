@@ -1,3 +1,4 @@
+@if(step() === 'FORM'){
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h5 class="mb-0">Create Invitation</h5>
@@ -175,3 +176,16 @@
         </form>
     </div>
 </div>
+}
+
+@if (step() === 'SUCCESS' && invitationResponseDto) {
+@if (event(); as eventData) {
+<app-invitation-success-detail-wizard [invitationResponseDto]="invitationResponseDto" [eventData]="eventData" (close)="closeInvitationWizard()">
+</app-invitation-success-detail-wizard>
+} @else {
+<div class="d-flex align-items-center gap-2">
+    <div class="spinner-border spinner-border-sm"></div>
+    <span>Loading event details...</span>
+</div>
+}
+}

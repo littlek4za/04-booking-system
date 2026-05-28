@@ -6,28 +6,28 @@
 
     <!-- Title -->
     <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-      <i class="fa-solid fa-calendar-check text-success"></i>
+      <i class="fa-solid fa-sliders text-success"></i>
       Slots Manager
     </h4>
 
     <!-- Event Name -->
     <div class="fw-semibold text-dark text-truncate w-100 d-flex align-items-center gap-1">
       <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1.5 fw-semibold">
-        Event: {{ eventName() }}
+        Event: {{ event()?.eventName }}
       </span>
-      @if(eventType() === EventType.FIXED) {
+      @if(event()?.eventType === EventType.FIXED) {
       <span
         class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
         Fixed
       </span>
       }
-      @if(eventType() === EventType.FLEXIBLE) {
+      @if(event()?.eventType === EventType.FLEXIBLE) {
       <span
         class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
         Flexible
       </span>
       }
-      @if(eventType() === EventType.BUSINESS) {
+      @if(event()?.eventType === EventType.BUSINESS) {
       <span
         class="d-none d-md-inline-flex badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
         Business
@@ -39,78 +39,126 @@
 
   <!-- RIGHT SIDE: Action Control Toolbar -->
   <div
-    class="d-flex align-items-center gap-2 w-100 w-md-auto justify-content-between justify-content-md-end mt-2 mt-md-0">
+    class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto ms-md-auto justify-content-end justify-content-md-end">
 
-    <!-- Mobile-only toolbar top border (Hidden on desktop) -->
-    <div class="w-100 d-block d-md-none position-absolute border-top"
-      style="transform: translateY(-24px); opacity: 0.5;"></div>
-
-    <!-- Grouping controls together -->
+    <!-- wrap group -->
     <div class="d-flex align-items-center gap-2">
-      <!-- Sort Dropdown Component -->
+
+      <!-- Search -->
+      <div class="input-group input-group-sm flex-grow-1">
+        <span class="input-group-text">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
+
+        <input type="search" class="form-control" placeholder="Search slots..." [value]="searchText()"
+          (input)="searchSlots($any($event.target).value)">
+      </div>
+
+      <!-- Sort Dropdown -->
       <div class="dropdown">
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
-          data-bs-toggle="dropdown" [title]="activeSort() === 'LATEST' ? 'Sort: Latest' : 'Sort: Earliest'">
+          [class.btn-primary-subtle]="activeSortMode() !== 'LATEST'"
+          [class.btn-outline-secondary]="activeSortMode() === 'LATEST'" data-bs-toggle="dropdown"
+          [title]="'Sort: ' + activeSortMode()">
 
           <i class="fa-solid fa-arrow-down-short-wide"></i>
 
           <span class="d-none d-md-inline">
-            Sort: {{ activeSort() === 'LATEST' ? 'Latest' : 'Earliest' }}
+            Sort:
+            {{
+            activeSortMode() === 'LATEST'
+            ? 'Latest'
+            : activeSortMode() === 'EARLIEST'
+            ? 'Earliest'
+            : activeSortMode() === 'NAME_ASC'
+            ? 'Name Ascending'
+            : 'Name Descending'
+            }}
           </span>
-
         </button>
+
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
           <li>
             <button class="dropdown-item d-flex justify-content-between align-items-center"
-              (click)="sortEventsByTime('LATEST')">
-              Latest Activity
-              @if(activeSort() === 'LATEST'){
+              (click)="sortEvents('LATEST')">
+              Latest Update
+              @if(activeSortMode() === 'LATEST'){
               <i class="fa-solid fa-check small text-primary"></i>
               }
             </button>
           </li>
+
           <li>
             <button class="dropdown-item d-flex justify-content-between align-items-center"
-              (click)="sortEventsByTime('EARLIEST')">
-              Earliest Activity
-              @if(activeSort() === 'EARLIEST'){
+              (click)="sortEvents('EARLIEST')">
+              Earliest Update
+              @if(activeSortMode() === 'EARLIEST'){
               <i class="fa-solid fa-check small text-primary"></i>
               }
             </button>
           </li>
+
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('NAME_ASC')">
+              Name Ascending
+              @if(activeSortMode() === 'NAME_ASC'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
+          <li>
+            <button class="dropdown-item d-flex justify-content-between align-items-center"
+              (click)="sortEvents('NAME_DSC')">
+              Name Descending
+              @if(activeSortMode() === 'NAME_DSC'){
+              <i class="fa-solid fa-check small text-primary"></i>
+              }
+            </button>
+          </li>
+
         </ul>
       </div>
 
       <!-- Clear Controls Button -->
-      @if ( activeSort() !== 'LATEST') {
+      @if (
+      searchText() ||
+      activeSortMode() !== 'LATEST'
+      ) {
       <button class="btn btn-sm btn-link text-muted small text-decoration-none px-1"
-        (click)="sortEventsByTime('LATEST')">
+        (click)="searchSlots(''); sortEvents('LATEST')">
         Clear
       </button>
       }
     </div>
 
-    <!-- Desktop Vertical Divider -->
-    <div class="vr mx-1 d-none d-md-block" style="height: 24px;"></div>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Desktop Vertical Divider -->
+      <div class="vr mx-1 d-none d-md-block" style="height: 24px;"></div>
 
-    <!-- Action Buttons -->
-    <div class="d-flex align-items-center gap-2 ms-auto ms-md-0">
-      <button type="button"
-        class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
-        (click)="openCreateSlotWizard()">
-        <i class="fa-solid fa-plus"></i>
-        <span class="d-inline">Create Slot</span>
-      </button>
+      <!-- Action Buttons -->
+      <div class="d-flex align-items-center gap-2 ms-auto ms-md-0">
+        <button type="button"
+          class="btn btn-success btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+          (click)="openCreateSlotWizard()">
+          <i class="fa-solid fa-plus"></i>
+          <span class="d-inline">Create Slot</span>
+        </button>
 
-      <button type="button"
-        class="btn btn-secondary btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
-        [routerLink]="['/eventDashboard']">
-        <i class="fa-solid fa-arrow-left-long"></i>
-        <span class="d-none d-md-inline">Back to Event Manager</span>
-        <span class="d-inline d-md-none">Back</span>
-      </button>
+        <button type="button"
+          class="btn btn-secondary btn-sm px-2 px-md-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+          [routerLink]="['/eventDashboard']">
+          <i class="fa-solid fa-arrow-left-long"></i>
+          <span class="d-none d-md-inline">Back to Event Manager</span>
+          <span class="d-inline d-md-none">Back</span>
+        </button>
+      </div>
     </div>
-
   </div>
 </div>
 
@@ -120,7 +168,8 @@
   <div class="list-group list-group-flush shadow-sm rounded-3 bg-white border">
 
     @for (slot of slotList(); track slot.id; let i = $index) {
-    <div class="list-group-item p-3 d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center justify-content-between gap-3 gap-xl-4">
+    <div
+      class="list-group-item p-3 d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center justify-content-between gap-3 gap-xl-4">
 
       <!-- Column 1: Info -->
       <div style="flex: 2; min-width: 220px;">
@@ -144,7 +193,7 @@
       <!-- Column 2: Status Badges -->
       <div class="text-xl-center border-start-xl border-end-xl px-xl-3 py-2 py-xl-0" style="flex: 1; min-width: 160px;">
         <div class="mb-1">
-          @if(eventType() === EventType.FIXED) {
+          @if(event()?.eventType === EventType.FIXED) {
           <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill fw-semibold">
             <i class="fa-solid fa-user-check me-1"></i> {{slot.bookingsCount}} / {{slot.maxBookPerInterval}} Filled
           </span>
@@ -155,12 +204,12 @@
           </span>
           }
         </div>
-        @if(eventType() === EventType.FLEXIBLE || eventType() === EventType.BUSINESS) {
+        @if(event()?.eventType === EventType.FLEXIBLE || event()?.eventType === EventType.BUSINESS) {
         <small class="text-muted d-block mt-1">
           <i class="fa-regular fa-hourglass-half me-1"></i> Interval: {{formatDuration(slot.slotIntervalMinutes)}}
         </small>
         }
-        @if(eventType() === EventType.FIXED) {
+        @if(event()?.eventType === EventType.FIXED) {
 
         <div class="small text-muted mt-2 lh-sm">
 
@@ -223,9 +272,9 @@
               <span>Create Invitation</span>
             </button>
             <button type="button"
-              class="btn btn-sm btn-outline-secondary text-wrap h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
+              class="btn btn-sm btn-outline-success text-wrap h-100 d-flex align-items-center justify-content-center gap-1 py-2 py-xxl-1 fw-semibold"
               (click)="openInvitationDashboard(slot.id)" title="View Invitations">
-              <i class="fa-solid fa-eye me-1"></i>
+              <i class="fa-solid fa-envelope-open-text me-1"></i>
               <span>View Invitations</span>
             </button>
           </div>
@@ -297,8 +346,8 @@
     <!-- 1. Header: Title, index, and event type badge -->
     <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
       <div class="flex-grow-1">
-        <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold px-2">
-          <small class="text-muted d-block">Slot #{{ i + 1 }}</small>
+        <span class="badge bg-dark-subtle text-dark fw-bold px-2">
+          <small class="text-muted d-block">SLOT #{{ i + 1 }}</small>
         </span>
         <h5 class="fw-bold text-dark mb-1" style="font-size: 1.1rem; line-height: 1.3;">
           {{ slot.slotName }}
@@ -307,19 +356,19 @@
 
       <!-- Conditional Type Status Badge -->
       <div class="align-self-start">
-        @if(eventType() === EventType.FIXED) {
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-          Fixed
+        @if(event()?.eventType === EventType.FIXED) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 align-self-start">
+          FIXED
         </span>
         }
-        @if(eventType() === EventType.FLEXIBLE) {
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-          Flexible
+        @if(event()?.eventType === EventType.FLEXIBLE) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 align-self-start">
+          FLEXIBLE
         </span>
         }
-        @if(eventType() === EventType.BUSINESS) {
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-          Business
+        @if(event()?.eventType === EventType.BUSINESS) {
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 align-self-start">
+          BUSINESS
         </span>
         }
       </div>
@@ -345,7 +394,7 @@
           <small class="text-muted d-block text-uppercase fw-bold mb-1"
             style="font-size: 0.65rem; letter-spacing: 0.5px;">Bookings</small>
 
-          @if(eventType() === EventType.FIXED) {
+          @if(event()?.eventType === EventType.FIXED) {
           <span class="fw-bold text-primary small">{{slot.bookingsCount}} / {{slot.maxBookPerInterval}} Filled</span>
           } @else {
           <span class="fw-bold text-dark small">
@@ -358,7 +407,7 @@
         <div class="col-6 ps-3 d-flex flex-column justify-content-center">
 
 
-          @if(eventType() === EventType.FLEXIBLE || eventType() === EventType.BUSINESS) {
+          @if(event()?.eventType === EventType.FLEXIBLE || event()?.eventType === EventType.BUSINESS) {
           <small class="text-muted text-uppercase fw-bold mb-1"
             style="font-size: 0.65rem; letter-spacing: 0.5px;">Interval Rate</small>
           <div class="small fw-semibold text-secondary lh-sm">
@@ -487,39 +536,52 @@
 @if (openCalendarView === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-full-calendar-view [eventId]="eventId" [eventType]="eventType()" [slotId]="slotId" mode="VIEW"
-    (close)="closeCalendar()"></app-full-calendar-view>
+  <app-full-calendar-view [eventId]="eventId" [eventType]="event()?.eventType ?? null" [slotId]="updateSlotId"
+    mode="VIEW" (close)="closeCalendar()"></app-full-calendar-view>
 </div>
 }
 
-@if (showInvitationWizard === true && slotId && eventId && eventType()) {
+@if (showInvitationWizard === true && updateSlotId && eventId && event()?.eventType) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-invitation-edit-wizard [eventId]="eventId" [eventType]="eventType()" [slotId]="slotId" mode="CREATE"
-    (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
+  <app-invitation-edit-wizard [eventId]="eventId" [eventType]="event()?.eventType ?? null" [slotId]="updateSlotId"
+    mode="CREATE" (close)="closeInvitationWizard()"></app-invitation-edit-wizard>
 </div>
 }
 
-@if (showInvitationDashboard === true && slotId != null) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
+@if (showInvitationDashboard === true && updateSlotId && event(); as eventData) {
+<div class="modal-backdrop fade show"></div>
 <div class="pop-out-wizard">
-  <app-invitation-dashboard [eventId]="eventId" [slotId]="slotId" [eventName]="eventName()"
-    (close)="closeInvitationDashboard()"></app-invitation-dashboard>
+
+  @if (event(); as eventData) {
+
+  <app-invitation-dashboard [slotId]="updateSlotId" [event]="eventData" (close)="closeInvitationDashboard()">
+  </app-invitation-dashboard>
+
+  } @else {
+  <div class="d-flex align-items-center gap-2">
+    <div class="spinner-border spinner-border-sm" role="status"></div>
+    <span>Loading event details...</span>
+  </div>
+  <button (click)="closeInvitationDashboard()">Cancel</button>
+  }
+
 </div>
 }
 
 @if(showSlotWizard === true) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-slot-edit-wizard [eventId]="eventId" [eventType]="eventType()" [mode]="modeSlotWizard" [slotId]="slotId"
-    (close)="closeSlotWizard()"></app-slot-edit-wizard>
+  <app-slot-edit-wizard [eventId]="eventId" [eventType]="event()?.eventType ?? null" [mode]="modeSlotWizard"
+    [slotId]="updateSlotId" (close)="closeSlotWizard()"></app-slot-edit-wizard>
 </div>
 }
 
-@if(showBookingManagerDashboard === true && slotId !== null) {
+@if(showBookingManagerDashboard === true && updateSlotId) {
 <div class="modal-backdrop fade show"></div> <!-- disables background -->
 <div class="pop-out-wizard">
-  <app-booking-manager-dashboard [slotId]="slotId" [slotName]="slotName" [eventName]="eventName()" [eventId]="eventId"
+  <app-booking-manager-dashboard [slotId]="updateSlotId" [slotName]="updateSlotName"
+    [eventName]="event()?.eventName ?? null" [eventId]="eventId"
     (close)="closeBookingManagerDashboard()"></app-booking-manager-dashboard>
 </div>
 }

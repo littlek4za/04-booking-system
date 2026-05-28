@@ -41,8 +41,10 @@ import com.littlek4za.booking_system.validators.BookingValidator;
 import com.littlek4za.booking_system.validators.InvitationValidator;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class BookingServiceImpl implements BookingService {
 
     private final SecurityUtil securityUtil;
@@ -83,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @PreAuthorize("@authz.isGuestBookingCreate() or (@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE'))")
     @Transactional
-    public OrganizerBookingResponseDto createBooking(BookingRequestDto dto, Long slotId, String clientIp) {
+    public AttendeeBookingResponseDto createBooking(BookingRequestDto dto, Long slotId, String clientIp) {
 
         boolean isGuestBookingCreate = securityUtil.isGuestBookingCreate();
 
@@ -132,9 +134,9 @@ public class BookingServiceImpl implements BookingService {
 
         bookingValidator.validateBookingRequestInfo(dto, invitation, slot, event, user);
 
-        OrganizerBookingResponseDto organizerBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
+        AttendeeBookingResponseDto attendeeBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
 
-        eventPublisher.publishEvent(BookingMailEvent.forConfirmation(organizerBookingResponseDto));
+        eventPublisher.publishEvent(BookingMailEvent.forConfirmation(attendeeBookingResponseDto));
 
         if (isGuestBookingCreate) {
             riskService.resetEmailIpForCreate(dto.email(), clientIp);
@@ -142,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
             riskService.recordCreateSuccess(clientIp);
         }
 
-        return organizerBookingResponseDto;
+        return attendeeBookingResponseDto;
     }
 
     private User getOrCreateUser(BookingRequestDto dto) {
@@ -170,7 +172,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     // create booking by Event Type sub method
-    private OrganizerBookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
+    private AttendeeBookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
             User user) {
 
         Instant requestedStartTime;
@@ -217,13 +219,20 @@ public class BookingServiceImpl implements BookingService {
         Integer maxUsagePerIdentity = invitation.getMaxUsagePerIdentity();
         invitationUsage.incrementUsage(maxUsagePerIdentity);
 
-        Booking newBooking = new Booking(user, slot, requestedStartTime, requestedEndTime,
-                slot.getEvent().getEventName(), slot.getSlotName(), invitation.getUser().getEmail(), user.getEmail(),
-                invitation.getEvent().getEventLocationAddress());
+        String attendeeFirstName;
+        String attendeeLastName;
+
         if (user.getGuest()) {
-            newBooking.setGuestFirstName(dto.firstName());
-            newBooking.setGuestLastName(dto.lastName());
+            attendeeFirstName = dto.firstName();
+            attendeeLastName =dto.lastName();
+        } else {
+            attendeeFirstName = user.getFirstName();
+            attendeeLastName = user.getLastName();
         }
+
+        Booking newBooking = new Booking(user, slot, requestedStartTime, requestedEndTime,
+                slot.getEvent().getEventName(), slot.getEvent().getEventDescription(), slot.getSlotName(), slot.getSlotDescription(), invitation.getUser().getEmail(), user.getEmail(),
+                invitation.getEvent().getEventLocationAddress(),attendeeFirstName, attendeeLastName, user.getGuest());
 
         if (invitation.getEvent().getLatitude() != null && invitation.getEvent().getLongitude() != null) {
             newBooking.setLatitude(invitation.getEvent().getLatitude());
@@ -238,7 +247,7 @@ public class BookingServiceImpl implements BookingService {
         invitationRepository.save(invitation);
         invitationUsageRepository.save(invitationUsage);
 
-        return dtoMapper.toOrganizerBookingResponseDto(savedBooking);
+        return dtoMapper.toAttendeeBookingResponseDto(savedBooking);
 
     }
 
@@ -322,7 +331,7 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         if (shouldSendCancellationEmail) {
-           eventPublisher.publishEvent(BookingMailEvent.forCancellation(bookingId));
+            eventPublisher.publishEvent(BookingMailEvent.forCancellation(bookingId));
         }
 
         return dtoMapper.toOrganizerBookingResponseDto(booking);
@@ -378,7 +387,11 @@ public class BookingServiceImpl implements BookingService {
                             HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
         } else if (securityUtil.isGuestBookingView()) {
             String email = securityUtil.requireEmail();
-            booking = bookingRepository.findbyBookingTokenAndEmail(bookingToken, email)
+            String jwtBookingToken = securityUtil.requireBookingToken();
+            if (!jwtBookingToken.equals(bookingToken)) {
+                log.warn("Booking Token and JWT Booking Token Mismatch detected");
+            }
+            booking = bookingRepository.findbyBookingTokenAndEmail(jwtBookingToken, email)
                     .orElseThrow(() -> new AppException("Booking not found with booking token and email",
                             HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND));
         } else {

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { OrganizerBookingResponseDto } from '../dtos/booking-response-dto';
+import { OrganizerBookingResponseDto } from '../dtos/organizer-booking-response-dto';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BookingService } from '../booking-service';
 import { DatePipe, NgClass } from '@angular/common';

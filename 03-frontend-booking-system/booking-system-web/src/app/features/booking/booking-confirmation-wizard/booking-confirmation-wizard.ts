@@ -8,7 +8,7 @@ import { BookingRequestDto } from '../dtos/booking-request-dto';
 import { AuthService } from '@features/auth/auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthTokenPayload } from '@features/auth/dtos/auth-token-payload';
-import { OrganizerBookingResponseDto } from '../dtos/booking-response-dto';
+import { OrganizerBookingResponseDto } from '../dtos/organizer-booking-response-dto';
 import { validateStartAndEndTimeBaseOnEvent } from '@shared/validators/custom-validator';
 import { FullCalendarView } from '@shared/components/full-calendar-view/full-calendar-view';
 import moment from 'moment';
@@ -19,12 +19,14 @@ import { Router } from '@angular/router';
 import { LoggerService } from '@core/services/logger-service';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '@core/services/notification-service';
+import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
+import { AttendeeBookingSuccessDetailWizard } from "../attendee-booking-success-detail-wizard/attendee-booking-success-detail-wizard";
 
 declare var grecaptcha: any;
 
 @Component({
   selector: 'app-booking-confirmation-wizard',
-  imports: [DatePipe, ReactiveFormsModule, FullCalendarView],
+  imports: [DatePipe, ReactiveFormsModule, FullCalendarView, AttendeeBookingSuccessDetailWizard],
   templateUrl: './booking-confirmation-wizard.html',
   styleUrl: './booking-confirmation-wizard.css',
 })
@@ -36,6 +38,9 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
     }
   };
 
+  // step for this wizard
+  step = signal<'FORM' | 'SUCCESS'>('FORM');
+
   // component IO
   @Output() close = new EventEmitter<void>();
   @Input() slot!: SlotResponseDto;
@@ -45,7 +50,8 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
   guestForm!: FormGroup;
   token: string | null = null;
   authTokenPayload: AuthTokenPayload | null = null;
-  organizerBookingResponseDto: OrganizerBookingResponseDto | null = null;
+  attendeeBookingResponseDto?: AttendeeBookingResponseDto | null;
+
   timeZone: string = 'local';
   private bookingRequestDto?: BookingRequestDto;
 
@@ -292,11 +298,10 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.organizerBookingResponseDto = res;
+          this.attendeeBookingResponseDto = res;
           this.notificationService.success('Booking created successfully');
           this.isSubmitInProgress.set(false);
-          this.closeWizard();
-          this.router.navigate(['/invitation']);
+          this.step.set('SUCCESS');
         },
         error: () => {
           this.isSubmitInProgress.set(false);

@@ -4,11 +4,8 @@ import { SlotResponseDto } from "@features/slots/dtos/slot-response-dto";
 export class OrganizerBookingResponseDto {
 
     bookingId!: number;
-    attendeeUsername?: string;
     attendeeLastName?: string;
     attendeeFirstName?: string;
-    guestAttendeeLastName? : string;
-    guestAttendeeFirstName?: string;
     isGuest! : boolean;
     attendeeEmail!: string;
     slot!: SlotResponseDto;

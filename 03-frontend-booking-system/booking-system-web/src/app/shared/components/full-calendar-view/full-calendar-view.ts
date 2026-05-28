@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 import moment from 'moment-timezone';
 import { InvitationResponseDto } from '@features/invitations/dtos/invitation-response-dto';
 import { BookingService } from '@features/booking/booking-service';
-import { OrganizerBookingResponseDto } from '@features/booking/dtos/booking-response-dto';
+import { OrganizerBookingResponseDto } from '@features/booking/dtos/organizer-booking-response-dto';
 import { SlotBookedTimeResponseDto } from '@features/booking/dtos/slot-booked-time-response-dto';
 import { LoggerService } from '@core/services/logger-service';
 import { NotificationService } from '@core/services/notification-service';
@@ -131,7 +131,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   // logic field
   calendarReady = signal(false);
-  
+
   // calendar date visible field
   private visibleRangeStart: Date | null = null;
   private visibleRangeEnd: Date | null = null;
@@ -168,7 +168,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
   constructor(
     private timeZoneService: TimeZoneService,
-    private notificationService:NotificationService
+    private notificationService: NotificationService
   ) {
     this.timeZoneOption = this.timeZoneService.getAllTimeZones();
     this.selectedTimeZone.set(this.timeZoneService.getUserTimeZone());
@@ -435,10 +435,17 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         while (businessDate.isSameOrBefore(businessRangeEnd, 'day')) {
           const businessDayOfWeek = businessDate.day();
           const ranges = slot.businessDaysHours[businessDayOfWeek] ?? [];
+          // const sortedRanges = [...ranges].sort((a, b) =>
+          //   a.open.localeCompare(b.open)
+          // );
+
+          // const lastRange = sortedRanges[sortedRanges.length - 1];
 
           ranges.forEach((range, rangeIndex) => {
             const startParts = range.open.split(':').map(Number);
             const endParts = range.close.split(':').map(Number);
+
+            // const isLastRange = range.open === lastRange.open && range.close === lastRange.close;
 
             const rangeStart = businessDate
               .clone()
@@ -737,8 +744,15 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       while (businessDate.isSameOrBefore(businessRangeEnd, 'day')) {
         const businessDayOfWeek = businessDate.day();
         const ranges = slot.businessDaysHours[businessDayOfWeek] ?? [];
+        const sortedRanges = [...ranges].sort((a, b) =>
+          a.open.localeCompare(b.open)
+        );
+        const lastRange = sortedRanges[sortedRanges.length - 1];
 
         ranges.forEach((range, rangeIndex) => {
+
+          const isLastRange = range.open === lastRange.open && range.close === lastRange.close;
+
           let current = businessDate
             .clone()
             .hour(Number(range.open.split(':')[0]))
@@ -753,13 +767,18 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
             .second(0)
             .millisecond(0);
 
+          if (rangeEnd.isBefore(current)) {
+            rangeEnd.add(1, 'day');
+          }
+
           let i = 0;
 
           while (
-            slot.businessAllowOt
+            (slot.businessAllowOt && isLastRange)
               ? current.isSameOrBefore(rangeEnd)
               : current.clone().add(slotIntervalMinutes, 'minutes').isSameOrBefore(rangeEnd)
           ) {
+
             const eventEnd = current.clone().add(slotFrequencyIntervalMinutes, 'minutes');
             const bookingEnd = current.clone().add(slotIntervalMinutes, 'minutes');
 
