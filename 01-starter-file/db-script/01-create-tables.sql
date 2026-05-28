@@ -77,8 +77,8 @@ CREATE TABLE invitations (
 CREATE TABLE bookings (
 	id BIGSERIAL PRIMARY KEY,
 	user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-	guest_first_name VARCHAR(255),
-	guest_last_name VARCHAR(255),
+	attendee_first_name VARCHAR(255),
+	attendee_last_name VARCHAR(255),
 	slot_id BIGINT REFERENCES slots(id) ON DELETE SET NULL,
 	invitation_id BIGINT REFERENCES invitations(id) ON DELETE SET NULL,
 	booked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -89,12 +89,15 @@ CREATE TABLE bookings (
 	deleted_at TIMESTAMPTZ,
 	deleted_by VARCHAR(20),
 	event_name TEXT NOT NULL,
+	event_description TEXT,
 	slot_name TEXT NOT NULL,
+	slot_description TEXT,
 	organizer_email VARCHAR(255) NOT NULL,
 	attendee_email VARCHAR(255) NOT NULL,
 	event_location_address TEXT NOT NULL,
 	latitude DOUBLE PRECISION,
-	longitude DOUBLE PRECISION
+	longitude DOUBLE PRECISION,
+	is_guest BOOLEAN NOT NULL
 );
 
 CREATE TABLE invitation_slots (
@@ -118,14 +121,10 @@ VALUES
 
 INSERT INTO users (username, password, email, first_name,last_name, guest)
 VALUES 
-	('admin','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','admin@test.com','booking','admin', false),
-	('organizer','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','organizer@test.com','booking','organizer', false),
-	('attendee','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','attendee@test.com','booking','attendee', false);
+	('admin','$2a$12$m6uSzgzScOBsJW/4G3ueUePUpvMKjVXeOq/ETtbn.1fDytaxGScmO','admin@testcom.testcom','booking','admin', false);
 
 INSERT INTO users_roles (user_id, role_id)
 VALUES
-	(1,1),
-	(2,2),
-	(3,3);
+	(1,1);
 
 

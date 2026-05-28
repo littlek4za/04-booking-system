@@ -6,11 +6,8 @@ import com.littlek4za.booking_system.models.BookingStatus;
 
 public record AttendeeBookingResponseDto(
     Long bookingId,
-    String attendeeUsername,
     String attendeeLastName,
     String attendeeFirstName,
-    String guestAttendeeLastName,
-    String guestAttendeeFirstName,
     boolean isGuest,
     Instant bookedStartTime,
     Instant bookedEndTime,
@@ -18,7 +15,9 @@ public record AttendeeBookingResponseDto(
     Instant bookedAt,
     BookingStatus bookingStatus,
     String eventName,
+    String eventDescription,
     String slotName,
+    String slotDescription,
     String organizerEmail,
     String attendeeEmail,
     String eventLocationAddress,

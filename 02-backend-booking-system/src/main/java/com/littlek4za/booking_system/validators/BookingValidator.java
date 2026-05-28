@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -189,7 +190,17 @@ public class BookingValidator {
         int dayOfWeekStart = requestedStartTimeZdt.getDayOfWeek().getValue() % 7;
 
         Map<Integer, List<TimeRange>> businessDaysHours = slot.getBusinessDaysHours();
-        List<TimeRange> instantRangeList = businessDaysHours.getOrDefault(dayOfWeekStart, List.of());
+        List<TimeRange> instantRangeList = businessDaysHours.getOrDefault(dayOfWeekStart, List.of())
+                .stream()
+                .sorted(Comparator.comparing(r -> LocalTime.parse(r.getOpen())))
+                .toList();
+
+        if (instantRangeList.isEmpty()) {
+            throw new AppException("No business hours defined for the chosen day",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
+        }
+
+        TimeRange lastRange = instantRangeList.get(instantRangeList.size() - 1);
 
         boolean fitsInInstantRange = instantRangeList.stream()
                 .anyMatch(range -> {
@@ -202,7 +213,9 @@ public class BookingValidator {
                         closeZdt = closeZdt.plusDays(1);
                     }
 
-                    if (Boolean.TRUE.equals(slot.getBusinessAllowOT())) {
+                    boolean isLastRange = range.equals(lastRange);
+
+                    if (Boolean.TRUE.equals(slot.getBusinessAllowOT()) && isLastRange) {
                         return !requestedStartTimeZdt.isBefore(openZdt) && !requestedStartTimeZdt.isAfter(closeZdt);
                     } else {
                         return !requestedStartTimeZdt.isBefore(openZdt) && !reqeustedEndTimeZdt.isAfter(closeZdt);

@@ -31,13 +31,8 @@
         @for (booking of organizerBookingListBySlotId(); track booking.bookingId ; ; let i = $index) {
         <tr>
             <th scope="row">{{i+1}}</th>
-            @if (booking.isGuest) {
-            <td>{{booking.guestAttendeeFirstName}}</td>
-            <td>{{booking.guestAttendeeLastName}}</td>
-            } @else {
             <td>{{booking.attendeeFirstName}}</td>
             <td>{{booking.attendeeLastName}}</td>
-            }
             <td>{{booking.attendeeEmail}}</td>
             <td>{{booking.isGuest === true ? 'No' : 'Yes'}}</td>
             <td>

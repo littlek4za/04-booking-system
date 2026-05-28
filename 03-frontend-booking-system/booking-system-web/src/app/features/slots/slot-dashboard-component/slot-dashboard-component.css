@@ -4,11 +4,11 @@
   left: 50%;
   transform: translate(-50%, -50%);
   
-  width: 95%;
-  max-width: 1200px;
+  width: 95vw;
+  max-width: none;
 
-  max-height: 90vh;          /* 🔥 limit height to screen */
-  overflow-y: auto;          /* 🔥 enable scroll inside */
+  max-height: 90vh;         
+  overflow-y: auto;          
 
   background: white;
   border-radius: 12px;
@@ -20,4 +20,40 @@
 
 .modal-backdrop {
   z-index: 1050 !important;
+}
+
+
+/* Mobile Bottom Sheet Overlay */
+@media (max-width: 767.98px) {
+  .pop-out-wizard {
+    top: auto !important;              /* Removes vertical centering */
+    bottom: 0 !important;            /* Anchors the modal to the bottom of the screen */
+    left: 0 !important;
+    transform: none !important;
+    
+    width: 100% !important;
+    height: 96vh !important;         /* Leaves a 8vh gap at the top to display the dark backdrop */
+    max-height: 96vh !important;
+    
+    /* Rounded top corners like a native iOS/Android bottom sheet */
+    border-radius: 20px 20px 0 0 !important; 
+    
+    padding: 24px 16px 16px 16px !important; /* Top padding leaves space for the drag-handle */
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15) !important; /* Casts shadow upwards */
+  }
+  /* Renders a native drag-handle bar at the top center of the overlay */
+  .pop-out-wizard::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 5px;
+    background-color: rgba(0, 0, 0, 0.18);
+    border-radius: 3px;
+    margin: -12px auto 16px auto;     /* Centers and positions the handle */
+  }
+  /* Ensure the dark background backdrop is visible in the top gap */
+  .modal-backdrop {
+    display: block !important;
+    opacity: 0.5 !important;
+  }
 }

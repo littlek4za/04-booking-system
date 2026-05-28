@@ -1,9 +1,9 @@
 package com.littlek4za.booking_system.services.event;
 
-import com.littlek4za.booking_system.dtos.OrganizerBookingResponseDto;
+import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 
 public record BookingMailEvent(
-    OrganizerBookingResponseDto dto,
+    AttendeeBookingResponseDto dto,
     Long bookingId,
     MailType type
 ) {
@@ -12,7 +12,7 @@ public record BookingMailEvent(
         CANCELLATION
     }
 
-    public static BookingMailEvent forConfirmation(OrganizerBookingResponseDto dto) {
+    public static BookingMailEvent forConfirmation(AttendeeBookingResponseDto dto) {
         return new BookingMailEvent(dto, null, MailType.CONFIRMATION);
     }
 

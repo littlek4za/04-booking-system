@@ -30,7 +30,7 @@ export const routes: Routes = [
     { path: 'mapSelection', component: LeafletMapSelection },
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'bookingConfirmation/:invitationToken', component: BookingConfirmationDashboard },
-    { path: 'my-booking/:bookingToken', component: BookingAccessComponent },
+    { path: 'bookingAccess/:bookingToken', component: BookingAccessComponent },
     { path: 'bookingView/:bookingToken', component: AttendeeBookingDetailComponent },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }

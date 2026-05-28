@@ -1,5 +1,5 @@
-import { Component, EventEmitter, inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
-import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, EventEmitter, inject, Input, OnChanges, OnDestroy, OnInit, Output, signal, SimpleChanges } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EventTypeModel } from '@features/events/dtos/event-type-model';
 import { SlotIncludeMode } from '../dtos/slot-include-mode';
 import { Subject, takeUntil } from 'rxjs';
@@ -12,23 +12,32 @@ import { InvitationService } from '../invitation-service';
 import { SlotResponseDto } from '@features/slots/dtos/slot-response-dto';
 import { LoggerService } from '@core/services/logger-service';
 import { NotificationService } from '@core/services/notification-service';
+import { InvitationSuccessDetailWizard } from "../invitation-success-detail-wizard/invitation-success-detail-wizard";
+import { InvitationResponseDto } from '../dtos/invitation-response-dto';
+import { EventWithSlotCountResponseDto } from '@features/events/dtos/event-with-slot-count-response-dto';
+import { EventService } from '@features/events/event-service';
 
 @Component({
   selector: 'app-invitation-edit-wizard',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, InvitationSuccessDetailWizard],
   templateUrl: './invitation-edit-wizard.html',
   styleUrl: './invitation-edit-wizard.css',
 })
 export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
+  step = signal<'FORM' | 'SUCCESS'>('FORM');
+
+  invitationResponseDto?: InvitationResponseDto | null;
+
   private slotService = inject(SlotService);
+  private eventService = inject(EventService);
   private logger = inject(LoggerService);
 
   @Input() mode!: 'CREATE';
   @Input() eventId!: number;
   @Input() eventType: EventTypeModel | null = null;
   @Input() slotId: number | null = null;
-  @Output() close = new EventEmitter<void>;
+  @Output() close = new EventEmitter<void>();
 
   //form field
   invitationForm!: FormGroup;
@@ -37,6 +46,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   //signal from service
   slotList = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
+  event = signal<EventWithSlotCountResponseDto | null>(null);
 
   //data from service
   slotSingle?: SlotResponseDto;
@@ -45,7 +55,7 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
   constructor(
     private invitationService: InvitationService,
-    private notificationService:NotificationService
+    private notificationService: NotificationService
   ) {
     this.initInvitationForm();
   }
@@ -53,6 +63,22 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
 
     if (!this.invitationForm) return;
+
+    if (changes['eventId'] && this.eventId) {
+      this.logger.debug(`[InvitationEditWizard] Changes detected for input "eventId"`);
+      this.logger.debug(`[InvitationEditWizard] Sending slotService.triggerRefreshForSlotListByEventId request`);
+      this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
+      this.logger.debug(`[InvitationEditWizard] Sending eventService.getEventById request`);
+      this.eventService.getEventById(this.eventId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (res) => {
+            this.event.set(res);
+          },
+          error: () => {
+          }
+        })
+    }
 
     if (this.slotId != null &&
       this.eventId != null &&
@@ -69,14 +95,9 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
           error: () => {
           }
         })
-      return;
     }
 
-    if (changes['eventId'] && this.eventId) {
-      this.logger.debug(`[InvitationEditWizard] Changes detected for input "eventId"`);
-      this.logger.debug(`[InvitationEditWizard] Sending slotService.triggerRefreshForSlotListByEventId request`);
-      this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
-    }
+
   }
 
   ngOnInit(): void {
@@ -267,10 +288,11 @@ export class InvitationEditWizard implements OnInit, OnDestroy, OnChanges {
 
     this.logger.debug('[InvitationEditWizard] Sending invitationService.createInvitation request');
     this.invitationService.createInvitation(invitationRequestDto, this.eventId).subscribe({
-      next: () => {
+      next: (res) => {
         this.notificationService.success("Create invitation success");
         this.invitationService.triggerRefreshForInvitationListByEventId(this.eventId);
-        this.closeInvitationWizard();
+        this.invitationResponseDto = res;
+        this.step.set('SUCCESS');
       },
       error: () => {
       }

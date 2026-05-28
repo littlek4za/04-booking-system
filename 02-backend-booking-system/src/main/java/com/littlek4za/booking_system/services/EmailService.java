@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.littlek4za.booking_system.dtos.OrganizerBookingResponseDto;
+import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.services.event.BookingMailEvent;
@@ -64,14 +64,14 @@ public class EmailService {
                                 sendBookingCancelledDetailsViaNormalMail(booking);
                         }
                 } catch (Exception e) {
-                        log.error("Failed to process booking mail event for type={}",event.type(), e);
+                        log.error("Failed to process booking mail event for type={}", event.type(), e);
                 }
 
         }
 
-        public void sendBookingConfirmationDetailsViaNormalMail(OrganizerBookingResponseDto dto) {
+        public void sendBookingConfirmationDetailsViaNormalMail(AttendeeBookingResponseDto dto) {
 
-                String link = frontendUrl + "/my-booking/" + dto.bookingToken();
+                String link = frontendUrl + "/bookingAccess/" + dto.bookingToken();
 
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(dto.attendeeEmail());
@@ -84,9 +84,9 @@ public class EmailService {
 
         }
 
-        public void sendBookingConfirmationDetailsViaResend(OrganizerBookingResponseDto dto) {
+        public void sendBookingConfirmationDetailsViaResend(AttendeeBookingResponseDto dto) {
 
-                String link = frontendUrl + "/my-booking/" + dto.bookingToken();
+                String link = frontendUrl + "/bookingAccess/" + dto.bookingToken();
 
                 CreateEmailOptions params = CreateEmailOptions.builder()
                                 .from("onboarding@resend.dev")
@@ -110,21 +110,14 @@ public class EmailService {
 
         public void sendBookingCancelledDetailsViaNormalMail(Booking booking) {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(booking.getUser().getEmail());
+                message.setTo(booking.getAttendeeEmail());
                 message.setSubject("Booking Cancellation");
 
-                boolean isGuest = booking.getUser().getGuest();
                 String firstName;
                 String lastName;
 
-                if (isGuest) {
-                        firstName = booking.getGuestFirstName();
-                        lastName = booking.getGuestLastName();
-
-                } else {
-                        firstName = booking.getUser().getFirstName();
-                        lastName = booking.getUser().getLastName();
-                }
+                firstName = booking.getAttendeeFirstName();
+                lastName = booking.getAttendeeLastName();
 
                 ZonedDateTime zonedStart = booking.getBookedStartTime()
                                 .atZone(ZoneOffset.UTC)
@@ -180,18 +173,11 @@ public class EmailService {
 
         public void sendBookingCancelledDetailsViaResend(Booking booking) {
 
-                boolean isGuest = booking.getUser().getGuest();
                 String firstName;
                 String lastName;
 
-                if (isGuest) {
-                        firstName = booking.getGuestFirstName();
-                        lastName = booking.getGuestLastName();
-
-                } else {
-                        firstName = booking.getUser().getFirstName();
-                        lastName = booking.getUser().getLastName();
-                }
+                firstName = booking.getAttendeeFirstName();
+                lastName = booking.getAttendeeLastName();
 
                 ZonedDateTime zonedStart = booking.getBookedStartTime()
                                 .atZone(ZoneOffset.UTC)
@@ -258,7 +244,7 @@ public class EmailService {
                         CreateEmailResponse data = resend.emails().send(params);
                         log.info("RESEND Email sent, id={}", data.getId());
                 } catch (Exception e) {
-                        log.warn("RESEND Email failed",e);
+                        log.warn("RESEND Email failed", e);
                 }
         }
 }

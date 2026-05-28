@@ -71,7 +71,7 @@ export class InvitationAccessComponent implements OnInit, OnDestroy {
             this.router.navigate([`/bookingConfirmation/${token}`]);
           }
           else if (res.requiredLogin && !this.authService.hasUserValidToken()) {
-            this.notificationService.info("redirecting to login page");
+            this.notificationService.info("Please log in to access the invitation page");
             const currentUrl = this.router.url;
             this.router.navigate(['/login'], {
               queryParams: { returnUrl: currentUrl }

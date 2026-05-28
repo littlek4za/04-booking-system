@@ -6,7 +6,6 @@ import { AuthService } from '@features/auth/auth-service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GuestBookingViewInitRequestDto } from '../dtos/guest-booking-view-init-request-dto';
 import { GuestBookingViewAccessRequestDto } from '../dtos/guest-booking-view-access-request-dto';
-import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
 import { LoggerService } from '@core/services/logger-service';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '@core/services/notification-service';
@@ -37,9 +36,6 @@ export class BookingAccessComponent implements OnInit, OnDestroy {
 
   // Form
   bookingTokenValidationForm!: FormGroup;
-
-  // Submit Field
-  bookingInfo: AttendeeBookingResponseDto | null = null;
 
   // Recaptcha Field
   showCaptcha = signal<boolean>(false);

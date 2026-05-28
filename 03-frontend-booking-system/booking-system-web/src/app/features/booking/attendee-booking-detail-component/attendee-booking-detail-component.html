@@ -1,79 +1,196 @@
-<p>booking-detail-component works!</p>
-
 @if (attendeeBookingDto()) {
-<div class="booking-card">
+<div class="card-body p-3 p-md-4">
 
-    <h2>{{ attendeeBookingDto()?.eventName }}</h2>
-    <p class="slot">{{ attendeeBookingDto()?.slotName }}</p>
+    <!-- Event -->
+    <div class="mb-4 text-center">
+        <h4 class="fw-bold mb-1">
+            Booking Details
+        </h4>
+    </div>
 
-    <!-- Name -->
-    <div class="row">
-        <label>Name:</label>
-        @if(attendeeBookingDto()?.isGuest){
-        <span>
-            {{ attendeeBookingDto()?.guestAttendeeFirstName }} {{ attendeeBookingDto()?.guestAttendeeLastName }}
-        </span>
-        } @else {
-        <span>
-            {{ attendeeBookingDto()?.attendeeFirstName }} {{ attendeeBookingDto()?.attendeeLastName }}
-        </span>
+    <!-- Booking Details -->
+    <div class="border rounded-3 p-3 bg-light-subtle">
+
+        <!-- Event Name -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user me-2"></i>Event Name
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.eventName }}
+            </span>
+        </div>
+
+        <!-- Event Description -->
+        @if(attendeeBookingDto()?.eventDescription){
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user me-2"></i>Event Description
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.eventDescription }}
+            </span>
+        </div>
         }
+
+        <!-- Slot Name -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user me-2"></i>Slot Name
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.slotName }}
+            </span>
+        </div>
+
+        <!-- Slot Description -->
+        @if(attendeeBookingDto()?.slotDescription){
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user me-2"></i>Slot Description
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.slotDescription }}
+            </span>
+        </div>
+        }
+
+        <!-- Name -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user me-2"></i>Name
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.attendeeFirstName }}
+                {{ attendeeBookingDto()?.attendeeLastName }}
+            </span>
+        </div>
+
+        <!-- Email -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-envelope me-2"></i>Email
+            </span>
+
+            <span class="text-end text-break">
+                {{ attendeeBookingDto()?.attendeeEmail }}
+            </span>
+        </div>
+
+        <!-- Start -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-calendar-day me-2"></i>Start
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.bookedStartTime | date:'yyyy-MM-dd hh:mm a' }}
+            </span>
+        </div>
+
+        <!-- End -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-clock me-2"></i>End
+            </span>
+
+            <span class="text-end">
+                {{ attendeeBookingDto()?.bookedEndTime | date:'yyyy-MM-dd hh:mm a' }}
+            </span>
+        </div>
+
+        <!-- Status -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-circle-info me-2"></i>Status
+            </span>
+
+            <span class="badge" [ngClass]="statusClassMap[attendeeBookingDto()?.bookingStatus!]">
+                {{ attendeeBookingDto()?.bookingStatus | titlecase }}
+            </span>
+        </div>
+
+        <!-- Organizer -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-user-tie me-2"></i>Organizer
+            </span>
+
+            <span class="text-end text-break">
+                {{ attendeeBookingDto()?.organizerEmail }}
+            </span>
+        </div>
+
+        <!-- Location -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-location-dot me-2"></i>Location
+            </span>
+
+            <div class="text-end">
+                <div class="small">
+                    {{ attendeeBookingDto()?.eventLocationAddress }}
+                </div>
+
+                @if (attendeeBookingDto()?.latitude &&
+                attendeeBookingDto()?.longitude) {
+
+                <a [href]="'https://www.google.com/maps/place/' + attendeeBookingDto()?.latitude + ',' + attendeeBookingDto()?.longitude"
+                  target="_blank" class="text-decoration-none text-primary small">
+                  <i class="fa-solid fa-map-location-dot"></i> Open Google Map
+                </a>
+
+                }
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- Email -->
-    <div class="row">
-        <label>Attendee Email:</label>
-        <span>{{ attendeeBookingDto()?.attendeeEmail }}</span>
+
+
+
+</div>
+<!-- Footer Actions -->
+<div class="card-footer bg-white border-0 p-3 p-md-4">
+
+    <div class="d-grid gap-2">
+
+        <!-- WhatsApp -->
+        <button class="btn btn-success" (click)="shareViaWhatsapp()">
+
+            <i class="fa-brands fa-whatsapp me-2"></i>
+            Share via WhatsApp
+        </button>
+
+        <!-- Copy -->
+        <button type="button" class="btn btn-outline-primary" (click)="copyLink()">
+
+            <i class="fa-solid fa-copy me-2"></i>
+            Copy Booking Link
+        </button>
+
+        <!-- Delete/Cancel -->
+        <button type="button" class="btn btn-danger" (click)="deleteBooking()">
+
+            <i class="fa-solid fa-trash-can"></i>
+            Cancel Booking
+        </button>
+
+        <!-- Done -->
+        <button type="button" class="btn btn-dark" (click)="closeWizard()">
+
+            <i class="fa-solid fa-check me-2"></i>
+            Done
+        </button>
+
     </div>
 
-    <!-- Time -->
-    <div class="row">
-        <label>Start Time:</label>
-        <span>{{ attendeeBookingDto()?.bookedStartTime }}</span>
-    </div>
-
-    <div class="row">
-        <label>End Time:</label>
-        <span>{{ attendeeBookingDto()?.bookedEndTime }}</span>
-    </div>
-
-    <!-- Booking Info -->
-    <div class="row">
-        <label>Status:</label>
-        <span>{{ attendeeBookingDto()?.bookingStatus }}</span>
-    </div>
-
-    <div class="row">
-        <label>Booked At:</label>
-        <span>{{ attendeeBookingDto()?.bookedAt }}</span>
-    </div>
-
-    <!-- Organizer -->
-    <div class="row">
-        <label>Organizer Email:</label>
-        <span>{{ attendeeBookingDto()?.organizerEmail }}</span>
-    </div>
-
-    <!-- Location -->
-    <div class="row">
-        <label>Location:</label>
-        <span>{{ attendeeBookingDto()?.eventLocationAddress }}</span>
-    </div>
-
-    <!-- Google Map Link -->
-    @if (attendeeBookingDto()?.latitude && attendeeBookingDto()?.longitude) {
-    <div class="row">
-        <label>Map:</label>
-        <a [href]="'https://www.google.com/maps?q=' + attendeeBookingDto()?.latitude + ',' + attendeeBookingDto()?.longitude"
-            target="_blank">
-            Open in Google Maps
-        </a>
-    </div>
-    }
-
-    <!-- Cancel Booking-->
-    <div class="row">
-        <button type="button" class="btn btn-sm btn-danger" (click)="deleteBooking()"> Cancel Booking</button>
-    </div>
 </div>
 }

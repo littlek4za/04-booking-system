@@ -146,25 +146,15 @@ public class DtoMapperImpl implements DtoMapper {
         @Override
         public OrganizerBookingResponseDto toOrganizerBookingResponseDto(Booking savedBooking) {
 
-                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(), savedBooking.getBookedEndTime(), savedBooking.isDeleted());
-
-                String guestFirstName = null;
-                String guestLastName = null;
-
-                if (Boolean.TRUE.equals(savedBooking.getUser().getGuest())) {
-                        guestFirstName = savedBooking.getGuestFirstName();
-                        guestLastName = savedBooking.getGuestLastName();
-                }
+                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(),
+                                savedBooking.getBookedEndTime(), savedBooking.isDeleted());
 
                 return new OrganizerBookingResponseDto(
                                 savedBooking.getId(),
-                                savedBooking.getUser().getUsername(),
-                                savedBooking.getUser().getLastName(),
-                                savedBooking.getUser().getFirstName(),
-                                guestLastName,
-                                guestFirstName,
-                                savedBooking.getUser().getGuest(),
-                                savedBooking.getUser().getEmail(),
+                                savedBooking.getAttendeeLastName(),
+                                savedBooking.getAttendeeFirstName(),
+                                savedBooking.getIsGuest(),
+                                savedBooking.getAttendeeEmail(),
                                 toSlotResponseDto(savedBooking.getSlot()),
                                 savedBooking.getBookedStartTime(),
                                 savedBooking.getBookedEndTime(),
@@ -177,31 +167,23 @@ public class DtoMapperImpl implements DtoMapper {
         @Override
         public AttendeeBookingResponseDto toAttendeeBookingResponseDto(Booking savedBooking) {
 
-                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(), savedBooking.getBookedEndTime(), savedBooking.isDeleted());
-
-                String guestFirstName = null;
-                String guestLastName = null;
-
-                if (Boolean.TRUE.equals(savedBooking.getUser().getGuest())) {
-                        guestFirstName = savedBooking.getGuestFirstName();
-                        guestLastName = savedBooking.getGuestLastName();
-                }
+                BookingStatus status = BookingStatus.from(savedBooking.getBookedStartTime(),
+                                savedBooking.getBookedEndTime(), savedBooking.isDeleted());
 
                 return new AttendeeBookingResponseDto(
                                 savedBooking.getId(),
-                                savedBooking.getUser().getUsername(),
-                                savedBooking.getUser().getLastName(),
-                                savedBooking.getUser().getFirstName(),
-                                guestLastName,
-                                guestFirstName,
-                                savedBooking.getUser().getGuest(),
+                                savedBooking.getAttendeeLastName(),
+                                savedBooking.getAttendeeFirstName(),
+                                savedBooking.getIsGuest(),
                                 savedBooking.getBookedStartTime(),
                                 savedBooking.getBookedEndTime(),
                                 savedBooking.getBookingToken(),
                                 savedBooking.getBookedAt(),
                                 status,
                                 savedBooking.getEventName(),
+                                savedBooking.getEventDescription(),
                                 savedBooking.getSlotName(),
+                                savedBooking.getSlotDescription(),
                                 savedBooking.getOrganizerEmail(),
                                 savedBooking.getAttendeeEmail(),
                                 savedBooking.getEventLocationAddress(),

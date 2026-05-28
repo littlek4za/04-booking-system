@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, Input, OnDestroy, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SlotService } from '../slot-service';
@@ -13,6 +13,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { InvitationDashboard } from '@features/invitations/invitation-dashboard/invitation-dashboard';
 import { LoggerService } from '@core/services/logger-service';
 import { NotificationService } from '@core/services/notification-service';
+import { EventWithSlotCountResponseDto } from '@features/events/dtos/event-with-slot-count-response-dto';
 
 @Component({
   standalone: true,
@@ -23,18 +24,10 @@ import { NotificationService } from '@core/services/notification-service';
 })
 export class SlotDashboardComponent implements OnInit, OnDestroy {
 
+  // Service Inject
   private slotService = inject(SlotService);
 
-  updateSlotWizard: boolean = false;
-  slotList = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
-  eventId!: number;
-  eventType = signal<EventTypeModel | null>(null);
-  eventName = signal<string | null>(null);
-  eventDescription = signal<string | null>(null);
-
-  slotId: number | null = null;
-  modeSlotWizard!: 'CREATE' | 'UPDATE';
-  openCalendarView: boolean = false;
+  // class
   protected readonly EventType = EventTypeModel;
 
   // show or hide component
@@ -42,22 +35,78 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   showBookingManagerDashboard: boolean = false;
   showInvitationWizard: boolean = false;
   showInvitationDashboard: boolean = false;
+  openCalendarView: boolean = false;
 
   // IO for component
-  slotName: string | null = null;
-
+  updateSlotName: string | null = null;
+  updateSlotId: number | null = null;
+  modeSlotWizard!: 'CREATE' | 'UPDATE';
 
   // for destroy usage
   private destroy$ = new Subject<void>();
 
-  activeSort = signal<'LATEST' | 'EARLIEST'>('LATEST');
+  // sort and filter field
+  activeSortMode = signal<'LATEST' | 'EARLIEST' | 'NAME_ASC' | 'NAME_DSC'>('LATEST');
+  searchText = signal<string>('');
+
+  // data
+  allSlot = toSignal(this.slotService.slotListByEventId$, { initialValue: [] });
+  eventId!: number;
+  event = signal<EventWithSlotCountResponseDto | null>(null);
+
+  slotList = computed(() => {
+    let list = [...this.allSlot()];
+
+    const searchTexts = this.searchText().trim().toLowerCase().split(/\s+/);
+    const sortMode = this.activeSortMode();
+
+    if (searchTexts) {
+      list = list.filter(slot => {
+        const searchableText = [
+          slot.slotName,
+          slot.slotDescription,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchTexts.every(word => searchableText.includes(word));
+      })
+    }
+
+    if (sortMode === 'LATEST') {
+      list.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+    }
+
+    if (sortMode === 'EARLIEST') {
+      list.sort((a, b) => 
+        new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+      )
+    }
+
+    if (sortMode === 'NAME_ASC') {
+      list.sort((a, b) => 
+        a.slotName.localeCompare(b.slotName)
+      )
+    }
+
+    if (sortMode === 'NAME_DSC') {
+      list.sort((a, b) => 
+        b.slotName.localeCompare(a.slotName)
+      )
+    }
+
+    return list;
+  })
 
 
   constructor(
-    private route: ActivatedRoute, 
-    private eventService: EventService, 
+    private route: ActivatedRoute,
+    private eventService: EventService,
     private logger: LoggerService,
-    private notificationService:NotificationService
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -91,11 +140,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.eventType.set(res.eventType);
-          this.eventName.set(res.eventName);
-          if (res.eventDescription) {
-            this.eventDescription.set(res.eventDescription);
-          }
+          this.event.set(res);
         },
         error: () => {
         }
@@ -155,13 +200,13 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
 
   openCreateSlotWizard() {
     this.modeSlotWizard = 'CREATE';
-    this.slotId = null;
+    this.updateSlotId = null;
     this.showSlotWizard = true;
   }
 
   openUpdateSlotWizard(slotId: number) {
     this.modeSlotWizard = 'UPDATE';
-    this.slotId = slotId;
+    this.updateSlotId = slotId;
     this.showSlotWizard = true;
   }
 
@@ -170,8 +215,8 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   }
 
   openCalendar(slotId: number) {
-    this.slotId = slotId;
-    console.log('Opening Calendar View', this.slotId);
+    this.updateSlotId = slotId;
+    console.log('Opening Calendar View', this.updateSlotId);
     this.openCalendarView = true;
   }
 
@@ -180,8 +225,8 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   }
 
   openBookingManagerDashboard(slotId: number, slotName: string) {
-    this.slotName = slotName;
-    this.slotId = slotId;
+    this.updateSlotName = slotName;
+    this.updateSlotId = slotId;
     this.showBookingManagerDashboard = true;
   }
 
@@ -194,13 +239,13 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
   }
 
   openInvitationWizard(slotId: number) {
-    this.slotId = slotId;
+    this.updateSlotId = slotId;
 
     this.showInvitationWizard = true;
   }
 
   openInvitationDashboard(slotId: number) {
-    this.slotId = slotId;
+    this.updateSlotId = slotId;
     this.showInvitationDashboard = true;
   }
 
@@ -208,8 +253,12 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
     this.showInvitationDashboard = false;
   }
 
-  sortEventsByTime(arg0: string) {
-    throw new Error('Method not implemented.');
+  searchSlots(value:string) {
+    this.searchText.set(value);
+  }
+
+  sortEvents(type: 'LATEST' | 'EARLIEST' | 'NAME_ASC' | 'NAME_DSC' ) {
+    this.activeSortMode.set(type);
   }
 
 }

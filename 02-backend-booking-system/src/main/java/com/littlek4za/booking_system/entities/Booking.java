@@ -35,11 +35,11 @@ public class Booking {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "guest_first_name")
-    private String guestFirstName;
+    @Column(name = "attendee_first_name")
+    private String attendeeFirstName;
 
-    @Column(name = "guest_last_name")
-    private String guestLastName;
+    @Column(name = "attendee_last_name")
+    private String attendeeLastName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "slot_id")
@@ -76,8 +76,14 @@ public class Booking {
     @Column(name = "event_name", nullable = false)
     private String eventName;
 
+    @Column(name = "event_description")
+    private String eventDescription;
+
     @Column(name = "slot_name", nullable = false)
     private String slotName;
+
+    @Column(name = "slot_description")
+    private String slotDescription;
 
     @Column(name = "organizer_email", nullable = false)
     private String organizerEmail;
@@ -94,20 +100,30 @@ public class Booking {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Column(name = "is_guest", nullable=false)
+    private Boolean isGuest;
+
     protected Booking() {
     }
 
     public Booking(User user, Slot slot, Instant bookedStartTime,
-            Instant bookedEndTime, String eventName, String slotName, String organizerEmail, String attendeeEmail,String eventLocationAddress) {
+            Instant bookedEndTime, String eventName, String eventDescription, String slotName, String slotDescription, 
+            String organizerEmail, String attendeeEmail,String eventLocationAddress, String attendeeFirstName, 
+            String attendeeLastName, Boolean isGuest) {
         this.user = user;
         this.slot = slot;
         this.bookedStartTime = bookedStartTime;
         this.bookedEndTime = bookedEndTime;
         this.eventName = eventName;
+        this.eventDescription = eventDescription;
         this.slotName = slotName;
+        this.slotDescription = slotDescription;
         this.organizerEmail = organizerEmail;
         this.attendeeEmail = attendeeEmail;
         this.eventLocationAddress = eventLocationAddress;
+        this.attendeeFirstName = attendeeFirstName;
+        this.attendeeLastName = attendeeLastName;
+        this.isGuest = isGuest;
     }
 
 }

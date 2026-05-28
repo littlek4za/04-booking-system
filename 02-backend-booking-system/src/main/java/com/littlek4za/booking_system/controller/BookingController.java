@@ -36,12 +36,12 @@ public class BookingController {
     }
 
     @PostMapping(path = "{version}/slots/{slotId}/bookings", version = "1")
-    public ResponseEntity<OrganizerBookingResponseDto> createBookingV1(@Valid @RequestBody BookingRequestDto bookingRequestDto,
+    public ResponseEntity<AttendeeBookingResponseDto> createBookingV1(@Valid @RequestBody BookingRequestDto bookingRequestDto,
             @PathVariable("slotId") Long slotId, HttpServletRequest request) {
 
         String clientIp = ipResolver.getClientIp(request);
-        OrganizerBookingResponseDto organizerBookingResponseDto = bookingService.createBooking(bookingRequestDto, slotId, clientIp);
-        return ResponseEntity.status(HttpStatus.CREATED).body(organizerBookingResponseDto);
+        AttendeeBookingResponseDto attendeeBookingResponseDto = bookingService.createBooking(bookingRequestDto, slotId, clientIp);
+        return ResponseEntity.status(HttpStatus.CREATED).body(attendeeBookingResponseDto);
     }
 
     // full calendar using specifically by organizer
