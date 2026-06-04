@@ -1,4 +1,4 @@
-@if (attendeeBookingDto()) {
+@if (attendeeBookingDto) {
 <div class="card-body p-3 p-md-4">
 
     <!-- Event -->
@@ -18,19 +18,19 @@
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.eventName }}
+                {{ attendeeBookingDto.eventName }}
             </span>
         </div>
 
         <!-- Event Description -->
-        @if(attendeeBookingDto()?.eventDescription){
+        @if(attendeeBookingDto.eventDescription){
         <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
             <span class="fw-semibold text-muted">
                 <i class="fa-solid fa-user me-2"></i>Event Description
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.eventDescription }}
+                {{ attendeeBookingDto.eventDescription }}
             </span>
         </div>
         }
@@ -42,19 +42,19 @@
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.slotName }}
+                {{ attendeeBookingDto.slotName }}
             </span>
         </div>
 
         <!-- Slot Description -->
-        @if(attendeeBookingDto()?.slotDescription){
+        @if(attendeeBookingDto.slotDescription){
         <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
             <span class="fw-semibold text-muted">
                 <i class="fa-solid fa-user me-2"></i>Slot Description
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.slotDescription }}
+                {{ attendeeBookingDto.slotDescription }}
             </span>
         </div>
         }
@@ -66,8 +66,8 @@
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.attendeeFirstName }}
-                {{ attendeeBookingDto()?.attendeeLastName }}
+                {{ attendeeBookingDto.attendeeFirstName }}
+                {{ attendeeBookingDto.attendeeLastName }}
             </span>
         </div>
 
@@ -78,7 +78,7 @@
             </span>
 
             <span class="text-end text-break">
-                {{ attendeeBookingDto()?.attendeeEmail }}
+                {{ attendeeBookingDto.attendeeEmail }}
             </span>
         </div>
 
@@ -89,7 +89,7 @@
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.bookedStartTime | date:'yyyy-MM-dd hh:mm a' }}
+                {{ attendeeBookingDto.bookedStartTime | date:'yyyy-MM-dd hh:mm a' }}
             </span>
         </div>
 
@@ -100,7 +100,7 @@
             </span>
 
             <span class="text-end">
-                {{ attendeeBookingDto()?.bookedEndTime | date:'yyyy-MM-dd hh:mm a' }}
+                {{ attendeeBookingDto.bookedEndTime | date:'yyyy-MM-dd hh:mm a' }}
             </span>
         </div>
 
@@ -110,8 +110,8 @@
                 <i class="fa-solid fa-circle-info me-2"></i>Status
             </span>
 
-            <span class="badge" [ngClass]="statusClassMap[attendeeBookingDto()?.bookingStatus!]">
-                {{ attendeeBookingDto()?.bookingStatus | titlecase }}
+            <span class="badge" [ngClass]="statusClassMap[attendeeBookingDto.bookingStatus!]">
+                {{ attendeeBookingDto.bookingStatus | titlecase }}
             </span>
         </div>
 
@@ -122,7 +122,7 @@
             </span>
 
             <span class="text-end text-break">
-                {{ attendeeBookingDto()?.organizerEmail }}
+                {{ attendeeBookingDto.organizerEmail }}
             </span>
         </div>
 
@@ -135,15 +135,15 @@
 
             <div class="text-end">
                 <div class="small">
-                    {{ attendeeBookingDto()?.eventLocationAddress }}
+                    {{ attendeeBookingDto.eventLocationAddress }}
                 </div>
 
-                @if (attendeeBookingDto()?.latitude &&
-                attendeeBookingDto()?.longitude) {
+                @if (attendeeBookingDto.latitude &&
+                attendeeBookingDto.longitude) {
 
-                <a [href]="'https://www.google.com/maps/place/' + attendeeBookingDto()?.latitude + ',' + attendeeBookingDto()?.longitude"
-                  target="_blank" class="text-decoration-none text-primary small">
-                  <i class="fa-solid fa-map-location-dot"></i> Open Google Map
+                <a [href]="'https://www.google.com/maps/place/' + attendeeBookingDto.latitude + ',' + attendeeBookingDto.longitude"
+                    target="_blank" class="text-decoration-none text-primary small">
+                    <i class="fa-solid fa-map-location-dot"></i> Open Google Map
                 </a>
 
                 }
@@ -151,12 +151,20 @@
 
         </div>
 
+        <!-- Booking Token -->
+        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span class="fw-semibold text-muted">
+                <i class="fa-solid fa-circle-info me-2"></i>Booking Code
+            </span>
+            <code class="fw-bold fs-4">
+                {{ attendeeBookingDto.bookingToken }}
+            </code>
+        </div>
+
     </div>
-
-
-
-
+    
 </div>
+
 <!-- Footer Actions -->
 <div class="card-footer bg-white border-0 p-3 p-md-4">
 
@@ -169,11 +177,18 @@
             Share via WhatsApp
         </button>
 
-        <!-- Copy -->
+        <!-- Copy Link -->
         <button type="button" class="btn btn-outline-primary" (click)="copyLink()">
 
             <i class="fa-solid fa-copy me-2"></i>
             Copy Booking Link
+        </button>
+
+        <!-- Copy Code -->
+        <button type="button" class="btn btn-outline-dark" (click)="copyCode()">
+
+            <i class="fa-solid fa-copy me-2"></i>
+            Copy Booking Code
         </button>
 
         <!-- Delete/Cancel -->
@@ -193,4 +208,4 @@
     </div>
 
 </div>
-}
+} 

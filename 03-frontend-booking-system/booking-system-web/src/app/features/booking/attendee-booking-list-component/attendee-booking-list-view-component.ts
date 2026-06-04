@@ -1,20 +1,31 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output, signal, Signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, signal, Signal, ViewChild } from '@angular/core';
 import { BookingService } from '../booking-service';
 import { Subject, takeUntil } from 'rxjs';
 import { CommonModule, DatePipe, NgClass } from '@angular/common';
 import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
 import { LoggerService } from '@core/services/logger-service';
+import { Router } from '@angular/router';
+import { AttendeeBookingDetailComponent } from '../attendee-booking-detail-component/attendee-booking-detail-component';
 
 @Component({
   selector: 'app-attendee-booking-list-view-component',
-  imports: [DatePipe, NgClass, CommonModule],
+  imports: [DatePipe, NgClass, CommonModule, AttendeeBookingDetailComponent],
   templateUrl: './attendee-booking-list-view-component.html',
   styleUrl: './attendee-booking-list-view-component.css',
   standalone: true
 })
+
 export class AttendeeBookingListViewComponent implements OnInit, OnDestroy {
 
+  @ViewChild('listScrollContainer')
+  listScrollContainer?: ElementRef<HTMLDivElement>;
+
+
   @Output() close = new EventEmitter<void>();
+
+  currentView = signal<'list' | 'details'>('list');
+  private listScrollTop = 0;
+
 
   bookingList = signal<AttendeeBookingResponseDto[]>([]);
   statusClassMap: Record<string, string> = {
@@ -24,9 +35,15 @@ export class AttendeeBookingListViewComponent implements OnInit, OnDestroy {
     EXPIRED: 'bg-warning text-dark'
   };
 
+  selectedBooking = signal<AttendeeBookingResponseDto | null>(null);
+
   private destroy$ = new Subject<void>();
 
-  constructor(private bookingService: BookingService, private cdr: ChangeDetectorRef, private logger: LoggerService) { }
+  constructor(
+    private bookingService: BookingService,
+    private cdr: ChangeDetectorRef,
+    private logger: LoggerService,
+  ) { }
 
   ngOnInit(): void {
     this.initBookingList();
@@ -68,6 +85,31 @@ export class AttendeeBookingListViewComponent implements OnInit, OnDestroy {
 
   closeWizard() {
     this.close.emit();
+  }
+
+  viewBookingDetails(booking: AttendeeBookingResponseDto) {
+    this.listScrollTop = this.listScrollContainer?.nativeElement.scrollTop ?? 0;
+
+    this.selectedBooking.set(booking);
+    this.currentView.set('details');
+
+    setTimeout(() => {
+      this.listScrollContainer?.nativeElement.scrollTo({
+        top: 0,
+        behavior: 'auto'
+      });
+    });
+
+  }
+
+  backToList() {
+    this.currentView.set('list');
+    setTimeout(() => {
+      this.listScrollContainer?.nativeElement.scrollTo({
+        top: this.listScrollTop,
+        behavior: 'auto'
+      });
+    });
   }
 
 }
