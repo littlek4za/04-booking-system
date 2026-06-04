@@ -1,30 +1,51 @@
-<p>attendee-access-component works!</p>
+<!-- ACTION BUTTONS -->
+<div class="full-vh flex-column justify-content-center align-items-center p-3">
 
-<button (click)="viewInvitationAccess()">I have an invitation code</button>
-@if (loggedInUser) {
-<button (click)="viewUserAttendeeBookingList()">List out all my bookings</button>
-} @else {
-<button (click)="viewBookingAccess()">I have a booking code</button>
-}
+  <div class="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center w-100">
 
+    <button class="option-card shadow-sm w-100" style="max-width: 260px;" (click)="viewInvitationAccess()">
+      <i class="fa-solid fa-ticket option-icon"></i>
+      <div class="option-text">
+        <div class="fw-semibold">Invitation code</div>
+        <small class="text-muted">Enter code from invitation</small>
+      </div>
+    </button>
 
-@if (showInvitationAccessPage === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-  <app-invitation-access-component (close)="closeInvitationAccessPage()"></app-invitation-access-component>
+    @if (loggedInUser) {
+    <button class="option-card shadow-sm w-100" style="max-width: 260px;" (click)="viewUserAttendeeBookingList()">
+      <i class="fa-solid fa-list option-icon"></i>
+      <div class="option-text">
+        <div class="fw-semibold">My bookings</div>
+        <small class="text-muted">View all your bookings</small>
+      </div>
+    </button>
+    } @else {
+    <button class="option-card shadow-sm w-100" style="max-width: 260px;" (click)="viewBookingAccess()">
+      <i class="fa-solid fa-key option-icon"></i>
+      <div class="option-text">
+        <div class="fw-semibold">Booking code</div>
+        <small class="text-muted">Access with booking reference</small>
+      </div>
+    </button>
+    }
+
+  </div>
+
 </div>
-}
 
-@if (showBookingAccessPage === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
+@if (modalView() !== 'NONE') {
+<div class="modal-backdrop fade show"></div>
 <div class="pop-out-wizard">
-  <app-booking-access-component [showCloseButton]="true" (close)="closeBookingAccessPage()"></app-booking-access-component>
-</div>
-}
+  @if(modalView() === 'INVITATION'){
+  <app-invitation-access-component (close)="closeModal()"></app-invitation-access-component>
+  }
 
-@if(showUserAttendeeBookingListDashboard === true) {
-<div class="modal-backdrop fade show"></div> <!-- disables background -->
-<div class="pop-out-wizard">
-    <app-attendee-booking-list-view-component (close)="closeAttendeeBookingListDashboard()"></app-attendee-booking-list-view-component>
+  @if(modalView() === 'BOOKING'){
+  <app-booking-access-component [showCloseButton]="true" (close)="closeModal()"></app-booking-access-component>
+  }
+
+  @if(modalView() === 'BOOKING_LIST'){
+  <app-attendee-booking-list-view-component (close)="closeModal()"></app-attendee-booking-list-view-component>
+  }
 </div>
 }

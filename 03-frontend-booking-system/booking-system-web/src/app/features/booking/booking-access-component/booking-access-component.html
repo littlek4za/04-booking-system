@@ -1,57 +1,73 @@
-@if (showCloseButton == true) {
-<div class="d-flex justify-content-end mb-3">
-    <button class="btn btn-outline-secondary btn-sm" (click)="closePage()">
-        <i class="fa fa-times"></i>
-    </button>
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+    <h5 class="fw-bold mb-0 text-dark">Find Your Booking</h5>
+    @if (showCloseButton == true) {
+        <button class="btn btn-link text-secondary p-1" (click)="closePage()" aria-label="Close">
+            <i class="fa fa-times fa-lg"></i>
+        </button>
+    }
 </div>
-}
 
-<form class="row g-3 needs-validation" [formGroup]="bookingTokenValidationForm" (ngSubmit)="onSubmit()">
-    <div class="col-md-4">
-        <label class="form-label">Booking Token</label>
-        <input type="text" class="form-control" formControlName="bookingToken"
-            placeholder="Please enter your booking token">
-        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('pattern') &&
-        (bookingTokenValidationForm.get('bookingToken')?.touched ||
-        bookingTokenValidationForm.get('bookingToken')?.dirty)){
-        <div class="text-danger">
-            Invalid booking token.
-        </div>
+<form class="needs-validation" [formGroup]="bookingTokenValidationForm" (ngSubmit)="onSubmit()" novalidate>
+    
+    <div class="mb-4">
+        <label class="form-label fw-semibold text-secondary small text-uppercase tracking-wider">
+            Booking Token
+        </label>
+        <input 
+            type="text" 
+            class="form-control form-control-lg" 
+            formControlName="bookingToken"
+            placeholder="e.g. XA2C34"
+            [class.is-invalid]="bookingTokenValidationForm.get('bookingToken')?.invalid && (bookingTokenValidationForm.get('bookingToken')?.touched || bookingTokenValidationForm.get('bookingToken')?.dirty)"
+        >
+        
+        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('pattern') && (bookingTokenValidationForm.get('bookingToken')?.touched || bookingTokenValidationForm.get('bookingToken')?.dirty)){
+            <div class="invalid-feedback">
+                Invalid booking token format.
+            </div>
         }
-        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('required') &&
-        (bookingTokenValidationForm.get('bookingToken')?.touched ||
-        bookingTokenValidationForm.get('bookingToken')?.dirty)){
-        <div class="text-danger">
-            Booking token is required.
-        </div>
+        @if (bookingTokenValidationForm.get('bookingToken')?.hasError('required') && (bookingTokenValidationForm.get('bookingToken')?.touched || bookingTokenValidationForm.get('bookingToken')?.dirty)){
+            <div class="invalid-feedback">
+                Booking token is required.
+            </div>
         }
     </div>
 
-    <div class="col-md-4">
-        <label class="form-label">Booking Email</label>
-        <input type="text" class="form-control" formControlName="email"
-            placeholder="Please enter the email used for this booking">
-        @if (bookingTokenValidationForm.get('email')?.hasError('pattern') &&
-        (bookingTokenValidationForm.get('email')?.touched ||
-        bookingTokenValidationForm.get('email')?.dirty)){
-        <div class="text-danger">
-            Invalid email.
-        </div>
+    <div class="mb-4">
+        <label class="form-label fw-semibold text-secondary small text-uppercase tracking-wider">
+            Booking Email
+        </label>
+        <input 
+            type="email" 
+            class="form-control form-control-lg" 
+            formControlName="email"
+            placeholder="Please enter the email used for this booking"
+            [class.is-invalid]="bookingTokenValidationForm.get('email')?.invalid && (bookingTokenValidationForm.get('email')?.touched || bookingTokenValidationForm.get('email')?.dirty)"
+        >
+        
+        @if (bookingTokenValidationForm.get('email')?.hasError('pattern') && (bookingTokenValidationForm.get('email')?.touched || bookingTokenValidationForm.get('email')?.dirty)){
+            <div class="invalid-feedback">
+                Invalid email address.
+            </div>
         }
-        @if (bookingTokenValidationForm.get('email')?.hasError('required') &&
-        (bookingTokenValidationForm.get('email')?.touched ||
-        bookingTokenValidationForm.get('email')?.dirty)){
-        <div class="text-danger">
-            Booking email is required.
-        </div>
+        @if (bookingTokenValidationForm.get('email')?.hasError('required') && (bookingTokenValidationForm.get('email')?.touched || bookingTokenValidationForm.get('email')?.dirty)){
+            <div class="invalid-feedback">
+                Booking email is required.
+            </div>
         }
     </div>
 
     @if(showCaptcha()){
-    <div #captchaContainer></div>
+        <div class="mb-4" #captchaContainer></div>
     }
 
-    <div class="col-12">
-        <button class="btn btn-primary" type="submit" [disabled]="isSubmitInProgress()">Submit form</button>
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+        <button 
+            class="btn btn-primary btn-lg px-4 fs-6" 
+            type="submit" 
+            [disabled]="bookingTokenValidationForm.invalid || isSubmitInProgress()"
+        >
+            Verify & Continue
+        </button>
     </div>
 </form>

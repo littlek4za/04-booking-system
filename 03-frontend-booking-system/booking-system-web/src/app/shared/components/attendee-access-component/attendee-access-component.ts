@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { InvitationAccessComponent } from "@features/invitations/invitation-access-component/invitation-access-component";
 import { BookingAccessComponent } from "@features/booking/booking-access-component/booking-access-component";
 import { AuthService } from '@features/auth/auth-service';
@@ -16,6 +16,13 @@ export class AttendeeAccessComponent {
   showUserAttendeeBookingListDashboard: boolean = false;
   showInvitationAccessPage: boolean = false;
 
+  modalView = signal<
+    | 'NONE'
+    | 'INVITATION'
+    | 'BOOKING'
+    | 'BOOKING_LIST'
+  >('NONE');
+
   constructor(private authService: AuthService) { }
 
   get loggedInUser() {
@@ -23,27 +30,19 @@ export class AttendeeAccessComponent {
   }
 
   viewBookingAccess() {
-    this.showBookingAccessPage = true;
+    this.modalView.set('BOOKING');
   }
 
   viewUserAttendeeBookingList() {
-    this.showUserAttendeeBookingListDashboard = true;
+    this.modalView.set('BOOKING_LIST');
   }
 
   viewInvitationAccess() {
-    this.showInvitationAccessPage = true;
+     this.modalView.set('INVITATION');
   }
 
-  closeInvitationAccessPage() {
-    this.showInvitationAccessPage = false;
-  }
-
-  closeBookingAccessPage() {
-    this.showBookingAccessPage = false;
-  }
-
-  closeAttendeeBookingListDashboard() {
-    this.showUserAttendeeBookingListDashboard = false;
+  closeModal() {
+    this.modalView.set('NONE');
   }
 
 }

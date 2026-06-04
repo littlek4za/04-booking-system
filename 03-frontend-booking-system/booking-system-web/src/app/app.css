@@ -7,3 +7,17 @@
     height: 40px;
     width: auto;
 }
+
+.loading-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.loading-box {
+  max-width: 320px;
+  padding: 1.25rem;
+}

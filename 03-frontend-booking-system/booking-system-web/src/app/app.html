@@ -42,4 +42,24 @@
     </div>
 </nav>
 
+@if (loadingService.isLoading()) {
+  <div class="loading-backdrop">
+    <div class="loading-box text-center">
+      <div class="spinner-border text-primary mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+
+      @if (loadingService.isSlowLoading()) {
+        <div class="fw-semibold">
+          The server is starting up
+        </div>
+        <div class="text-muted small mt-1">
+          This app is hosted on a free tier, so the first request may take few minutes.
+          Please wait.
+        </div>
+      }
+    </div>
+  </div>
+}
+
 <router-outlet></router-outlet>

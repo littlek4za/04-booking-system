@@ -13,8 +13,8 @@ import { SlotDashboardComponent } from '@features/slots/slot-dashboard-component
 import { InvitationAccessComponent } from '@features/invitations/invitation-access-component/invitation-access-component';
 import { BookingConfirmationDashboard } from '@features/booking/booking-confirmation-dashboard/booking-confirmation-dashboard';
 import { AttendeeAccessComponent } from '@shared/components/attendee-access-component/attendee-access-component';
-import { AttendeeBookingDetailComponent } from '@features/booking/attendee-booking-detail-component/attendee-booking-detail-component';
 import { BookingAccessComponent } from '@features/booking/booking-access-component/booking-access-component';
+import { BookingViewPageComponent } from '@features/booking/booking-view-page-component/booking-view-page-component';
 
 
 export const routes: Routes = [
@@ -31,7 +31,7 @@ export const routes: Routes = [
     { path: 'eventDashboard/:id/slots', component: SlotDashboardComponent, canActivate: [AuthGuard], data: { roles: ['ROLE_ORGANIZER', 'ROLE_ATTENDEE', 'ROLE_ADMIN'] } },
     { path: 'bookingConfirmation/:invitationToken', component: BookingConfirmationDashboard },
     { path: 'bookingAccess/:bookingToken', component: BookingAccessComponent },
-    { path: 'bookingView/:bookingToken', component: AttendeeBookingDetailComponent },
+    { path: 'bookingView/:bookingToken', component: BookingViewPageComponent },
     { path: '', component: WelcomeComponent },
     { path: '**', component: NoPageComponent }
 ];

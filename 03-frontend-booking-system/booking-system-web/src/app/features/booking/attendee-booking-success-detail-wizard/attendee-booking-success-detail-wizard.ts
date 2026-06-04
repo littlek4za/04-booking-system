@@ -31,21 +31,13 @@ export class AttendeeBookingSuccessDetailWizard {
     private clipboard: Clipboard,
     private router: Router,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private bookingService: BookingService,
+    private logger: LoggerService,
   ) { }
 
   get hasUserValidToken() {
     return this.authService.hasUserValidToken();
-  }
-
-  copyLink() {
-    this.clipboard.copy(`${window.location.origin}/bookingAccess/${this.attendeeBookingResponseDto().bookingToken}`);
-    this.notificationService.success('Booking access link copied to clipboard!');
-  }
-
-  closeWizard() {
-    this.close.emit();
-    this.router.navigate(['/invitation']);
   }
 
   shareViaWhatsapp() {
@@ -60,5 +52,49 @@ export class AttendeeBookingSuccessDetailWizard {
 
     window.open(whatsappUrl, '_blank');
   }
+
+  copyLink() {
+    const dto = this.attendeeBookingResponseDto();
+
+    if (!dto?.bookingToken) return;
+
+    this.clipboard.copy(`${window.location.origin}/bookingAccess/${this.attendeeBookingResponseDto().bookingToken}`);
+    this.notificationService.success('Booking access link copied to clipboard!');
+  }
+
+  copyCode() {
+    const dto = this.attendeeBookingResponseDto();
+
+    if (!dto?.bookingToken) return;
+
+    this.clipboard.copy(`${dto.bookingToken}`);
+    this.notificationService.success('Booking code copied to clipboard!')
+  }
+
+  deleteBooking() {
+    if (confirm("Confirm Delete Booking?")) {
+      const booking = this.attendeeBookingResponseDto();
+
+      if (booking) {
+        this.logger.debug('[AttendeeBookingSuccessDetailWizard] Sending bookingService.softDeleteBookingAsAttendee request');
+        this.bookingService.softDeleteBookingAsAttendee(booking.bookingId)
+          .subscribe({
+            next: () => {
+              this.notificationService.success("Cancel booking sucessful");
+              this.router.navigate(['/attendeeAccess']);
+            },
+            error: () => {
+            },
+          })
+      }
+    }
+  }
+
+  closeWizard() {
+    this.close.emit();
+    this.router.navigate(['/invitation']);
+  }
+
+  
 
 }
