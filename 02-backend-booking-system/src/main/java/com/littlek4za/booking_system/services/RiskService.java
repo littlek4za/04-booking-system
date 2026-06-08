@@ -59,7 +59,7 @@ public class RiskService {
     public boolean shouldLimitView(String email, String ip) {
         String key = buildKey(email, ip);
         int emailIpAttempts = emailIpAttemptCounterForView.getOrDefault(key, 0);
-        int ipAttempts = ipAttemptCounterForView.getOrDefault(key, 0);
+        int ipAttempts = ipAttemptCounterForView.getOrDefault(ip, 0);
         return emailIpAttempts >= 3 || ipAttempts >= 10;
     }
 
@@ -157,7 +157,7 @@ public class RiskService {
         int usernameIpAttempts = (usernameIpInfo == null || now - usernameIpInfo.getLastUpdated() > WINDOW_MS) ? 0
                 : usernameIpInfo.getCount();
 
-        int usernameAttempts = (usernameInfo == null || usernameInfo.getLastUpdated() > WINDOW_MS) ? 0
+        int usernameAttempts = (usernameInfo == null || now - usernameInfo.getLastUpdated() > WINDOW_MS) ? 0
                 : usernameInfo.getCount();
 
         return usernameIpAttempts >= 5 || usernameAttempts >= 10;
