@@ -26,24 +26,33 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DtoMapper dtoMapper;
+    private final RiskService riskService;
 
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder, DtoMapper dtoMapper) {
+            PasswordEncoder passwordEncoder, DtoMapper dtoMapper, RiskService riskService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.dtoMapper = dtoMapper;
+        this.riskService = riskService;
     }
 
     @Override
-    public UserDto login(LoginRequestDto loginRequestDto) {
+    public UserDto login(LoginRequestDto loginRequestDto, String ip) {
+
+        riskService.shouldLimitLogin(loginRequestDto.username(), ip);
 
         User user = userRepository.findByUsername(loginRequestDto.username())
-                .orElseThrow(() -> new AppException("Invalid username or password", HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> {
+                    riskService.recordAttemptForLogin(loginRequestDto.username(),ip);
+                    return new AppException("Invalid username or password", HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS);
+                });
 
         if (passwordEncoder.matches(CharBuffer.wrap(loginRequestDto.password()), user.getPassword())) {
             return dtoMapper.toUserDto(user);
         }
+
+        riskService.recordAttemptForLogin(loginRequestDto.username(),ip);
         throw new AppException("Invalid username or password", HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS);
     }
 

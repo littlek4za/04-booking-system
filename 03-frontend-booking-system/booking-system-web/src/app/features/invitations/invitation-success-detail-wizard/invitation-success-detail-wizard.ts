@@ -60,7 +60,7 @@ export class InvitationSuccessDetailWizard {
 
     if (this.eventData().includePosition) {
       messageLines.push(
-        `*Google Map:* https://www.google.com/maps/place/${this.eventData().latitude},${this.eventData().longitude}`
+        `*Google Map:* https://www.google.com/maps?q=${this.eventData().latitude},${this.eventData().longitude}`
       );
     }
 
@@ -76,7 +76,12 @@ export class InvitationSuccessDetailWizard {
     const whatsappUrl =
       `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappUrl, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
   }
 
 }

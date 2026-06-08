@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
 import com.littlek4za.booking_system.exception.filter.ExceptionHandlerFilter;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
+import com.littlek4za.booking_system.services.RiskService;
+import com.littlek4za.booking_system.utils.IpResolver;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,16 +32,21 @@ public class SecurityConfig {
     @Value("${allowed.origins}")
     private String[] allowedOrigins;
     private final JwtAuthenticationProvider jwtAuthenticationProvider;
+    private final RiskService riskService;
+    private final IpResolver ipResolver;
 
-    public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider) {
+    public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider, IpResolver ipResolver, RiskService riskService) {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
+        this.riskService = riskService;
+        this.ipResolver = ipResolver;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
         http
-                .addFilterBefore(new JwtAuthFilter(jwtAuthenticationProvider), BasicAuthenticationFilter.class)
-                .addFilterBefore(new ExceptionHandlerFilter(objectMapper), JwtAuthFilter.class)
+                .addFilterBefore(new ExceptionHandlerFilter(objectMapper), BasicAuthenticationFilter.class)
+                .addFilterAfter(new SecurityBouncerFilter(riskService, ipResolver), ExceptionHandlerFilter.class)
+                .addFilterAfter(new JwtAuthFilter(jwtAuthenticationProvider), SecurityBouncerFilter.class)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(

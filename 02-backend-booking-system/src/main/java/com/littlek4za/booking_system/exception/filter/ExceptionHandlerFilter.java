@@ -31,10 +31,12 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         }  catch(JWTVerificationException e) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(),ErrorCode.TOKEN_INVALID, request);
+            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage(), ErrorCode.TOKEN_INVALID, request);
         } catch (JwtAuthFilterException e) { // custom filter
-            writeErrorResponse(response, e.getHttpStatus(), e.getMessage(),ErrorCode.USER_NOT_FOUND, request);
-        }  
+            writeErrorResponse(response, e.getHttpStatus(), e.getMessage(), e.getErrorCode(), request);
+        }  catch (SecurityBouncerFilterException e) {
+            writeErrorResponse(response, e.getHttpStatus(), e.getMessage(), e.getErrorCode(), request);
+        }
         // catch (Exception e) {
         //     log.error("EXCEPTION HANDLER FILTER error: ", e);
         //     writeErrorResponse(response, HttpStatus.INTERNAL_SERVER_ERROR, "Internal System Error",ErrorCode.INTERNAL_ERROR, request);

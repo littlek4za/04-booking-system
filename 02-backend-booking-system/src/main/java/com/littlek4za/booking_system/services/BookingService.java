@@ -19,8 +19,6 @@ public interface BookingService {
 
     OrganizerBookingResponseDto softDeleteBookingAsAttendee(Long bookingId);
 
-    OrganizerBookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId);
-
     AttendeeBookingResponseDto getBookingByTokenAsAttendee(String bookingToken);
 
     List<AttendeeBookingResponseDto> getAttendeeBookings();

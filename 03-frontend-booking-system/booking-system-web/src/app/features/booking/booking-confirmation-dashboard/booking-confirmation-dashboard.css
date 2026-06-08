@@ -7,6 +7,7 @@
   width: 95vw;
   max-width: none;
 
+  height: min(90vh, 900px);
   max-height: 90vh;         
   overflow-y: auto;          
 
@@ -16,10 +17,39 @@
 
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   z-index: 1055;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.pop-out-wizard > app-booking-confirmation-wizard {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .modal-backdrop {
   z-index: 1050 !important;
+}
+
+.booking-dashboard {
+  max-width: 100%;
+}
+
+.time-range-line,
+.business-day-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.business-hours-list {
+  max-width: 320px;
+}
+
+.fs-7 {
+  font-size: 0.875rem;
 }
 
 

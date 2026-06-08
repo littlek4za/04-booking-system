@@ -1,33 +1,31 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="d-flex flex-column gap-2">
-        <h5 class="mb-0 fw-bold text-dark gap-2">
-            <i class="fa-solid fa-envelope-open-text text-success"></i> Invitation Manager
+<div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div class="d-flex flex-column gap-2 min-w-0 flex-grow-1">
+        <h5 class="mb-0 fw-bold text-dark">
+            <i class="fa-solid fa-calendar-check text-primary"></i>
+            Invitation Manager
         </h5>
 
-        <!-- Event Name -->
-        <div class="fw-semibold text-dark text-truncate d-flex align-items-center gap-1">
-            <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1.5 fw-semibold">
-                Event: {{ event.eventName }}
+        <div class="d-flex flex-wrap gap-2 min-w-0">
+            <span class="badge bg-secondary-subtle text-dark border text-truncate d-inline-block"
+                  style="max-width: 50vw;"
+                  title="{{event.eventName}}">
+                Event: {{event.eventName}}
             </span>
-            @if(event.eventType === EventTypeModel.FIXED) {
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-                Fixed
+
+            <span class="badge bg-primary-subtle text-primary border text-truncate d-inline-block"
+                  style="max-width: 50vw;"
+                  title="{{event.eventType}}">
+                {{event.eventType}}
             </span>
-            }
-            @if(event.eventType === EventTypeModel.FLEXIBLE) {
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-                Flexible
+
+            <span class="badge bg-success-subtle text-success border flex-shrink-0">
+                {{ invitationList().length }} {{ invitationList().length === 1 ? 'invitation' : 'invitations'}}
             </span>
-            }
-            @if(event.eventType === EventTypeModel.BUSINESS) {
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1.5 fw-semibold">
-                Business
-            </span>
-            }
         </div>
     </div>
 
-    <button class="btn btn-outline-secondary" (click)="closeDashboard()">
+    <button class="btn btn-outline-secondary flex-shrink-0"
+            (click)="closeDashboard()">
         Close
     </button>
 </div>

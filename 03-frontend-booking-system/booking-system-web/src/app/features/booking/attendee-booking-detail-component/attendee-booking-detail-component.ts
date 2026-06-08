@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { AttendeeBookingResponseDto } from '../dtos/attendee-booking-response-dto';
 import { Router } from '@angular/router';
 import { BookingService } from '../booking-service';
@@ -31,7 +31,7 @@ export class AttendeeBookingDetailComponent {
     private router: Router,
     private logger: LoggerService,
     private notificationService: NotificationService,
-    private clipboard:Clipboard
+    private clipboard: Clipboard
   ) { }
 
   deleteBooking() {
@@ -67,7 +67,12 @@ export class AttendeeBookingDetailComponent {
     const whatsappUrl =
       `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappUrl, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
   }
 
   copyLink() {

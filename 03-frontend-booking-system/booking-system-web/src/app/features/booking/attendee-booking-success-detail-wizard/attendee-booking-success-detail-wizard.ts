@@ -50,7 +50,12 @@ export class AttendeeBookingSuccessDetailWizard {
     const whatsappUrl =
       `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappUrl, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
   }
 
   copyLink() {
@@ -92,9 +97,8 @@ export class AttendeeBookingSuccessDetailWizard {
 
   closeWizard() {
     this.close.emit();
-    this.router.navigate(['/invitation']);
+    this.router.navigate(['/attendeeAccess']);
   }
 
-  
 
 }

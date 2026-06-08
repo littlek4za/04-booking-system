@@ -14,7 +14,9 @@ import com.littlek4za.booking_system.dtos.UserAccessTokenDto;
 import com.littlek4za.booking_system.dtos.UserDto;
 import com.littlek4za.booking_system.security.JwtTokenService;
 import com.littlek4za.booking_system.services.UserService;
+import com.littlek4za.booking_system.utils.IpResolver;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -23,15 +25,20 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtTokenService jwtTokenService;
+    private final IpResolver ipResolver;
 
-    public AuthController(UserService userService, JwtTokenService jwtTokenService) {
+    public AuthController(UserService userService, JwtTokenService jwtTokenService, IpResolver ipResolver) {
         this.userService = userService;
         this.jwtTokenService = jwtTokenService;
+        this.ipResolver = ipResolver;
     }
 
     @PostMapping(path = "{version}/login", version = "1")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
-        UserDto userDto = userService.login(loginRequestDto);
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletRequest request){
+
+        String clientIp = ipResolver.getClientIp(request);
+
+        UserDto userDto = userService.login(loginRequestDto, clientIp);
         String token = jwtTokenService.createUserToken(userDto);
         UserAccessTokenDto userAccessTokenDto = jwtTokenService.toUserAccessTokenDto(token);
         LoginResponseDto loginResponseDto = new LoginResponseDto(userDto, userAccessTokenDto);
