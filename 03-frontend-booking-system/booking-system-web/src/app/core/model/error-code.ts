@@ -16,6 +16,8 @@ export class ErrorCode {
     static readonly USER_NOT_FOUND = "USER_NOT_FOUND";
     static readonly INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
     static readonly TOKEN_TYPE_INVALID = "TOKEN_TYPE_INVALID";
+    static readonly LOGIN_ATTEMPT_LIMIT_EXCEEDED = "LOGIN_ATTEMPT_LIMIT_EXCEEDED";
+    
 
     // Validation
     static readonly FIELD_VALIDATION_FAILED = "FIELD_VALIDATION_FAILED";
@@ -47,6 +49,7 @@ export class ErrorCode {
     // Booking
     static readonly BOOKING_NOT_FOUND = "BOOKING_NOT_FOUND";
     static readonly BOOKING_REQUEST_INVALID = "BOOKING_REQUEST_INVALID";
+    static readonly BOOKING_TIME_INVALID = "BOOKING_TIME_INVALID";
     static readonly EVENT_BOOKING_LIMIT_REACHED = "EVENT_BOOKING_LIMIT_REACHED";
     static readonly SLOT_BOOKING_LIMIT_REACHED = "SLOT_BOOKING_LIMIT_REACHED";
 

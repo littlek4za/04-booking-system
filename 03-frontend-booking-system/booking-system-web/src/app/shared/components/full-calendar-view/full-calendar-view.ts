@@ -319,6 +319,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
   private setUpCalendarOptionForViewMode() {
     if (this.mode != 'VIEW') return;
     this.logger.debug('[FullCalendarView] Setup calendar option for VIEW mode');
+
     this.calendarApi.setOption('eventClick', (info) => {
       const timeZone = this.selectedTimeZone();
       const start = info.event.start
@@ -336,6 +337,18 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
         `End Time: ${end}`
       )
     });
+    this.calendarApi.setOption('headerToolbar', this.isMobileCalendarView()
+      ? {
+        left: 'prev,next,today',
+        center: 'title',
+        right: 'timeGridWeek,timeGridDay'
+      }
+      : {
+        left: 'prev,next,today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      }
+    );
   }
 
   private initCalendarData(
@@ -533,8 +546,21 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       this.calendarApi.setOption('slotDuration', slotDuration);
       this.calendarApi.setOption('snapDuration', slotDuration);
 
+      this.calendarApi.setOption('headerToolbar', this.isMobileCalendarView()
+        ? {
+          left: 'prev,next',
+          center: 'title',
+          right: 'today'
+        }
+        : {
+          left: 'prev,next,today',
+          center: 'title',
+          right: 'timeGridWeek,timeGridDay'
+        }
+      );
+
       this.applyInitialEditView(slot, eventType);
-      this.setUpEventClickForEditMode(slot);
+      this.setUpCalendarClickForEditMode(slot);
     }
 
     if (eventType == EventTypeModel.BUSINESS) {
@@ -549,12 +575,21 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       this.calendarApi.setOption('slotDuration', slotDuration);
       this.calendarApi.setOption('snapDuration', slotDuration);
 
-      this.calendarApi.setOption('headerToolbar', {
-        right: 'timeGridWeek,timeGridDay'
-      });
+      this.calendarApi.setOption('headerToolbar', this.isMobileCalendarView()
+        ? {
+          left: 'prev,next',
+          center: 'title',
+          right: 'today'
+        }
+        : {
+          left: 'prev,next,today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        }
+      );
 
       this.applyInitialEditView(slot, eventType);
-      this.setUpEventClickForEditMode(slot);
+      this.setUpCalendarClickForEditMode(slot);
     }
   }
 
@@ -594,24 +629,37 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       const displayDate = moment.tz(firstDay, 'YYYY-MM-DD', this.selectedTimeZone()).toDate();
 
       // set view and date
-      this.calendarApi.changeView(viewType, displayDate);
+      this.calendarApi.changeView(this.isMobileCalendarView() ? 'timeGridDay' : viewType, displayDate);
 
       this.editInitialViewApplied = true;
     }
 
     if (eventType == EventTypeModel.BUSINESS) {
-      this.calendarApi.changeView('timeGridWeek');
+      this.calendarApi.changeView(this.isMobileCalendarView() ? 'timeGridDay' : 'timeGridWeek');
       this.editInitialViewApplied = true;
     }
   }
 
-  private setUpEventClickForEditMode(slot: SlotResponseDto) {
+  private isMobileCalendarView(): boolean {
+    return window.innerWidth < 768;
+  }
+
+  private setUpCalendarClickForEditMode(slot: SlotResponseDto) {
     this.logger.debug('[FullCalendarView] Setup calendar event click option for EDIT mode');
+
+    this.calendarApi.setOption('dateClick', undefined);
+
     this.calendarApi.setOption('eventClick', (info) => {
       if (info.event.extendedProps['isSlotBooked']) {
         this.notificationService.warning('Booked by others');
         return;
       }
+
+      if (info.event.extendedProps['isPast']) {
+        this.notificationService.warning('This time is no longer available');
+        return;
+      }
+
       const start = info.event.start;
       if (!start) return;
 
@@ -645,20 +693,27 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
       }
     }
 
+    // const now = moment();
+
+    // function isPastSlot(slotEnd: moment.Moment){
+    //   slotEnd.isSameOrBefore(now);
+    // } 
+
     if (eventType == EventTypeModel.FIXED) {
       this.logger.debug('[FullCalendarView] Mapping calendar event for EDIT mode and FIXED event');
       const start = moment(slot.slotStartTime, this.selectedTimeZone());
       const end = moment(slot.slotEndTime, this.selectedTimeZone())
       const isSlotBooked = this.isSlotBooked(start.clone().toDate(), end.clone().toDate(), slotBookedTimes);
+      const isPast = start.isSameOrBefore(moment());
       events.push({
         ...baseEvent,
         title: `${start.format('hh:mm a')} - ${end.format('hh:mm a')} - ${slot.slotName}`,
         id: `event-${eventId}-slot-${slot.id}`,
         start: slot.slotStartTime,
         end: slot.slotEndTime,
-        backgroundColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
-        borderColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
-        textColor: isSlotBooked ? '#000000' : '#ffffff',
+        backgroundColor: isPast ? '#686868b7' : isSlotBooked ? '#ff4d4f' : '#3788d8',
+        borderColor: isPast ? '#686868b7' : isSlotBooked ? '#ff4d4f' : '#3788d8',
+        textColor: isPast ? '#000000' : isSlotBooked ? '#000000' : '#ffffff',
         extendedProps: {
           ...baseEvent.extendedProps,
           isSlotBooked: isSlotBooked,
@@ -688,7 +743,9 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
           const endTitle = current.clone().tz(this.selectedTimeZone()).add(slot.slotIntervalMinutes, 'minutes').format('hh:mm a');
           const slotEnd = current.clone().add(slot.slotIntervalMinutes, 'minutes');
 
+          const isPast = current.isSameOrBefore(moment());
           const isSlotBooked = this.isSlotBooked(current.clone().toDate(), slotEnd.clone().toDate(), slotBookedTimes);
+
 
           events.push({
             ...baseEvent,
@@ -696,14 +753,15 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
             id: `event-${eventId}-slot-${slot.id}-rangeIndex-${index}-${i}`,
             start: current.toDate(),
             end: selectEnd.toDate(),
-            backgroundColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
-            borderColor: isSlotBooked ? '#ff4d4f' : '#3788d8',
-            textColor: isSlotBooked ? '#000000' : '#ffffff',
+            backgroundColor: isPast ? '#686868b7' : isSlotBooked ? '#ff4d4f' : '#3788d8',
+            borderColor: isPast ? '#686868b7' : isSlotBooked ? '#ff4d4f' : '#3788d8',
+            textColor: isPast ? '#000000' : isSlotBooked ? '#000000' : '#ffffff',
             extendedProps: {
               ...baseEvent.extendedProps,
               slotIntervalMinutes: slotIntervalMinutes,
               slotFrequencyIntervalMinutes: slotFrequencyIntervalMinutes,
               isSlotBooked: isSlotBooked,
+              isPast: isPast,
             }
           });
 
@@ -784,6 +842,7 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
 
             const startTitle = current.clone().tz(this.selectedTimeZone()).format('hh:mm a');
             const endTitle = bookingEnd.clone().tz(this.selectedTimeZone()).format('hh:mm a');
+            const isPast = current.isSameOrBefore(moment());
 
             events.push({
               ...baseEvent,
@@ -792,14 +851,15 @@ export class FullCalendarView implements OnChanges, OnDestroy, AfterViewInit {
               start: current.toDate(),
               end: eventEnd.toDate(),
               display: 'background',
-              color: '#5d9edf',
-              className: 'slot-item',
+              color: isPast ? '#686868b7' : '#5d9edf',
+              className: isPast ? 'slot-item past-slot-item' : 'slot-item',
               extendedProps: {
                 ...baseEvent.extendedProps,
                 slotFrequencyIntervalMinutes: slot.slotFrequencyIntervalMinutes,
                 slotIntervalMinutes: slot.slotIntervalMinutes,
                 businessTimeZone: slot.businessTimeZone,
                 businessAllowOt: slot.businessAllowOt,
+                isPast: isPast,
               }
             });
 

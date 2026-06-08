@@ -82,6 +82,9 @@ export class ErrorMapperService {
       case ErrorCode.TOKEN_TYPE_INVALID:
         return "Invalid token type.";
 
+        case ErrorCode.LOGIN_ATTEMPT_LIMIT_EXCEEDED:
+        return "Too many login attempts. Please try again later.";
+
       // Validation
       case ErrorCode.FIELD_VALIDATION_FAILED:
         return "Please check the highlighted fields.";
@@ -144,6 +147,9 @@ export class ErrorMapperService {
 
       case ErrorCode.BOOKING_REQUEST_INVALID:
         return "Invalid booking request.";
+
+      case ErrorCode.BOOKING_TIME_INVALID:
+        return "Invalid booking time.";
 
       case ErrorCode.EVENT_BOOKING_LIMIT_REACHED:
         return "Event booking limit reached.";

@@ -331,7 +331,20 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         if (shouldSendCancellationEmail) {
-            eventPublisher.publishEvent(BookingMailEvent.forCancellation(bookingId));
+            eventPublisher.publishEvent(BookingMailEvent.forOrganizerCancellation(
+                booking.getBookingToken(),
+                booking.getAttendeeEmail(),
+                booking.getAttendeeFirstName(),
+                booking.getAttendeeLastName(),
+                booking.getOrganizerEmail(),
+                booking.getSlot().getEvent().getUser().getFirstName(),
+                booking.getSlot().getEvent().getUser().getLastName(),
+                booking.getBookedStartTime(),
+                booking.getBookedEndTime(),
+                booking.getEventName(),
+                booking.getSlotName(),
+                booking.getEventLocationAddress()
+            ));
         }
 
         return dtoMapper.toOrganizerBookingResponseDto(booking);
@@ -358,21 +371,36 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException("Access denied", HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
         }
 
+        BookingStatus bookingStatus = BookingStatus.from(booking.getBookedStartTime(), booking.getBookedEndTime(),
+                booking.isDeleted());
+
+        boolean shouldSendCancellationEmail = bookingStatus == BookingStatus.UPCOMING
+                || bookingStatus == BookingStatus.ONGOING;
+
         booking.setDeletedBy(DeletedBy.ATTENDEE);
         booking.setDeletedAt(Instant.now());
         booking.setDeleted(true);
 
         bookingRepository.save(booking);
 
+        if (shouldSendCancellationEmail) {
+            eventPublisher.publishEvent(BookingMailEvent.forAttendeeCancellation(
+                booking.getBookingToken(),
+                booking.getAttendeeEmail(),
+                booking.getAttendeeFirstName(),
+                booking.getAttendeeLastName(),
+                booking.getOrganizerEmail(),
+                booking.getSlot().getEvent().getUser().getFirstName(),
+                booking.getSlot().getEvent().getUser().getLastName(),
+                booking.getBookedStartTime(),
+                booking.getBookedEndTime(),
+                booking.getEventName(),
+                booking.getSlotName(),
+                booking.getEventLocationAddress()
+            ));
+        }
+
         return dtoMapper.toOrganizerBookingResponseDto(booking);
-    }
-
-    @PreAuthorize("@authz.isGuestBookingView()")
-    @Override
-    @Transactional
-    public OrganizerBookingResponseDto softDeleteBookingAsGuestAttendee(Long bookingId) {
-        throw new AppException("METHOD NOT IMPLMENTED", null, null);
-
     }
 
     @PreAuthorize("(@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ATTENDEE')) or @authz.isGuestBookingView()")

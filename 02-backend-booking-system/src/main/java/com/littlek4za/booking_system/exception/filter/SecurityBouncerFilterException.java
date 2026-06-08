@@ -4,12 +4,12 @@ import org.springframework.http.HttpStatus;
 
 import com.littlek4za.booking_system.exception.model.ErrorCode;
 
-public class JwtAuthFilterException extends RuntimeException{
+public class SecurityBouncerFilterException extends RuntimeException {
 
     private final HttpStatus httpStatus;
     private final ErrorCode errorCode;
 
-    public JwtAuthFilterException(String message, HttpStatus httpStatus, ErrorCode errorCode){
+    public SecurityBouncerFilterException(String message, HttpStatus httpStatus, ErrorCode errorCode) {
         super(message);
         this.httpStatus = httpStatus;
         this.errorCode = errorCode;

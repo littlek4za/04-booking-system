@@ -115,6 +115,13 @@ public class BookingValidator {
                     ErrorCode.BOOKING_REQUEST_INVALID);
         }
 
+        Instant requestedStartTime = slot.getSlotStartTime();
+
+        if (!requestedStartTime.isAfter(Instant.now())) {
+            throw new AppException("The selected time has already passed", HttpStatus.BAD_REQUEST,
+                ErrorCode.BOOKING_TIME_INVALID);
+        }
+
         int count = bookingRepository.getBookingsCountBySlot(slot);
 
         if (count >= slot.getMaxBookPerInterval()) {
@@ -130,6 +137,12 @@ public class BookingValidator {
         }
 
         Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
+
+        if (!requestedStartTime.isAfter(Instant.now())) {
+            throw new AppException("The selected time has already passed", HttpStatus.BAD_REQUEST,
+                ErrorCode.BOOKING_TIME_INVALID);
+        }
+
         Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
         // check if the time is occupied
@@ -165,6 +178,12 @@ public class BookingValidator {
         }
 
         Instant requestedStartTime = Instant.parse(dto.bookedStartTime());
+
+        if (!requestedStartTime.isAfter(Instant.now())) {
+            throw new AppException("The selected time has already passed", HttpStatus.BAD_REQUEST,
+                ErrorCode.BOOKING_TIME_INVALID);
+        }
+        
         Instant requestedEndTime = requestedStartTime.plus(Duration.ofMinutes(slot.getSlotIntervalMinutes()));
 
         // check if the time is occupied
@@ -192,7 +211,7 @@ public class BookingValidator {
         Map<Integer, List<TimeRange>> businessDaysHours = slot.getBusinessDaysHours();
         List<TimeRange> instantRangeList = businessDaysHours.getOrDefault(dayOfWeekStart, List.of())
                 .stream()
-                .sorted(Comparator.comparing(r -> LocalTime.parse(r.getOpen())))
+                .sorted(Comparator.comparing(r -> parseBusinessOpenTime(r.getOpen())))
                 .toList();
 
         if (instantRangeList.isEmpty()) {
@@ -204,14 +223,9 @@ public class BookingValidator {
 
         boolean fitsInInstantRange = instantRangeList.stream()
                 .anyMatch(range -> {
-                    LocalTime openTime = LocalTime.parse(range.getOpen());
-                    LocalTime closeTime = LocalTime.parse(range.getClose());
+                    LocalTime openTime = parseBusinessOpenTime(range.getOpen());
                     ZonedDateTime openZdt = ZonedDateTime.of(requestedStartDate, openTime, zone);
-                    ZonedDateTime closeZdt = ZonedDateTime.of(requestedStartDate, closeTime, zone);
-
-                    if (closeZdt.isBefore(openZdt)) {
-                        closeZdt = closeZdt.plusDays(1);
-                    }
+                    ZonedDateTime closeZdt = toBusinessCloseDateTime(range.getClose(), requestedStartDate, zone, openZdt);
 
                     boolean isLastRange = range.equals(lastRange);
 
@@ -226,6 +240,23 @@ public class BookingValidator {
             throw new AppException(("The chosen start time + slot interval exceeds the allowed slot time ranges"),
                     HttpStatus.BAD_REQUEST, ErrorCode.BOOKING_REQUEST_INVALID);
         }
+    }
+
+    private LocalTime parseBusinessOpenTime(String time) {
+        return LocalTime.parse(time);
+    }
+
+    private ZonedDateTime toBusinessCloseDateTime(String time, LocalDate requestedStartDate, ZoneId zone,
+            ZonedDateTime openZdt) {
+        ZonedDateTime closeZdt = "24:00".equals(time)
+                ? ZonedDateTime.of(requestedStartDate.plusDays(1), LocalTime.MIDNIGHT, zone)
+                : ZonedDateTime.of(requestedStartDate, LocalTime.parse(time), zone);
+
+        if (closeZdt.isBefore(openZdt)) {
+            closeZdt = closeZdt.plusDays(1);
+        }
+
+        return closeZdt;
     }
 
 }

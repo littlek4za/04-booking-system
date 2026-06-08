@@ -81,6 +81,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                 JOIN FETCH b.user
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
+                JOIN FETCH e.user u
                 WHERE b.id = :bookingId
                 AND b.user.id = :userId
                 AND b.isDeleted = false
@@ -93,6 +94,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                 JOIN FETCH b.user
                 JOIN FETCH b.slot s
                 JOIN FETCH s.event e
+                JOIN FETCH e.user u
                 WHERE b.id = :bookingId
                 AND b.user.email = :email
                 AND b.bookingToken = :bookingToken

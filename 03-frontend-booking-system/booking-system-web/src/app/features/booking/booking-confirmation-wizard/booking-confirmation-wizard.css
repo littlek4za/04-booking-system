@@ -1,14 +1,25 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
 .calendar-step-wrapper {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Fill the whole wizard */
-  min-height: 0; 
+  height: 100%;
+  min-height: 0;
 }
 
 .calendar-content {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  /* This ensures the calendar-view component has a 
-     defined height to fill, enabling its own scrollbar */
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-content app-full-calendar-view {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 

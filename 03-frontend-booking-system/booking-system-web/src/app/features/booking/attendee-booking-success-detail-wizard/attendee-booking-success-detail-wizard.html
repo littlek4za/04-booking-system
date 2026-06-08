@@ -180,10 +180,12 @@
         <div class="alert alert-success mt-4 mb-0 small">
             <i class="fa-solid fa-envelope-circle-check me-2"></i>
             @if(hasUserValidToken){
-            Booking details have also been sent to your email.
+            Booking details can be delivered via email in a production deployment.
+            Email sending is disabled in this demo environment.
             } @else {
-            Booking details have also been sent to your email.
-            Guest that accessing booking details requires to key in email used during booking.
+            Booking details can be delivered via email in a production deployment.
+            Guests would normally receive booking information and can access it using the email provided during booking.
+            Email sending is disabled in this demo environment.
             }
         </div>
 

@@ -118,7 +118,7 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
 
     if (this.event.includePosition) {
       messageLines.push(
-        `*Google Map:* https://www.google.com/maps/place/${this.event.latitude},${this.event.longitude}`
+        `*Google Map:* https://www.google.com/maps?q=${this.event.latitude},${this.event.longitude}`
       );
     }
 
@@ -133,7 +133,12 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
     const whatsappUrl =
       `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappUrl, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
   }
 
   deleteInvitation(invitationId: number) {

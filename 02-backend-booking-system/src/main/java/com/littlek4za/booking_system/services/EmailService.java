@@ -14,8 +14,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.littlek4za.booking_system.dtos.AttendeeBookingResponseDto;
-import com.littlek4za.booking_system.entities.Booking;
-import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.services.event.BookingMailEvent;
 import com.resend.*;
 import com.resend.services.emails.model.CreateEmailOptions;
@@ -33,12 +31,9 @@ public class EmailService {
         private final JavaMailSender mailSender;
         private final Resend resend;
 
-        private final BookingRepository bookingRepository;
-
-        public EmailService(Resend resend, BookingRepository bookingRepository, JavaMailSender mailSender) {
+        public EmailService(Resend resend, JavaMailSender mailSender) {
                 this.mailSender = mailSender;
                 this.resend = resend;
-                this.bookingRepository = bookingRepository;
         }
 
         @Async
@@ -49,25 +44,20 @@ public class EmailService {
                                 sendBookingConfirmationDetailsViaNormalMail(event.dto());
                         }
 
-                        if (event.type() == BookingMailEvent.MailType.CANCELLATION) {
-                                Booking booking = bookingRepository
-                                                .findByIdAndIsDeletedTrueWithUser(event.bookingId())
-                                                .orElse(null);
-
-                                if (booking == null) {
-                                        log.error(
-                                                        "Failed to send cancellation email. Deleted booking not found. bookingId={}",
-                                                        event.bookingId());
-                                        return;
-                                }
-
-                                sendBookingCancelledDetailsViaNormalMail(booking);
+                        if (event.type() == BookingMailEvent.MailType.ORGANIZER_CANCELLATION) {
+                                sendOrganizerBookingCancelledDetailsViaNormalMail(event);
                         }
+
+                        if (event.type() == BookingMailEvent.MailType.ATTENDEE_CANCELLATION) {
+                                sendAttendeeBookingCancelledDetailsViaNormalMail(event);
+                        }
+
                 } catch (Exception e) {
                         log.error("Failed to process booking mail event for type={}", event.type(), e);
                 }
 
         }
+
 
         public void sendBookingConfirmationDetailsViaNormalMail(AttendeeBookingResponseDto dto) {
 
@@ -108,25 +98,19 @@ public class EmailService {
                 }
         }
 
-        public void sendBookingCancelledDetailsViaNormalMail(Booking booking) {
+        public void sendOrganizerBookingCancelledDetailsViaNormalMail(BookingMailEvent bookingMailEvent) {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(booking.getAttendeeEmail());
+                message.setTo(bookingMailEvent.attendeeEmail());
                 message.setSubject("Booking Cancellation");
 
-                String firstName;
-                String lastName;
-
-                firstName = booking.getAttendeeFirstName();
-                lastName = booking.getAttendeeLastName();
-
-                ZonedDateTime zonedStart = booking.getBookedStartTime()
+                ZonedDateTime zonedStart = bookingMailEvent.bookedStartTime()
                                 .atZone(ZoneOffset.UTC)
                                 .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
 
                 String formattedZonedStart = zonedStart.format(
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
 
-                ZonedDateTime zonedEnd = booking.getBookedEndTime()
+                ZonedDateTime zonedEnd = bookingMailEvent.bookedEndTime()
                                 .atZone(ZoneOffset.UTC)
                                 .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
 
@@ -155,15 +139,15 @@ public class EmailService {
 
                                                 Thank you.
                                                 """,
-                                firstName,
-                                lastName,
-                                booking.getEventName(),
-                                booking.getSlotName(),
+                                bookingMailEvent.attendeeFirstName(),
+                                bookingMailEvent.attendeeLastName(),
+                                bookingMailEvent.eventName(),
+                                bookingMailEvent.slotName(),
                                 formattedZonedStart,
                                 formattedZonedEnd,
-                                booking.getEventLocationAddress(),
-                                booking.getBookingToken(),
-                                booking.getOrganizerEmail());
+                                bookingMailEvent.eventLocationAddress(),
+                                bookingMailEvent.bookingToken(),
+                                bookingMailEvent.organizerEmail());
 
                 message.setText(text);
 
@@ -171,22 +155,16 @@ public class EmailService {
 
         }
 
-        public void sendBookingCancelledDetailsViaResend(Booking booking) {
+        public void sendOrganizerBookingCancelledDetailsViaResend(BookingMailEvent bookingMailEvent) {
 
-                String firstName;
-                String lastName;
-
-                firstName = booking.getAttendeeFirstName();
-                lastName = booking.getAttendeeLastName();
-
-                ZonedDateTime zonedStart = booking.getBookedStartTime()
+                ZonedDateTime zonedStart = bookingMailEvent.bookedStartTime()
                                 .atZone(ZoneOffset.UTC)
                                 .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
 
                 String formattedZonedStart = zonedStart.format(
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
 
-                ZonedDateTime zonedEnd = booking.getBookedEndTime()
+                ZonedDateTime zonedEnd = bookingMailEvent.bookedEndTime()
                                 .atZone(ZoneOffset.UTC)
                                 .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
 
@@ -223,15 +201,146 @@ public class EmailService {
                                                 "<p>Thank you.</p>" +
 
                                                 "</div>",
-                                firstName,
-                                lastName,
-                                booking.getEventName(),
-                                booking.getSlotName(),
+                                bookingMailEvent.attendeeFirstName(),
+                                bookingMailEvent.attendeeLastName(),
+                                bookingMailEvent.eventName(),
+                                bookingMailEvent.slotName(),
                                 formattedZonedStart,
                                 formattedZonedEnd,
-                                booking.getEventLocationAddress(),
-                                booking.getBookingToken(),
-                                booking.getOrganizerEmail());
+                                bookingMailEvent.eventLocationAddress(),
+                                bookingMailEvent.bookingToken(),
+                                bookingMailEvent.organizerEmail()
+                        );
+
+                CreateEmailOptions params = CreateEmailOptions.builder()
+                                .from("onboarding@resend.dev")
+                                .to("littlek4za@hotmail.com")
+                                .subject("Booking Cancellation")
+                                .html(html)
+                                .build();
+
+                try {
+                        CreateEmailResponse data = resend.emails().send(params);
+                        log.info("RESEND Email sent, id={}", data.getId());
+                } catch (Exception e) {
+                        log.warn("RESEND Email failed", e);
+                }
+        }
+
+        private void sendAttendeeBookingCancelledDetailsViaNormalMail(BookingMailEvent bookingMailEvent) {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(bookingMailEvent.organizerEmail());
+                message.setSubject("Booking Cancellation By Attendee");
+
+                ZonedDateTime zonedStart = bookingMailEvent.bookedStartTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedStart = zonedStart.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                ZonedDateTime zonedEnd = bookingMailEvent.bookedEndTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedEnd = zonedEnd.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                String text = String.format(
+                                """
+                                                Dear %s %s,
+
+                                                Booking has been cancelled by the attendee.
+
+                                                Booking Details:
+                                                --------------------------------
+                                                Event      : %s
+                                                Slot       : %s
+                                                Time       : %s - %s
+                                                Location   : %s
+                                                Reference  : %s
+
+                                                Attendee Contact
+                                                --------------------------------
+                                                Email      : %s
+                                                FirstName  : %s
+                                                LastName   : %s
+
+                                                Thank you.
+                                                """,
+                                bookingMailEvent.organizerFirstName(),
+                                bookingMailEvent.organizerLastName(),
+                                bookingMailEvent.eventName(),
+                                bookingMailEvent.slotName(),
+                                formattedZonedStart,
+                                formattedZonedEnd,
+                                bookingMailEvent.eventLocationAddress(),
+                                bookingMailEvent.bookingToken(),
+                                bookingMailEvent.attendeeEmail(),
+                                bookingMailEvent.attendeeFirstName(),
+                                bookingMailEvent.attendeeLastName()
+                        );
+
+                message.setText(text);
+
+                mailSender.send(message);
+        }
+
+        public void sendAttendeeBookingCancelledDetailsViaResend(BookingMailEvent bookingMailEvent) {
+
+                ZonedDateTime zonedStart = bookingMailEvent.bookedStartTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedStart = zonedStart.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                ZonedDateTime zonedEnd = bookingMailEvent.bookedEndTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedEnd = zonedEnd.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                String html = String.format(
+                                "<div style='font-family:Arial,sans-serif; line-height:1.6; color:#333;'>" +
+
+                                                "<p>Dear %s %s,</p>" +
+
+                                                "<p>Booking has been <strong style='color:#d9534f;'>cancelled</strong> by the attendee.</p>"
+                                                +
+
+                                                "<h3 style='margin-top:20px;'>Booking Details</h3>" +
+                                                "<hr/>" +
+
+                                                "<p><strong>Event:</strong> %s</p>" +
+                                                "<p><strong>Slot:</strong> %s</p>" +
+                                                "<p><strong>Time:</strong> %s - %s</p>" +
+                                                "<p><strong>Location:</strong> %s</p>" +
+                                                "<p><strong>Reference:</strong> %s</p>" +
+
+                                                "<h3 style='margin-top:20px;'>Attendee Contact</h3>" +
+                                                "<hr/>" +
+
+                                                "<p><strong>Email:</strong> %s</p>" +
+                                                "<p><strong>First Name:</strong> %s</p>" +
+                                                "<p><strong>Last Name :</strong> %s</p>" +
+
+                                                "<p>Thank you.</p>" +
+
+                                                "</div>",
+                                bookingMailEvent.organizerFirstName(),
+                                bookingMailEvent.organizerLastName(),
+                                bookingMailEvent.eventName(),
+                                bookingMailEvent.slotName(),
+                                formattedZonedStart,
+                                formattedZonedEnd,
+                                bookingMailEvent.eventLocationAddress(),
+                                bookingMailEvent.bookingToken(),
+                                bookingMailEvent.attendeeEmail(),
+                                bookingMailEvent.attendeeFirstName(),
+                                bookingMailEvent.attendeeLastName()
+                        );
 
                 CreateEmailOptions params = CreateEmailOptions.builder()
                                 .from("onboarding@resend.dev")

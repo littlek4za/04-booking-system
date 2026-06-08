@@ -1,19 +1,26 @@
 <div class="calendar-wrapper">
     <div class="calendar-header">
-        <button (click)="closeCalendar()">Close</button>
-        @if(mode == 'VIEW'){
-        <label>
-            <input type="checkbox" [checked]="showBookings()" (change)="toggleShowBookings($event.target.checked)" />
-            Show Booked Slots
-        </label>
-        <br>
-        }
-        <label>View Time Zone as:</label>
-        <select class="form-select" [(ngModel)]="selectedTimeZone" (ngModelChange)="onTimeZoneChange($event)">
-            @for (timeZone of timeZoneOption; track $index) {
-            <option [value]="timeZone.value">{{timeZone.label}}</option>
+        <div class="calendar-header-row">
+            <button class="btn btn-outline-secondary btn-sm" (click)="closeCalendar()">Close</button>
+
+            @if(mode == 'VIEW'){
+            <label class="calendar-inline-control">
+                <input type="checkbox" [checked]="showBookings()"
+                    (change)="toggleShowBookings($event.target.checked)" />
+                Show Booked Slots
+            </label>
             }
-        </select>
+        </div>
+
+        <label class="calendar-timezone-control">
+            <span>View Time Zone as:</span>
+            <select class="form-select form-select-sm" [(ngModel)]="selectedTimeZone"
+                (ngModelChange)="onTimeZoneChange($event)">
+                @for (timeZone of timeZoneOption; track $index) {
+                <option [value]="timeZone.value">{{timeZone.label}}</option>
+                }
+            </select>
+        </label>
     </div>
 
     <div class="calendar-body">
@@ -22,31 +29,31 @@
 
     @if(mode == 'VIEW'){
     <div class="slot-filter">
-        <label>
-            Show slots for:
-        </label>
-        @for (slot of normalizedSlots(); track $index) {
-        <label>
-            <input type="checkbox" [checked]="selectedSlots().has(slot.id)"
-                (change)="toggleSlotFilter(slot.id, $event.target.checked)">
-            {{slot.slotName}}
-        </label>
-        }
+        <span class="slot-filter-title">Show slots for:</span>
+        <div class="slot-filter-list">
+            @for (slot of normalizedSlots(); track $index) {
+            <label class="calendar-inline-control">
+                <input type="checkbox" [checked]="selectedSlots().has(slot.id)"
+                    (change)="toggleSlotFilter(slot.id, $event.target.checked)">
+                {{slot.slotName}}
+            </label>
+            }
+        </div>
     </div>
     }
 
     @if(mode == 'VIEW' && showBookings()){
     <div class="slot-filter">
-        <label>
-            Show bookings for:
-        </label>
-        @for (slot of distinctBookingSlots(); track $index) {
-        <label>
-            <input type="checkbox" [checked]="selectedOrganizerBookingListForView().has(slot.id)"
-                (change)="toggleBookingFilter(slot.id, $event.target.checked)">
-            {{slot.slotName}}
-        </label>
-        }
+        <span class="slot-filter-title">Show bookings for:</span>
+        <div class="slot-filter-list">
+            @for (slot of distinctBookingSlots(); track $index) {
+            <label class="calendar-inline-control">
+                <input type="checkbox" [checked]="selectedOrganizerBookingListForView().has(slot.id)"
+                    (change)="toggleBookingFilter(slot.id, $event.target.checked)">
+                {{slot.slotName}}
+            </label>
+            }
+        </div>
     </div>
     }
 

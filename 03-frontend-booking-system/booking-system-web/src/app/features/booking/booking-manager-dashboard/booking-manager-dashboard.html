@@ -1,89 +1,237 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">Booking Manager</h5>
-    <button class="btn btn-outline-secondary" (click)="closeDashboard()">
+<div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+    <div class="d-flex flex-column gap-2 min-w-0 flex-grow-1">
+        <h5 class="mb-0 fw-bold text-dark">
+            <i class="fa-solid fa-calendar-check text-primary"></i>
+            Booking Manager
+        </h5>
+
+        <div class="d-flex flex-wrap gap-2 min-w-0">
+            <span class="badge bg-secondary-subtle text-dark border text-truncate d-inline-block"
+                  style="max-width: 50vw;"
+                  title="{{eventName}}">
+                Event: {{eventName}}
+            </span>
+
+            <span class="badge bg-primary-subtle text-primary border text-truncate d-inline-block"
+                  style="max-width: 50vw;"
+                  title="{{slotName}}">
+                Slot: {{slotName}}
+            </span>
+
+            <span class="badge bg-success-subtle text-success border flex-shrink-0">
+                {{ organizerBookingListBySlotId().length }} Bookings
+            </span>
+        </div>
+    </div>
+
+    <button class="btn btn-outline-secondary flex-shrink-0"
+            (click)="closeDashboard()">
         Close
     </button>
 </div>
 
-<h6 class="mb-2 text-muted">
-    Event Name: {{eventName}}
-    <br>
-    Slot Name: {{slotName}}
-    <br><br>
-    Booking List ({{ organizerBookingListBySlotId().length}})
-</h6>
-<table table class="table table-hover align-middle">
-    <thead>
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">First Name</th>
-            <th scope="col">Last Name</th>
-            <th scope="col">Email</th>
-            <th scope="col">Registered User</th>
-            <th scope="col">Booked Time Range</th>
-            <th scope="col">Booking Token</th>
-            <th scope="col">Booking Creation Time</th>
-            <th scope="col">Status</th>
-            <th scope="col">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (booking of organizerBookingListBySlotId(); track booking.bookingId ; ; let i = $index) {
-        <tr>
-            <th scope="row">{{i+1}}</th>
-            <td>{{booking.attendeeFirstName}}</td>
-            <td>{{booking.attendeeLastName}}</td>
-            <td>{{booking.attendeeEmail}}</td>
-            <td>{{booking.isGuest === true ? 'No' : 'Yes'}}</td>
-            <td>
-                @if ((booking.bookedStartTime | date:'yyyyMMdd') === (booking.bookedEndTime | date:'yyyyMMdd')) {
-                <div class="fw-semibold">
-                    {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
-                </div>
-                <div class="text-muted small">
-                    {{ booking.bookedStartTime | date:'hh:mm a' }}
-                    →
-                    {{ booking.bookedEndTime | date:'hh:mm a' }}
-                </div>
-                } @else {
-                <div class="fw-semibold">
-                    {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
-                </div>
-                <div class="text-muted small">
-                    {{ booking.bookedStartTime | date:'hh:mm a' }}
-                </div>
-                <div>
-                    →
-                </div>
-                <div class="fw-semibold">
-                    {{ booking.bookedEndTime | date:'dd MMM yyyy' }}
-                </div>
-                <div class="text-muted small">
-                    {{ booking.bookedEndTime | date:'hh:mm a' }}
-                </div>
-                }
+<div class="table-responsive d-none d-xl-block">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Attendee</th>
+                <th>Email</th>
+                <th>User</th>
+                <th>Booked Slot</th>
+                <th>Token</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+            </tr>
+        </thead>
 
+        <tbody>
+            @for (booking of organizerBookingListBySlotId(); track booking.bookingId; let i = $index) {
 
-            </td>
-            <td>{{booking.bookingToken}}</td>
-            <td>
-                <div class="fw-semibold">
-                    {{booking.bookedAt | date:'dd MMM yyyy'}}
+            <tr>
+                <th scope="row">{{i+1}}</th>
+
+                <td>
+                    <div class="fw-semibold">
+                        {{booking.attendeeFirstName}}
+                        {{booking.attendeeLastName}}
+                    </div>
+                </td>
+
+                <td>
+                    <span class="text-muted">
+                        {{booking.attendeeEmail}}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="badge"
+                        [ngClass]="booking.isGuest ? 'bg-secondary' : 'bg-success'">
+                        {{ booking.isGuest ? 'Guest' : 'Registered' }}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="fw-semibold">
+                        {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
+                    </div>
+
+                    <div class="text-muted small">
+                        {{ booking.bookedStartTime | date:'hh:mm a' }}
+                        →
+                        {{ booking.bookedEndTime | date:'hh:mm a' }}
+                    </div>
+                </td>
+
+                <td>
+                    <code>{{booking.bookingToken}}</code>
+                </td>
+
+                <td>
+                    <div class="fw-semibold">
+                        {{booking.bookedAt | date:'dd MMM yyyy'}}
+                    </div>
+
+                    <div class="text-muted small">
+                        {{booking.bookedAt | date:'hh:mm a'}}
+                    </div>
+                </td>
+
+                <td>
+                    <span class="badge"
+                        [ngClass]="statusClassMap[booking.bookingStatus]">
+                        {{booking.bookingStatus}}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="d-flex justify-content-end">
+                        <button
+                            class="btn btn-sm btn-outline-danger"
+                            (click)="comfirmDeleteBooking(booking.slot.id, booking.bookingId)">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+
+            } @empty {
+
+            <tr>
+                <td colspan="9" class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-calendar-xmark me-2"></i>
+                    No bookings found.
+                </td>
+            </tr>
+
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-xl-none">
+
+    @for (booking of organizerBookingListBySlotId(); track booking.bookingId; let i = $index) {
+
+    <div class="card mb-3 shadow-sm border-start border-4 border-secondary-subtle">
+
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+
+            <span class="fw-bold text-primary">
+                #{{i+1}}
+            </span>
+
+            <span class="badge"
+                [ngClass]="statusClassMap[booking.bookingStatus]">
+                {{booking.bookingStatus}}
+            </span>
+
+        </div>
+
+        <div class="card-body p-3">
+
+            <div class="row g-2">
+
+                <div class="col-12">
+                    <strong>Attendee:</strong>
+                    <div class="text-muted">
+                        {{booking.attendeeFirstName}}
+                        {{booking.attendeeLastName}}
+                    </div>
                 </div>
-                <div class="text-muted small">
-                    {{booking.bookedAt | date:'hh:mm a'}}
+
+                <div class="col-12">
+                    <strong>Email:</strong>
+                    <div class="text-muted text-break">
+                        {{booking.attendeeEmail}}
+                    </div>
                 </div>
-            </td>
-            <td [ngClass]="statusClassMap[booking.bookingStatus]">{{booking.bookingStatus}}</td>
-            <td>
-                <button type="button" class="btn btn-sm btn-danger"
-                    (click)="comfirmDeleteBooking(booking.slot.id, booking.bookingId)">
-                    Delete Booking
-                </button>
-            </td>
-        </tr>
-        }
 
-    </tbody>
+                <div class="col-6">
+                    <strong>User:</strong>
+                    <div class="text-muted">
+                        {{booking.isGuest ? 'Guest' : 'Registered'}}
+                    </div>
+                </div>
 
-</table>
+                <div class="col-6">
+                    <strong>Token:</strong>
+                    <div>
+                        <code>{{booking.bookingToken}}</code>
+                    </div>
+                </div>
+
+                <hr class="my-1 opacity-25">
+
+                <div class="col-12">
+                    <strong>Booked Slot:</strong>
+
+                    <div class="fw-semibold">
+                        {{ booking.bookedStartTime | date:'dd MMM yyyy' }}
+                    </div>
+
+                    <div class="text-muted">
+                        {{ booking.bookedStartTime | date:'hh:mm a' }}
+                        →
+                        {{ booking.bookedEndTime | date:'hh:mm a' }}
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <strong>Created:</strong>
+
+                    <div class="text-muted">
+                        {{booking.bookedAt | date:'dd MMM yyyy hh:mm a'}}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card-footer bg-white">
+
+            <button
+                type="button"
+                class="btn btn-outline-danger w-100"
+                (click)="comfirmDeleteBooking(booking.slot.id, booking.bookingId)">
+
+                <i class="fa-solid fa-trash me-2"></i>
+                Delete Booking
+
+            </button>
+
+        </div>
+
+    </div>
+
+    } @empty {
+
+    <div class="text-center text-muted py-4">
+        <i class="fa-solid fa-calendar-xmark me-2"></i>
+        No bookings found.
+    </div>
+
+    }
+
+</div>

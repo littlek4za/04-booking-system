@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.filter.JwtAuthFilterException;
+import com.littlek4za.booking_system.exception.model.ErrorCode;
 import com.littlek4za.booking_system.models.RoleType;
 import com.littlek4za.booking_system.models.TokenType;
 import com.littlek4za.booking_system.repos.UserRepository;
@@ -42,14 +43,14 @@ public class JwtAuthenticationProvider {
                 } else if (tokenType.isGuestToken()) {
                         return buildGuestAuthentication(decodedJWT);
                 } else {
-                        throw new JwtAuthFilterException("Invalid token type", HttpStatus.UNAUTHORIZED);
+                        throw new JwtAuthFilterException("Invalid token type", HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
                 }
 
         }
 
         private Authentication buildUserAuthentication(DecodedJWT decodedJWT) {
                 User user = userRepository.findByUsername(decodedJWT.getSubject())
-                                .orElseThrow(() -> new JwtAuthFilterException("Unknown User", HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new JwtAuthFilterException("Bad credentials", HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED));
 
                 UserPrincipal userPrincipal = new UserPrincipal(
                                 user.getId(),

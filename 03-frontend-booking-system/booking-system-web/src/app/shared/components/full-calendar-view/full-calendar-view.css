@@ -1,28 +1,7 @@
-.calendar-wrapper {
-  display: flex;
-  flex-direction: column;
+:host {
+  display: block;
   height: 100%;
   min-height: 0;
-}
-
-.calendar-header {
-  flex: 0 0 auto;   /* fixed height */
-  padding: 8px;
-
-}
-
-.calendar-body {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden; /* FullCalendar manages its own scroll */
-}
-
-.slot-filter {
-  flex: 0 0 auto;
-  max-height: 120px;
-  overflow-y: auto;
-  border-top: 1px solid #ddd;
-  padding: 8px;
 }
 
 :host ::ng-deep .fc-event.booked-slot-item {
@@ -33,7 +12,6 @@
     overflow: hidden;
     display: flex;
     align-items: center;
-
 }
 
 :host ::ng-deep .fc-event.blocked-overlap-slot {
@@ -44,10 +22,7 @@
     overflow: hidden;
     display: flex;
     align-items: center;
-
 }
-
-
 
 :host ::ng-deep .fc-event.slot-item {
     opacity: 1;
@@ -58,5 +33,129 @@
     padding: 0 4px;
     display: flex;
     align-items: center;
+}
 
+.calendar-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+  min-width: 0;
+}
+
+.calendar-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.calendar-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.calendar-timezone-control {
+  display: grid;
+  gap: 4px;
+  min-width: 260px;
+  margin: 0;
+}
+
+.calendar-timezone-control span {
+  font-size: 13px;
+}
+
+.calendar-inline-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.calendar-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep full-calendar,
+:host ::ng-deep .fc {
+  height: 100%;
+}
+
+.slot-filter {
+  flex: 0 0 auto;
+  max-height: 96px;
+  overflow-y: auto;
+  border-top: 1px solid #ddd;
+  padding: 8px;
+}
+
+.slot-filter-title {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.slot-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+@media (max-width: 767.98px) {
+  .calendar-wrapper {
+    min-height: 0;
+  }
+
+  .calendar-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .calendar-header-row {
+    justify-content: space-between;
+  }
+
+  .calendar-timezone-control {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .slot-filter {
+    max-height: 82px;
+  }
+
+  .slot-filter-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .slot-filter-list .calendar-inline-control {
+    flex: 0 0 auto;
+  }
+
+  :host ::ng-deep .fc .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  :host ::ng-deep .fc .fc-toolbar-title {
+    font-size: 16px;
+  }
+
+  :host ::ng-deep .fc .fc-button {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
 }
