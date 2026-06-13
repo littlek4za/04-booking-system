@@ -5,18 +5,16 @@ import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
 public class JacksonConfig {
 
     @Bean
-    public ObjectMapper objectMapper(){
+    public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule()); // to enable Instant/LocalDateTime support
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);// disable this will write AS ISO-8601 strings
+        mapper.findAndRegisterModules(); // auto-discovers JavaTimeModule from classpath
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return mapper;
-
     }
 
 }

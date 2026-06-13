@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Slot;
-import com.littlek4za.booking_system.repos.projections.EventSlotCount;
+import com.littlek4za.booking_system.models.EventSlotCount;
 
 import jakarta.persistence.LockModeType;
 
@@ -21,10 +21,10 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
                         SELECT s.event.id AS eventId,
                             COUNT (s) AS slotCount
                         FROM Slot s
-                        WHERE s.event IN :events
+                        WHERE s.event.id IN :eventIds
                         GROUP BY s.event.id
                         """)
-        List<EventSlotCount> countSlotForEvents(@Param("events") List<Event> events);
+        List<EventSlotCount> countSlotForEvents(@Param("eventIds") List<Long> eventIds);
 
         @Query("""
                         SELECT COUNT (s)

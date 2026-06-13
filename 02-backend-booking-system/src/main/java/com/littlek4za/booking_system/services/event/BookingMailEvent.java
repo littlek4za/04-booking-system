@@ -18,7 +18,9 @@ public record BookingMailEvent(
         Instant bookedEndTime,
         String eventName,
         String slotName,
-        String eventLocationAddress) {
+        String eventLocationAddress
+    ) {
+
     public enum MailType {
         CONFIRMATION,
         ORGANIZER_CANCELLATION,

@@ -424,7 +424,46 @@
             }
 
             @if (eventType == EventType.BUSINESS){
+
+            <div class="col-md-4 mb-2">
+                <label class="form-label">Business Time Zone</label>
+                <select class="form-select" formControlName="businessTimeZone">
+                    @for (tz of timezones; track $index) {
+                    <option [value]="tz.value">
+                        {{tz.label}}
+                    </option>
+                    }
+                </select>
+                @if(slotForm.get('businessTimeZone')?.hasError('required') &&
+                (slotForm.get('businessTimeZone')?.touched ||
+                slotForm.get('businessTimeZone')?.dirty)) {
+                <div class="text-danger">
+                    Please choose a Time Zone
+                </div>
+                }
+            </div>
+
+            <div class="col-md-4 mb-2">
+                <label class="form-label">Business Allow OverTime</label>
+                <select class="form-select" formControlName="businessAllowOt">
+                    <option [ngValue]="true">
+                        Allow Over Time
+                    </option>
+                    <option [ngValue]="false">
+                        No Over Time
+                    </option>
+                </select>
+                @if(slotForm.get('businessAllowOt')?.hasError('required') &&
+                (slotForm.get('businessAllowOt')?.touched ||
+                slotForm.get('businessAllowOt')?.dirty)) {
+                <div class="text-danger">
+                    Please choose
+                </div>
+                }
+            </div>
+
             <div class="col-12 mb-2">
+
                 <div [formGroup]="businessDaysHoursForm">
                     <div formArrayName="days">
                         <div class="row mt-2">
@@ -432,7 +471,7 @@
                             <div [formGroupName]="i">
                                 <label>
                                     <input type="checkbox" formControlName="enabled" />
-                                    <label class="form-label">{{dayNames[i]}}</label>
+                                    {{dayNames[i]}}
                                 </label>
                                 <div [hidden]="!day.get('enabled')?.value">
                                     <div formArrayName="intervals">
@@ -468,7 +507,8 @@
                                                 </mat-form-field>
                                                 @if (showBusinessIntervalWarning(interval)) {
                                                 <mat-hint class="text-danger">
-                                                    Please select "Slot Interval (minutes"), "Start Time" and "Business Allow OverTime" first.
+                                                    Please select "Slot Interval (minutes"), "Start Time" and "Business
+                                                    Allow OverTime" first.
                                                 </mat-hint>
                                                 }
                                             </div>
@@ -526,42 +566,6 @@
                 </div>
             </div>
 
-            <div class="col-md-4 mb-2">
-                <label class="form-label">Business Time Zone</label>
-                <select class="form-select" formControlName="businessTimeZone">
-                    @for (tz of timezones; track $index) {
-                    <option [value]="tz.value">
-                        {{tz.label}}
-                    </option>
-                    }
-                </select>
-                @if(slotForm.get('businessTimeZone')?.hasError('required') &&
-                (slotForm.get('businessTimeZone')?.touched ||
-                slotForm.get('businessTimeZone')?.dirty)) {
-                <div class="text-danger">
-                    Please choose a Time Zone
-                </div>
-                }
-            </div>
-
-            <div class="col-md-4 mb-2">
-                <label class="form-label">Business Allow OverTime</label>
-                <select class="form-select" formControlName="businessAllowOt">
-                    <option [ngValue]="true">
-                        Allow Over Time
-                    </option>
-                    <option [ngValue]="false">
-                        No Over Time
-                    </option>
-                </select>
-                @if(slotForm.get('businessAllowOt')?.hasError('required') &&
-                (slotForm.get('businessAllowOt')?.touched ||
-                slotForm.get('businessAllowOt')?.dirty)) {
-                <div class="text-danger">
-                    Please choose
-                </div>
-                }
-            </div>
             }
             <div class="col-12">
                 <h6 class="border-bottom pb-2 mt-3">Booking Rules</h6>

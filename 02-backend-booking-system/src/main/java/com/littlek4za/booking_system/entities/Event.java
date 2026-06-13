@@ -80,7 +80,7 @@ public class Event {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Slot> slotList = new ArrayList<>();
 

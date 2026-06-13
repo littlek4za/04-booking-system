@@ -1,30 +1,39 @@
 package com.littlek4za.booking_system.services;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.littlek4za.booking_system.dtos.InvitationRequestDto;
 import com.littlek4za.booking_system.dtos.InvitationResponseDto;
 import com.littlek4za.booking_system.dtos.InvitationValidationResponseDto;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
+import com.littlek4za.booking_system.entities.InvitationUsage;
+import com.littlek4za.booking_system.entities.InvitationUsageId;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
+import com.littlek4za.booking_system.models.CacheKeys;
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 import com.littlek4za.booking_system.models.ValidationResult;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
+import com.littlek4za.booking_system.repos.InvitationUsageRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
 import com.littlek4za.booking_system.security.SecurityUtil;
+import com.littlek4za.booking_system.services.event.InvitationServiceEvent;
 import com.littlek4za.booking_system.utils.DtoMapper;
 import com.littlek4za.booking_system.validators.InvitationValidator;
 
@@ -34,33 +43,45 @@ import jakarta.transaction.Transactional;
 public class InvitationServiceImpl implements InvitationService {
 
     private final InvitationRepository invitationRepository;
+    private final InvitationUsageRepository invitationUsageRepository;
     private final SecurityUtil securityUtil;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final SlotRepository slotRepository;
     private final DtoMapper dtoMapper;
     private final InvitationValidator invitationValidator;
+    private final ApplicationEventPublisher eventPublisher;
+    private final RedisCacheService redisCacheService;
 
     public InvitationServiceImpl(InvitationRepository invitationRepository, SecurityUtil securityUtil,
             UserRepository userRepository, EventRepository eventRepository, SlotRepository slotRepository,
-            DtoMapper dtoMapper, InvitationValidator invitationValidator) {
+            DtoMapper dtoMapper, InvitationValidator invitationValidator,
+            InvitationUsageRepository invitationUsageRepository, ApplicationEventPublisher eventPublisher,
+            RedisCacheService redisCacheService) {
         this.invitationRepository = invitationRepository;
+        this.invitationUsageRepository = invitationUsageRepository;
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
         this.slotRepository = slotRepository;
         this.dtoMapper = dtoMapper;
         this.invitationValidator = invitationValidator;
+        this.eventPublisher = eventPublisher;
+        this.redisCacheService = redisCacheService;
     }
 
     @Override
+    @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
     @Transactional
     public InvitationResponseDto createInvitation(InvitationRequestDto invitationRequestDto, Long eventId) {
 
-        User user = userRepository.findById(securityUtil.requireUserId())
+        Long userId = securityUtil.requireUserId();
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
+                        ErrorCode.EVENT_NOT_FOUND));
 
         Invitation newInvitation;
         Set<Slot> slotSet;
@@ -68,7 +89,8 @@ public class InvitationServiceImpl implements InvitationService {
 
             slotSet = slotRepository.findByIdInAndEventIdWithEvent(invitationRequestDto.slotIdList(), eventId);
             if (slotSet.size() != invitationRequestDto.slotIdList().size()) {
-                throw new AppException("Some slots do not belong to this event", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_EVENT_MISMATCH);
+                throw new AppException("Some slots do not belong to this event", HttpStatus.BAD_REQUEST,
+                        ErrorCode.SLOT_EVENT_MISMATCH);
             }
 
             if (slotSet.isEmpty()) {
@@ -103,7 +125,8 @@ public class InvitationServiceImpl implements InvitationService {
             newInvitation = dtoMapper.toInvitation(invitationRequestDto, event, user);
 
         } else {
-            throw new AppException("Slot include mode invalid", HttpStatus.BAD_REQUEST, ErrorCode.SLOT_INCLUDE_MODE_INVALID);
+            throw new AppException("Slot include mode invalid", HttpStatus.BAD_REQUEST,
+                    ErrorCode.SLOT_INCLUDE_MODE_INVALID);
         }
 
         if (newInvitation.getExpiresAt() == null) {
@@ -115,8 +138,11 @@ public class InvitationServiceImpl implements InvitationService {
         Invitation savedInvitation = invitationRepository.save(newInvitation);
 
         Invitation invitationForResponse = invitationRepository
-        .findByAccessTokenWithEventAndSlotSet(savedInvitation.getAccessToken())
-        .orElseThrow(() -> new AppException("Invitation not found ", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+                .findByAccessTokenWithEventAndSlotSet(savedInvitation.getAccessToken())
+                .orElseThrow(() -> new AppException("Invitation not found ", HttpStatus.NOT_FOUND,
+                        ErrorCode.INVITATION_NOT_FOUND));
+
+        eventPublisher.publishEvent(InvitationServiceEvent.invitationCreated(userId, eventId));
 
         return dtoMapper.toInvitationResponseDto(invitationForResponse, slotSet);
     }
@@ -140,12 +166,25 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
+    @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
     public List<InvitationResponseDto> getInvitationsByEventId(Long eventId) {
 
-        User user = userRepository.findById(securityUtil.requireUserId())
+        Long userId = securityUtil.requireUserId();
+
+        List<InvitationResponseDto> cacheDtoList = redisCacheService.getList(
+                CacheKeys.invitationListByEventId(userId, eventId),
+                new TypeReference<List<InvitationResponseDto>>() {
+                });
+
+        if (cacheDtoList != null) {
+            return cacheDtoList;
+        }
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
+                        ErrorCode.EVENT_NOT_FOUND));
 
         Set<Invitation> invitationSet = invitationRepository.findByEventWithSlotSet(event);
         Set<Slot> allEventSlots = slotRepository.findByEventWithEvent(event);
@@ -160,15 +199,31 @@ public class InvitationServiceImpl implements InvitationService {
             return dtoMapper.toInvitationResponseDto(invitation, slotSetToUse);
         }).collect(Collectors.toList());
 
+        redisCacheService.set(CacheKeys.invitationListByEventId(userId, eventId), invitationResponseDtoList,
+                Duration.ofMinutes(5));
+
         return invitationResponseDtoList;
     }
 
     @Override
+    @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
     public List<InvitationResponseDto> getInvitationsByEventIdAndSlotId(Long eventId, Long slotId) {
-        User user = userRepository.findById(securityUtil.requireUserId())
+        Long userId = securityUtil.requireUserId();
+
+        List<InvitationResponseDto> cacheDtoList = redisCacheService.getList(
+                CacheKeys.invitationListBySlotId(userId, eventId, slotId),
+                new TypeReference<List<InvitationResponseDto>>() {
+                });
+
+        if (cacheDtoList != null) {
+            return cacheDtoList;
+        }
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
         Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
+                        ErrorCode.EVENT_NOT_FOUND));
 
         Set<Invitation> invitationSet = invitationRepository.findInvitationsApplicableToSlot(eventId, slotId,
                 SlotIncludeMode.ALL_AND_FUTURE);
@@ -184,33 +239,56 @@ public class InvitationServiceImpl implements InvitationService {
             return dtoMapper.toInvitationResponseDto(invitation, slotSetToUse);
         }).collect(Collectors.toList());
 
+        redisCacheService.set(CacheKeys.invitationListBySlotId(userId, eventId, slotId), invitationResponseDtoList,
+                Duration.ofMinutes(5));
+
         return invitationResponseDtoList;
     }
 
     @Override
+    @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
     @Transactional
     public Long deleteInvitationByEventAndId(Long eventId, Long invitationId) {
-        User user = userRepository.findById(securityUtil.requireUserId())
+        Long userId = securityUtil.requireUserId();
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
-        Event event = eventRepository.findByIdAndUser(eventId, user)
-                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
-        Invitation invitation = invitationRepository.findByEventAndId(event, invitationId)
-                .orElseThrow(() -> new AppException("Invitation not found with event and invitationId", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+        eventRepository.findByIdAndUser(eventId, user)
+                .orElseThrow(() -> new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
+                        ErrorCode.EVENT_NOT_FOUND));
+        Invitation invitation = invitationRepository.findByEventIdAndId(eventId, invitationId)
+                .orElseThrow(() -> new AppException("Invitation not found with event and invitationId",
+                        HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+
+        List<Long> slotIds = invitation.getSlotSet().stream().map(slot -> slot.getId()).toList();
+
+        String invitationToken = invitation.getAccessToken();
 
         invitationRepository.delete(invitation);
+
+        eventPublisher.publishEvent(InvitationServiceEvent.invitationUpdated(userId, eventId, slotIds, invitationToken));
 
         return invitationId;
     }
 
-    // guest and user share
+    // public access
     @Override
     public InvitationValidationResponseDto validateInvitationAccess(String token) {
         Invitation invitation = invitationRepository.findByAccessTokenWithEvent(token)
-                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND,
+                        ErrorCode.INVITATION_NOT_FOUND));
 
         Long userId = securityUtil.getUserIdOrNull();
 
-        ValidationResult result = invitationValidator.validateAccess(invitation, userId);
+        InvitationUsage invitationUsage = null;
+        if (userId != null) {
+            InvitationUsageId invitationUsageId = new InvitationUsageId(invitation.getId(),
+                    this.securityUtil.requireUserId());
+
+            invitationUsage = invitationUsageRepository.findById(invitationUsageId).orElse(null);
+        } 
+
+        ValidationResult result = invitationValidator.validateAccess(invitation, userId, invitationUsage);
 
         return buildInvitationValidationResponseDto(
                 result.isValid(),
@@ -230,10 +308,19 @@ public class InvitationServiceImpl implements InvitationService {
                 reason);
     }
 
+    //public access
     @Override
     public InvitationResponseDto getInvitationByToken(String token) {
+
+        InvitationResponseDto cacheDto = redisCacheService.get(CacheKeys.invitationByToken(token), InvitationResponseDto.class);
+
+        if(cacheDto!= null){
+            return cacheDto;
+        }
+
         Invitation invitation = invitationRepository.findByAccessTokenWithEventAndSlotSet(token)
-                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND, ErrorCode.INVITATION_NOT_FOUND));
+                .orElseThrow(() -> new AppException("Invitation not found with token", HttpStatus.NOT_FOUND,
+                        ErrorCode.INVITATION_NOT_FOUND));
 
         Set<Slot> slotSet;
         if (invitation.getSlotIncludeMode() == SlotIncludeMode.ALL_AND_FUTURE) {
@@ -241,7 +328,20 @@ public class InvitationServiceImpl implements InvitationService {
         } else {
             slotSet = invitation.getSlotSet();
         }
-        return dtoMapper.toInvitationResponseDto(invitation, slotSet);
+
+        InvitationResponseDto invitationResponseDto = dtoMapper.toInvitationResponseDto(invitation, slotSet);
+
+        Long eventId = invitation.getEvent().getId();
+
+        redisCacheService.setAndGroup(
+            CacheKeys.invitationByToken(token), 
+            invitationResponseDto, 
+            Duration.ofMinutes(5), 
+            CacheKeys.groupInvitationTokens(eventId),
+            token
+        );
+
+        return invitationResponseDto;
     }
 
 }

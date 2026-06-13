@@ -45,7 +45,15 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
         boolean existsByAccessToken(String token);
 
-        Optional<Invitation> findByEventAndId(Event event, Long id);
+        @Query("""
+                        SELECT i
+                        FROM Invitation i
+                        LEFT JOIN FETCH i.event e
+                        LEFT JOIN FETCH i.slotSet s
+                        WHERE i.event.id = :eventId
+                        AND i.id = :id
+                        """)
+        Optional<Invitation> findByEventIdAndId(@Param("eventId") Long eventId, @Param("id") Long id);
 
         @Query("""
                         SELECT i

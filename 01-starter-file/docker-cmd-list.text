@@ -1,3 +1,4 @@
+BACKEND JAVA 
 // Mvn clean and build jar (skip test)
 mvn clean package -DskipTests
 
@@ -9,3 +10,10 @@ docker run -p 8080:8080 booking-system-backend
 
 // Run image with env settings (application-prod.properties)
 docker run --env-file .env -p 8080:8080 booking-system-backend
+
+REDIS
+// Download image, run image, create container and port forward redis
+docker run -d --name redis -p 6379:6379 redis
+
+// run cli for redis
+docker exec -it redis redis-cli

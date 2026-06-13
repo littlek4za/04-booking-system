@@ -28,6 +28,8 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
 
   @Output() close = new EventEmitter<void>();
 
+  private useSlotFilter = signal(false);
+
   // signal from service
 
   invitationListByEventId = toSignal(this.invitationService.invitationListByEventId$, { initialValue: [] as InvitationResponseDto[] });
@@ -37,11 +39,9 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
     const invitationListByEventId = this.invitationListByEventId();
     const invitationListByEventIdAndSlotId = this.invitationListByEventIdAndSlotId();
 
-    if (invitationListByEventIdAndSlotId.length >= 1) {
-      return invitationListByEventIdAndSlotId;
-    } else {
-      return invitationListByEventId;
-    }
+    return this.useSlotFilter()
+      ? invitationListByEventIdAndSlotId
+      : invitationListByEventId;
   });
 
   // html field
@@ -65,20 +65,27 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
     if (eventChanged || slotIdChanged) {
       this.logger.debug(`[InvitationDashboard] Changes detected for input "eventId" or "slotId"`);
       if (this.slotId) {
+        this.useSlotFilter.set(true);
         this.logger.debug(`[InvitationDashboard] Sending invitationService.getInvitationsByEventIdAndSlotId request`);
-        this.invitationService.getInvitationsByEventIdAndSlotId(this.event.id, this.slotId)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (res) => {
-              this.invitationListByEventIdAndSlotId.set(res);
-            },
-            error: () => {
-            }
-          })
+        this.loadInvitationsByEventIdAndSlotId();
       } else {
+        this.useSlotFilter.set(false);
         this.invitationService.triggerRefreshForInvitationListByEventId(this.event.id);
       }
     }
+  }
+
+  private loadInvitationsByEventIdAndSlotId() {
+    if (!this.slotId) return;
+    this.invitationService.getInvitationsByEventIdAndSlotId(this.event.id, this.slotId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.invitationListByEventIdAndSlotId.set(res);
+        },
+        error: () => {
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -148,7 +155,11 @@ export class InvitationDashboard implements OnChanges, OnDestroy {
       .subscribe({
         next: () => {
           this.notificationService.success('Invitation delete succeed');
-          this.invitationService.triggerRefreshForInvitationListByEventId(this.event.id);
+          if (this.useSlotFilter()) {
+            this.loadInvitationsByEventIdAndSlotId();
+          } else {
+            this.invitationService.triggerRefreshForInvitationListByEventId(this.event.id);
+          }
         },
         error: () => {
         }

@@ -20,6 +20,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { LoggerService } from '@core/services/logger-service';
 import { NotificationService } from '@core/services/notification-service';
+import { EventService } from '@features/events/event-service';
 
 
 
@@ -78,7 +79,8 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
   private initialIntervalType: string | null = null;
 
   constructor(
-    private formBuilder: FormBuilder, 
+    private formBuilder: FormBuilder,
+    private eventService:EventService, 
     private slotService: SlotService, 
     private timeZoneService: TimeZoneService, 
     private logger: LoggerService,
@@ -1050,9 +1052,11 @@ export class SlotEditWizard implements OnInit, OnChanges, OnDestroy {
 
     if (this.mode == 'CREATE') {
       this.logger.debug('[SlotEditWizard] Sending slotService.createSlotByEventId request');
-      this.slotService.createSlotByEventId(slotRequestDto, this.eventId).subscribe({
+      this.slotService.createSlotByEventId(slotRequestDto, this.eventId)
+      .subscribe({
         next: (res) => {
           this.notificationService.success('Slot Created Succesfully.');
+          this.eventService.triggerRefresh();
           this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
           this.closeWizard();
         },

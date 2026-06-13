@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import com.littlek4za.booking_system.models.SlotIncludeMode;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -74,7 +75,7 @@ public class Invitation {
     @JoinTable(name = "invitation_slots", joinColumns = @JoinColumn(name = "invitation_id"), inverseJoinColumns = @JoinColumn(name = "slot_id"))
     private Set<Slot> slotSet = new HashSet<>();
 
-    @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<InvitationUsage> invitationUsages = new HashSet<>();
 
     @OneToMany(mappedBy = "invitation", fetch = FetchType.LAZY)
@@ -112,7 +113,7 @@ public class Invitation {
         this.bookingSet.add(booking);
     }
 
-    public void removeBookin(Booking booking) {
+    public void removeBooking(Booking booking) {
         this.bookingSet.remove(booking);
         booking.setInvitation(null);
     }

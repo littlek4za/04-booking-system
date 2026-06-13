@@ -84,6 +84,8 @@ export class BookingConfirmationWizard implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    console.log("Slot", this.slot);
+    console.log("Invitation", this.invitation);
     this.authTokenPayload = this.authService.getAuthTokenInfo();
     this.initGuestForm();
     if (this.loggedInUser) {

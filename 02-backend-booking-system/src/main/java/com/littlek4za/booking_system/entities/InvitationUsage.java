@@ -47,13 +47,13 @@ public class InvitationUsage {
         this.user = user;
         this.usageCount = 0;
 
-        if (user.getInvitationUsages() != null) {
-            user.getInvitationUsages().add(this);
-        }
+        // if (user.getInvitationUsages() != null) {
+        //     user.getInvitationUsages().add(this);
+        // }
 
-        if (invitation.getInvitationUsages() != null) {
-            invitation.getInvitationUsages().add(this);
-        }
+        // if (invitation.getInvitationUsages() != null) {
+        //     invitation.getInvitationUsages().add(this);
+        // }
     }
 
     public void incrementUsage(Integer maxUsagePerIdentity) {

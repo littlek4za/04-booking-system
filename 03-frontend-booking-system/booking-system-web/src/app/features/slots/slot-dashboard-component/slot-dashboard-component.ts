@@ -177,6 +177,7 @@ export class SlotDashboardComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.logger.debug(`[SlotDashboardComponent] Sending slotService.triggerRefreshForSlotListByEventId request`);
+          this.eventService.triggerRefresh();
           this.slotService.triggerRefreshForSlotListByEventId(this.eventId);
         },
         error: () => {

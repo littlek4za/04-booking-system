@@ -1,4 +1,4 @@
-package com.littlek4za.booking_system.services;
+package com.littlek4za.booking_system.services.eventlistener;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -21,9 +21,9 @@ import com.resend.services.emails.model.CreateEmailResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Service
 @Slf4j
-public class EmailService {
+@Component
+public class EmailEventListener {
 
         @Value("${app.frontend.url}")
         private String frontendUrl;
@@ -31,7 +31,7 @@ public class EmailService {
         private final JavaMailSender mailSender;
         private final Resend resend;
 
-        public EmailService(Resend resend, JavaMailSender mailSender) {
+        public EmailEventListener(Resend resend, JavaMailSender mailSender) {
                 this.mailSender = mailSender;
                 this.resend = resend;
         }

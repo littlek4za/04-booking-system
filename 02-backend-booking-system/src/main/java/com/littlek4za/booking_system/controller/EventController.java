@@ -33,7 +33,6 @@ public class EventController {
         this.eventService = eventService;
     }
 
-
     @PostMapping(path= "{version}/events", version ="1")
     public ResponseEntity<EventResponseDto> createEventV1(@Valid @RequestBody EventRequestDto eventRequestDto){
         EventResponseDto eResponseDto = eventService.createEvent(eventRequestDto);
