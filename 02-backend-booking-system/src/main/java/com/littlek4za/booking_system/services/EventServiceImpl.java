@@ -1,30 +1,36 @@
 package com.littlek4za.booking_system.services;
 
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.littlek4za.booking_system.dtos.DeleteValidationResponseDto;
 import com.littlek4za.booking_system.dtos.EventRequestDto;
 import com.littlek4za.booking_system.dtos.EventResponseDto;
 import com.littlek4za.booking_system.dtos.EventWithSlotCountReponseDto;
 import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
-import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
+import com.littlek4za.booking_system.models.CacheKeys;
+import com.littlek4za.booking_system.models.EventSlotCount;
 import com.littlek4za.booking_system.models.EventType;
 import com.littlek4za.booking_system.repos.BookingRepository;
 import com.littlek4za.booking_system.repos.EventRepository;
 import com.littlek4za.booking_system.repos.InvitationRepository;
 import com.littlek4za.booking_system.repos.SlotRepository;
 import com.littlek4za.booking_system.repos.UserRepository;
-import com.littlek4za.booking_system.repos.projections.EventSlotCount;
 import com.littlek4za.booking_system.security.SecurityUtil;
+import com.littlek4za.booking_system.services.event.EventServiceEvent;
 import com.littlek4za.booking_system.utils.DtoMapper;
 
 import jakarta.transaction.Transactional;
@@ -39,27 +45,32 @@ public class EventServiceImpl implements EventService {
         private final DtoMapper dtoMapper;
         private final SlotRepository slotRepository;
         private final SecurityUtil securityUtil;
-        private final InvitationRepository invitationRepository;
         private final BookingRepository bookingRepository;
-        private final DeleteValidationService deleteValidationService ;
+        private final DeleteValidationService deleteValidationService;
+        private final ApplicationEventPublisher eventPublisher;
+        private final RedisCacheService redisCacheService;
 
         public EventServiceImpl(EventRepository eventRepository, UserRepository userRepository, DtoMapper dtoMapper,
                         SlotRepository slotRepository, SecurityUtil securityUtil,
-                        InvitationRepository invitationRepository, BookingRepository bookingRepository, DeleteValidationService deleteValidationService) {
+                        InvitationRepository invitationRepository, BookingRepository bookingRepository,
+                        DeleteValidationService deleteValidationService, ApplicationEventPublisher eventPublisher, RedisCacheService redisCacheService) {
                 this.eventRepository = eventRepository;
                 this.userRepository = userRepository;
                 this.dtoMapper = dtoMapper;
                 this.slotRepository = slotRepository;
                 this.securityUtil = securityUtil;
-                this.invitationRepository = invitationRepository;
                 this.bookingRepository = bookingRepository;
                 this.deleteValidationService = deleteValidationService;
+                this.eventPublisher = eventPublisher;
+                this.redisCacheService = redisCacheService;
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         @Transactional
         public EventResponseDto createEvent(EventRequestDto eRequestDto) {
-                User user = userRepository.findById(this.securityUtil.requireUserId())
+                Long userId = this.securityUtil.requireUserId();
+                User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
                                                 ErrorCode.USER_NOT_FOUND));
                 EventType eventTypeEnum = stringtoEventType(eRequestDto.eventType());
@@ -79,29 +90,71 @@ public class EventServiceImpl implements EventService {
 
                 Event savedEvent = eventRepository.save(newEvent);
 
+                eventPublisher.publishEvent(EventServiceEvent.eventCreated(userId));
+
                 return dtoMapper.toEventResponseDto(savedEvent);
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         public List<EventWithSlotCountReponseDto> getEvents() {
 
-                User user = userRepository.findById(this.securityUtil.requireUserId())
+                Long userId = this.securityUtil.requireUserId();
+
+                List<EventWithSlotCountReponseDto> cacheDtoList = redisCacheService.getList(
+                                CacheKeys.eventWithSlotCountList(userId),
+                                new TypeReference<List<EventWithSlotCountReponseDto>>() {
+                                });
+
+                if (cacheDtoList != null) {
+                        return cacheDtoList;
+                }
+
+                log.info("DB CALLED FOR event_list - NOT FROM CACHE");
+
+                User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
                                                 ErrorCode.USER_NOT_FOUND));
 
                 List<Event> eventList = eventRepository.findByUser(user);
-                List<EventSlotCount> slotCountList = slotRepository.countSlotForEvents(eventList);
+
+                if (eventList.isEmpty()) {
+                        return Collections.emptyList();
+                }
+
+                List<Long> eventIds = eventList.stream()
+                                .map(event -> event.getId())
+                                .collect(Collectors.toList());
+
+                List<EventSlotCount> slotCountList = slotRepository.countSlotForEvents(eventIds);
                 Map<Long, Long> slotCountMap = slotCountList.stream()
-                                .collect(Collectors.toMap(EventSlotCount::getEventId, EventSlotCount::getSlotCount));
+                                .collect(Collectors.toMap(e -> e.eventId(), e -> e.slotCount()));
                 List<EventWithSlotCountReponseDto> eResponseDtoList = eventList.stream()
                                 .map(event -> dtoMapper.toEventWithSlotCountResponseDto(event,
                                                 slotCountMap.getOrDefault(event.getId(), 0L)))
-                                .toList();
+                                .collect(Collectors.toList());
+
+                redisCacheService.set(CacheKeys.eventWithSlotCountList(userId), eResponseDtoList, Duration.ofMinutes(5));
+
                 return eResponseDtoList;
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         public EventWithSlotCountReponseDto getEventById(Long eventId) {
+
+                Long userId = this.securityUtil.requireUserId();
+
+                EventWithSlotCountReponseDto cacheDto = redisCacheService.get(
+                                CacheKeys.eventById(userId,eventId),
+                               EventWithSlotCountReponseDto.class);
+
+                if (cacheDto != null) {
+                        return cacheDto;
+                }
+
+                log.info("DB CALLED FOR event_by_id - NOT FROM CACHE");
+
                 User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
                                                 ErrorCode.USER_NOT_FOUND));
@@ -110,14 +163,21 @@ public class EventServiceImpl implements EventService {
                                                 HttpStatus.NOT_FOUND, ErrorCode.EVENT_NOT_FOUND));
                 long slotCount = slotRepository.countSlotByEventId(eventId);
 
-                return dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
+                EventWithSlotCountReponseDto eReponseDto = dtoMapper.toEventWithSlotCountResponseDto(event, slotCount);
+
+                redisCacheService.set(CacheKeys.eventById(userId,eventId), eReponseDto, Duration.ofMinutes(5));
+
+                return eReponseDto;
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         @Transactional
         public EventResponseDto putEventById(Long eventId,
                         EventRequestDto eRequestDto) {
-                User user = userRepository.findById(this.securityUtil.requireUserId())
+
+                Long userId = this.securityUtil.requireUserId();
+                User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
                                                 ErrorCode.USER_NOT_FOUND));
                 Event event = eventRepository.findByIdAndUser(eventId, user)
@@ -141,14 +201,19 @@ public class EventServiceImpl implements EventService {
 
                 Event updatedEvent = eventRepository.save(event);
 
+                eventPublisher.publishEvent(EventServiceEvent.eventUpdated(userId, updatedEvent.getId()));
+
                 return dtoMapper.toEventResponseDto(updatedEvent);
 
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         @Transactional
         public Long deleteEventById(Long eventId) {
-                User user = userRepository.findById(this.securityUtil.requireUserId())
+
+                Long userId = this.securityUtil.requireUserId();
+                User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
                                                 ErrorCode.USER_NOT_FOUND));
 
@@ -171,13 +236,15 @@ public class EventServiceImpl implements EventService {
                                         ErrorCode.EVENT_HAS_ACTIVE_BOOKINGS);
                 }
 
-                List<Invitation> invitationList = invitationRepository.findByEventIdWithSlotSet(eventId);
+                // // Not needed handle by CASCADETYPE.ALL in Event entity
+                // List<Invitation> invitationList =
+                // invitationRepository.findByEventIdWithSlotSet(eventId);
 
-                invitationList.forEach(invitation -> {
-                        invitation.getSlotSet().clear();
-                        invitationRepository.save(invitation);
-                        invitationRepository.delete(invitation);
-                });
+                // invitationList.forEach(invitation -> {
+                // invitation.getSlotSet().clear();
+                // invitationRepository.save(invitation);
+                // invitationRepository.delete(invitation);
+                // });
 
                 int deleted = eventRepository.deleteByIdAndUserId(eventId, user.getId());
 
@@ -185,6 +252,8 @@ public class EventServiceImpl implements EventService {
                         throw new AppException("Event not found with eventId and user", HttpStatus.NOT_FOUND,
                                         ErrorCode.EVENT_NOT_FOUND);
                 }
+
+                eventPublisher.publishEvent(EventServiceEvent.eventUpdated(userId, eventId));
 
                 return eventId;
         }
@@ -201,6 +270,7 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
+        @PreAuthorize("@authz.isUser() and hasAnyAuthority('ROLE_ADMIN','ROLE_ORGANIZER')")
         public DeleteValidationResponseDto eventDeleteValidation(Long eventId) {
                 User user = userRepository.findById(this.securityUtil.requireUserId())
                                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND,
@@ -211,7 +281,8 @@ public class EventServiceImpl implements EventService {
 
                 List<Booking> bookingList = bookingRepository.findBySlot_Event_IdAndIsDeletedFalse(eventId);
 
-                DeleteValidationResponseDto responseDto = deleteValidationService.buildDeleteValidationResponseDto(bookingList);
+                DeleteValidationResponseDto responseDto = deleteValidationService
+                                .buildDeleteValidationResponseDto(bookingList);
 
                 return responseDto;
         }

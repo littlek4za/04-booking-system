@@ -1,7 +1,6 @@
 package com.littlek4za.booking_system.validators;
 
 import java.time.Instant;
-import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -22,7 +21,7 @@ public class InvitationValidator {
     }
 
 
-    public ValidationResult validateAccess(Invitation invitation, Long userId){
+    public ValidationResult validateAccess(Invitation invitation, Long userId, InvitationUsage invitationUsage){
          Instant now = Instant.now();
 
         if (now.isAfter(invitation.getExpiresAt())) {
@@ -33,18 +32,16 @@ public class InvitationValidator {
             return ValidationResult.fail("This invitation has reached its maximum usage", ErrorCode.INVITATION_MAX_USAGE_REACHED);
         }
 
-        if (invitation.getMaxUsagePerIdentity() != null) {
+        if (invitation.getMaxUsagePerIdentity() != null && userId != null) {
 
-            if (userId != null) {
-                Optional<InvitationUsage> invitationUsage = invitationUsageRepository
-                        .findByUserIdAndInvitationId(userId, invitation.getId());
+            int usageCount = (invitationUsage != null)
+                ? invitationUsage.getUsageCount()
+                : 0;
 
-                int usageCount = invitationUsage.map(u -> u.getUsageCount()).orElse(0);
-
-                if (usageCount >= invitation.getMaxUsagePerIdentity()) {
-                    return ValidationResult.fail("User has reached maximum usage of this invitation", ErrorCode.INVITATION_USER_USAGE_LIMIT_REACHED);
-                }
+            if (usageCount >= invitation.getMaxUsagePerIdentity()) {
+                return ValidationResult.fail("User has reached maximum usage of this invitation", ErrorCode.INVITATION_USER_USAGE_LIMIT_REACHED);
             }
+
         }
 
         return ValidationResult.ok();

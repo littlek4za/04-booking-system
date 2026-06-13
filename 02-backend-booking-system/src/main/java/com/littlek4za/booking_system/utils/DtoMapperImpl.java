@@ -96,7 +96,6 @@ public class DtoMapperImpl implements DtoMapper {
         public EventResponseDto toEventResponseDto(Event event) {
                 return new EventResponseDto(
                                 event.getId(),
-                                event.getUser().getUsername(),
                                 event.getEventName(),
                                 event.getEventDescription(),
                                 event.getEventLocationAddress(),

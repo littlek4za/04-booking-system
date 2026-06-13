@@ -49,4 +49,36 @@ public class DeleteValidationService {
 
     }
 
+    public boolean canDelete(List<Booking> bookingList) {
+        if (bookingList.isEmpty()) {
+            return true;
+        }
+
+        boolean canDelete = false;
+        long upcoming = 0L;
+        long ongoing = 0L;
+
+        for (Booking booking : bookingList) {
+
+            BookingStatus bookingStatus = BookingStatus.from(booking.getBookedStartTime(), booking.getBookedEndTime(),
+                    booking.isDeleted());
+
+            if (bookingStatus == BookingStatus.DELETED) {
+                continue;
+            } else if (bookingStatus == BookingStatus.UPCOMING) {
+                upcoming++;
+            } else if (bookingStatus == BookingStatus.ONGOING) {
+                ongoing++;
+            } else {
+                log.warn("Unhandle booking status: {}", bookingStatus);
+            }
+        }
+
+        if (upcoming == 0 && ongoing == 0) {
+            canDelete = true;
+        }
+        
+        return canDelete;
+    }
+
 }

@@ -2,7 +2,6 @@ import { EventTypeModel } from "./event-type-model";
 
 export class EventResponseDto {
     id!:number;
-    username!:string | null;
     eventName!:string;
     eventDescription?:string;
     eventLocationAddress!:string;

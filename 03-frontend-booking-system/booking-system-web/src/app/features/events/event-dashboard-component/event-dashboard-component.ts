@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { EventEditWizard } from '../event-edit-wizard/event-edit-wizard';
 import { EventService } from '../event-service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -19,7 +19,7 @@ import { NotificationService } from '@core/services/notification-service';
   templateUrl: './event-dashboard-component.html',
   styleUrl: './event-dashboard-component.css',
 })
-export class EventDashboardComponent {
+export class EventDashboardComponent implements OnInit{
 
   // Service Inject
   private eventService = inject(EventService);
@@ -132,6 +132,10 @@ export class EventDashboardComponent {
 
   constructor(private notificationService: NotificationService) { }
 
+  ngOnInit(): void {
+    this.eventService.triggerRefresh();
+  }
+
   confirmDeleteEvent(eventId: number, eventSlotCount: number) {
 
     this.eventService.eventDeleteValidation(eventId).subscribe({
@@ -147,7 +151,7 @@ export class EventDashboardComponent {
           return;
         }
         const message = eventSlotCount > 0
-          ? `Are you sure you want to delete this event?\n${eventSlotCount} slot(s) under this event will be deleted too`
+          ? `Are you sure you want to delete this event?\n${eventSlotCount} slot(s) and invitation(s) under this event will be deleted too`
           : 'Are you sure you want to delete this event?';
 
         if (confirm(message)) {

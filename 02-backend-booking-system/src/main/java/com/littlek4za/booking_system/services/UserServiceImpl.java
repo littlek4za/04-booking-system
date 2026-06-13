@@ -40,7 +40,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto login(LoginRequestDto loginRequestDto, String ip) {
 
-        riskService.shouldLimitLogin(loginRequestDto.username(), ip);
+        boolean isLoginRestrict = riskService.shouldLimitLogin(loginRequestDto.username(), ip);
+
+        if(isLoginRestrict){
+            throw new AppException("Too many login attempts. Please try again later", HttpStatus.TOO_MANY_REQUESTS, ErrorCode.LOGIN_ATTEMPT_LIMIT_EXCEEDED);
+        }
 
         User user = userRepository.findByUsername(loginRequestDto.username())
                 .orElseThrow(() -> {

@@ -20,6 +20,7 @@ import com.littlek4za.booking_system.entities.Booking;
 import com.littlek4za.booking_system.entities.Event;
 import com.littlek4za.booking_system.entities.Invitation;
 import com.littlek4za.booking_system.entities.InvitationUsage;
+import com.littlek4za.booking_system.entities.InvitationUsageId;
 import com.littlek4za.booking_system.entities.Slot;
 import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.AppException;
@@ -59,7 +60,6 @@ public class BookingServiceImpl implements BookingService {
     private final InvitationValidator invitationValidator;
     private final RiskService riskService;
 
-    // to trigger email after transactional finish
     private final ApplicationEventPublisher eventPublisher;
 
     public BookingServiceImpl(SecurityUtil securityUtil, UserRepository userRepository, SlotRepository slotRepository,
@@ -110,6 +110,19 @@ public class BookingServiceImpl implements BookingService {
 
         User user = getOrCreateUser(dto);
 
+        InvitationUsageId invitationUsageId = new InvitationUsageId(invitation.getId(), user.getId());
+
+        InvitationUsage invitationUsage = invitationUsageRepository.findById(invitationUsageId)
+                .orElseGet(() -> {
+                    try {
+                        InvitationUsage iu = new InvitationUsage(invitation, user);
+                        return invitationUsageRepository.save(iu);
+                    } catch (DataIntegrityViolationException e) {
+                        return invitationUsageRepository.findById(invitationUsageId)
+                                .orElseThrow();
+                    }
+                });
+
         try {
             bookingValidator.validateSlotBelongsToInvitation(slot, invitation);
         } catch (AppException e) {
@@ -123,7 +136,8 @@ public class BookingServiceImpl implements BookingService {
 
         bookingValidator.validateGuestOrUserFields(dto);
 
-        ValidationResult validationResult = invitationValidator.validateAccess(invitation, user.getId());
+        ValidationResult validationResult = invitationValidator.validateAccess(invitation, user.getId(),
+                invitationUsage);
         if (!validationResult.isValid()) {
             if (isGuestBookingCreate) {
                 riskService.recordAttemptForCreate(dto.email(), clientIp);
@@ -134,7 +148,8 @@ public class BookingServiceImpl implements BookingService {
 
         bookingValidator.validateBookingRequestInfo(dto, invitation, slot, event, user);
 
-        AttendeeBookingResponseDto attendeeBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user);
+        AttendeeBookingResponseDto attendeeBookingResponseDto = saveBookingByEventType(dto, invitation, slot, user,
+                invitationUsage);
 
         eventPublisher.publishEvent(BookingMailEvent.forConfirmation(attendeeBookingResponseDto));
 
@@ -173,7 +188,7 @@ public class BookingServiceImpl implements BookingService {
 
     // create booking by Event Type sub method
     private AttendeeBookingResponseDto saveBookingByEventType(BookingRequestDto dto, Invitation invitation, Slot slot,
-            User user) {
+            User user, InvitationUsage invitationUsage) {
 
         Instant requestedStartTime;
         Instant requestedEndTime;
@@ -192,30 +207,6 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException("Event type invalid", HttpStatus.NOT_FOUND, ErrorCode.EVENT_TYPE_INVALID);
         }
 
-        Optional<InvitationUsage> existingInvitationUsage = invitationUsageRepository
-                .findByUserIdAndInvitationId(user.getId(), invitation.getId());
-
-        InvitationUsage invitationUsage;
-
-        if (existingInvitationUsage.isPresent()) {
-            invitationUsage = existingInvitationUsage.get();
-        } else {
-            invitationUsage = new InvitationUsage(invitation, user);
-            try { // for case that same user doing two instance at same time,
-                  // and two instance reaches this point at the same time,
-                  // saving invitationUsage will failed for one of them
-                  // because the faster instance already save it
-                  // and this slower instance under go catch will try to get the invitationusage
-                  // one more time, if cant, then throw the error
-                invitationUsageRepository.save(invitationUsage);
-            } catch (DataIntegrityViolationException e) {
-                invitationUsage = invitationUsageRepository
-                        .findByUserIdAndInvitationId(user.getId(), invitation.getId())
-                        .orElseThrow();
-            }
-
-        }
-
         Integer maxUsagePerIdentity = invitation.getMaxUsagePerIdentity();
         invitationUsage.incrementUsage(maxUsagePerIdentity);
 
@@ -224,15 +215,16 @@ public class BookingServiceImpl implements BookingService {
 
         if (user.getGuest()) {
             attendeeFirstName = dto.firstName();
-            attendeeLastName =dto.lastName();
+            attendeeLastName = dto.lastName();
         } else {
             attendeeFirstName = user.getFirstName();
             attendeeLastName = user.getLastName();
         }
 
         Booking newBooking = new Booking(user, slot, requestedStartTime, requestedEndTime,
-                slot.getEvent().getEventName(), slot.getEvent().getEventDescription(), slot.getSlotName(), slot.getSlotDescription(), invitation.getUser().getEmail(), user.getEmail(),
-                invitation.getEvent().getEventLocationAddress(),attendeeFirstName, attendeeLastName, user.getGuest());
+                slot.getEvent().getEventName(), slot.getEvent().getEventDescription(), slot.getSlotName(),
+                slot.getSlotDescription(), invitation.getUser().getEmail(), user.getEmail(),
+                invitation.getEvent().getEventLocationAddress(), attendeeFirstName, attendeeLastName, user.getGuest());
 
         if (invitation.getEvent().getLatitude() != null && invitation.getEvent().getLongitude() != null) {
             newBooking.setLatitude(invitation.getEvent().getLatitude());
@@ -332,19 +324,18 @@ public class BookingServiceImpl implements BookingService {
 
         if (shouldSendCancellationEmail) {
             eventPublisher.publishEvent(BookingMailEvent.forOrganizerCancellation(
-                booking.getBookingToken(),
-                booking.getAttendeeEmail(),
-                booking.getAttendeeFirstName(),
-                booking.getAttendeeLastName(),
-                booking.getOrganizerEmail(),
-                booking.getSlot().getEvent().getUser().getFirstName(),
-                booking.getSlot().getEvent().getUser().getLastName(),
-                booking.getBookedStartTime(),
-                booking.getBookedEndTime(),
-                booking.getEventName(),
-                booking.getSlotName(),
-                booking.getEventLocationAddress()
-            ));
+                    booking.getBookingToken(),
+                    booking.getAttendeeEmail(),
+                    booking.getAttendeeFirstName(),
+                    booking.getAttendeeLastName(),
+                    booking.getOrganizerEmail(),
+                    booking.getSlot().getEvent().getUser().getFirstName(),
+                    booking.getSlot().getEvent().getUser().getLastName(),
+                    booking.getBookedStartTime(),
+                    booking.getBookedEndTime(),
+                    booking.getEventName(),
+                    booking.getSlotName(),
+                    booking.getEventLocationAddress()));
         }
 
         return dtoMapper.toOrganizerBookingResponseDto(booking);
@@ -385,19 +376,18 @@ public class BookingServiceImpl implements BookingService {
 
         if (shouldSendCancellationEmail) {
             eventPublisher.publishEvent(BookingMailEvent.forAttendeeCancellation(
-                booking.getBookingToken(),
-                booking.getAttendeeEmail(),
-                booking.getAttendeeFirstName(),
-                booking.getAttendeeLastName(),
-                booking.getOrganizerEmail(),
-                booking.getSlot().getEvent().getUser().getFirstName(),
-                booking.getSlot().getEvent().getUser().getLastName(),
-                booking.getBookedStartTime(),
-                booking.getBookedEndTime(),
-                booking.getEventName(),
-                booking.getSlotName(),
-                booking.getEventLocationAddress()
-            ));
+                    booking.getBookingToken(),
+                    booking.getAttendeeEmail(),
+                    booking.getAttendeeFirstName(),
+                    booking.getAttendeeLastName(),
+                    booking.getOrganizerEmail(),
+                    booking.getSlot().getEvent().getUser().getFirstName(),
+                    booking.getSlot().getEvent().getUser().getLastName(),
+                    booking.getBookedStartTime(),
+                    booking.getBookedEndTime(),
+                    booking.getEventName(),
+                    booking.getSlotName(),
+                    booking.getEventLocationAddress()));
         }
 
         return dtoMapper.toOrganizerBookingResponseDto(booking);
