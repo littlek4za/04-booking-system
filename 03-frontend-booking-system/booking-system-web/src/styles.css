@@ -32,3 +32,15 @@ body {
 .full-vh {
   min-height: calc(100dvh - 58px);
 }
+
+:root {
+  --ink: #1b1e2b;
+  --ink-soft: #4a4f63;
+  --surface: #f7f7fb;
+  --surface-alt: #eef0f7;
+  --indigo: #3a3aa8;
+  --indigo-deep: #232168;
+  --amber: #f5a623;
+  --line: #e1e3ee;
+  --radius: 14px;
+}
