@@ -13,11 +13,11 @@ import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.littlek4za.booking_system.dtos.GuestAccessTokenDto;
-import com.littlek4za.booking_system.dtos.UserAccessTokenDto;
-import com.littlek4za.booking_system.dtos.UserDto;
-import com.littlek4za.booking_system.models.RoleType;
-import com.littlek4za.booking_system.models.TokenType;
+import com.littlek4za.booking_system.features.auth.dto.UserAccessTokenDto;
+import com.littlek4za.booking_system.features.auth.dto.UserDto;
+import com.littlek4za.booking_system.features.auth.model.RoleType;
+import com.littlek4za.booking_system.features.auth.model.TokenType;
+import com.littlek4za.booking_system.features.guest_access.dto.GuestAccessTokenDto;
 
 import jakarta.annotation.PostConstruct;
 

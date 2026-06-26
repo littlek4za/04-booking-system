@@ -203,7 +203,7 @@ psql -U postgres -d your_database_name -f 01-starter-file/db-script.sql
 This creates the following tables: `users`, `roles`, `users_roles`, `events`, `slots`, `invitations`, `bookings`, `invitation_slots`, `invitation_usages` — and inserts the 3 default roles (`ROLE_ADMIN`, `ROLE_ORGANIZER`, `ROLE_ATTENDEE`) plus a default admin account.
 
 > **Default admin credentials (for local testing only):**
-> Email: `admin@testcom.testcom` / Password: `admin` *(change this before any real deployment)*
+> Email: `admin@testcom.testcom` / Username: `admin` / Password: `password` *(change this before any real deployment)*
 
 ---
 
@@ -388,7 +388,7 @@ export const environment = {
 ```bash
 cd 03-frontend-booking-system/booking-system-web
 npm install
-ng serve
+ng serve --port 4300
 # Frontend starts at http://localhost:4300
 ```
 
