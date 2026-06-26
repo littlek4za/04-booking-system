@@ -4,7 +4,7 @@
   Requires: Bootstrap 5 + Font Awesome (already in your project)
 ============================================================ -->
 
-<div class="showcase-page full-vh">
+<div class="showcase-page full-vh" id="top">
 
   <!-- ============ HERO ============ -->
   <section class="hero-section text-white">
@@ -19,9 +19,9 @@
             <span class="text-gradient">Three ways.</span>
           </h1>
           <p class="hero-sub mb-4">
-            A multi-layered booking system built for real-world scheduling:
-            recurring business hours, flexible availability windows, and fixed-time
-            events — all wrapped in one invitation link.
+            A multi-layered booking system built for real-world scheduling, equipped with three concrete way for event
+            time construction:
+            recurring business hours, flexible availability windows, and fixed-time events.
           </p>
           <div class="d-flex flex-wrap gap-3">
             <a href="#how-it-works" class="btn btn-light btn-lg px-4">
@@ -36,7 +36,7 @@
           <div class="demo-note mt-4">
             <i class="fa-solid fa-circle-info me-2"></i>
             You're viewing the live deployment — feel free to register and test
-            the organizer and attendee flows below.
+            the booking system.
           </div>
         </div>
 
@@ -53,21 +53,21 @@
               <i class="fa-solid fa-user-check"></i>
               <div>
                 <strong>Attendee</strong>
-                <small>Book via link — no account needed</small>
+                <small>Book via invitation link</small>
               </div>
             </div>
             <div class="hero-card-row">
               <i class="fa-solid fa-envelope-open-text"></i>
               <div>
                 <strong>Email alerts</strong>
-                <small>Booking, cancellation & updates</small>
+                <small>Notify organizer and attendee on booking event</small>
               </div>
             </div>
             <div class="hero-card-row">
               <i class="fa-solid fa-shield-halved"></i>
               <div>
                 <strong>Secured</strong>
-                <small>JWT, rate limiting & reCAPTCHA</small>
+                <small>JWT, PreAuth, Rate Limiting, reCAPTCHA & Bouncer Filter</small>
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@
       <div class="text-center mb-5">
         <span class="section-eyebrow">GETTING STARTED</span>
         <h2 class="section-title">Two roles, one system</h2>
-        <p class="section-sub">Pick a perspective to explore the platform from.</p>
+        <p class="section-sub">Pick a perspective to explore the platform from:</p>
       </div>
 
       <div class="row g-4">
@@ -95,7 +95,8 @@
             <p class="text-muted">Requires a registered account.</p>
             <ul class="role-list">
               <li><i class="fa-solid fa-check"></i> Create events with location, rules & type</li>
-              <li><i class="fa-solid fa-check"></i> Build time slots — recurring, flexible, or fixed</li>
+              <li><i class="fa-solid fa-check"></i> Build slots which feature by different event types: business,
+                flexible, or fixed</li>
               <li><i class="fa-solid fa-check"></i> Generate shareable invitation links</li>
               <li><i class="fa-solid fa-check"></i> Get notified by email on bookings & cancellations</li>
             </ul>
@@ -110,12 +111,11 @@
             <h3>Attendee</h3>
             <p class="text-muted">Open to registered users <em>and</em> public guests.</p>
             <ul class="role-list">
-              <li><i class="fa-solid fa-check"></i> Open an invitation link — no login required*</li>
+              <li><i class="fa-solid fa-check"></i> Open an invitation link</li>
               <li><i class="fa-solid fa-check"></i> View available slots in your timezone</li>
               <li><i class="fa-solid fa-check"></i> Book, manage, or cancel a reservation</li>
               <li><i class="fa-solid fa-check"></i> Get email confirmations & cancellation notices</li>
             </ul>
-            <small class="text-muted">*unless the organizer requires login for that invitation</small>
           </div>
         </div>
       </div>
@@ -127,9 +127,9 @@
     <div class="container">
       <div class="text-center mb-5">
         <span class="section-eyebrow">THE BUILDING BLOCKS</span>
-        <h2 class="section-title">Event → Slot → Invitation</h2>
+        <h2 class="section-title">Event → Slot → Invitation → Booking</h2>
         <p class="section-sub">
-          Every booking link is built from three connected layers.
+          Bookign system is built from four basic connected layers.
         </p>
       </div>
 
@@ -139,8 +139,8 @@
           <div class="layer-body">
             <h4><i class="fa-solid fa-calendar-days me-2"></i>Event</h4>
             <p>
-              The container for everything. Holds basic info, location (with map),
-              booking rules, and — most importantly — a <strong>type</strong> that
+              The container for everything. Holds basic event info, event location (with map),
+              event booking rules, and — most importantly — a <strong>type</strong> that
               determines how its slots behave.
             </p>
           </div>
@@ -154,7 +154,8 @@
             <h4><i class="fa-solid fa-clock me-2"></i>Slots</h4>
             <p>
               Created inside an event, slots define <em>when</em> bookings can happen.
-              Their shape depends entirely on the event type chosen below.
+              Holds basic slot info, slot booking rules, slot bookable time.
+              Their shape depends entirely on the chosen event type.
             </p>
           </div>
         </div>
@@ -171,6 +172,19 @@
             </p>
           </div>
         </div>
+
+        <div class="layer-arrow"><i class="fa-solid fa-arrow-down"></i></div>
+
+        <div class="layer-step">
+          <div class="layer-num">4</div>
+          <div class="layer-body">
+            <h4><i class="fa-solid fa-calendar-day"></i>Booking</h4>
+            <p>
+              Storage for all booking info, where booking records can traced back by organizer and attendee.
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -194,12 +208,12 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-shop"></i></div>
             <h4>Business</h4>
-            <p class="text-muted">Recurring weekly hours — great for clinics, salons, support slots.</p>
+            <p class="text-muted">Slot is set as recurring weekly hours — great for clinics, salons, support slots.</p>
             <ul class="type-list">
               <li>Set your weekly business hours (e.g. Mon–Fri 9am–5pm)</li>
               <li>Define a <strong>frequency</strong> — e.g. every 5 minutes</li>
               <li>Define a <strong>duration</strong> per booking — e.g. 1 hour</li>
-              <li>Attendee picks 4:15pm → booking blocks 4:15–5:15pm</li>
+              <li>Attendee picks 4:15pm → booking blocks 4:15pm–5:15pm</li>
               <li>Organizer is emailed instantly on booking</li>
             </ul>
             <div class="example-tag">
@@ -213,10 +227,11 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-sliders"></i></div>
             <h4>Flexible</h4>
-            <p class="text-muted">Custom availability windows — great for tutoring, freelance calls, interviews.</p>
+            <p class="text-muted">Slot is set as custom availability windows — great for tutoring, freelance calls,
+              interviews.</p>
             <ul class="type-list">
               <li>Define one or multiple available ranges (date + time)</li>
-              <li>e.g. Date A 1am–5pm, then Date A 6pm → Date B 1am</li>
+              <li>e.g. Date A 8am–3pm, then Date B 11am → Date B 12om</li>
               <li>Same <strong>frequency</strong> & <strong>duration</strong> controls as Business</li>
               <li>Send one slot to multiple invitees — each picks their own time</li>
             </ul>
@@ -231,7 +246,8 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-thumbtack"></i></div>
             <h4>Fixed</h4>
-            <p class="text-muted">A single set time slot — great for webinars, group sessions, fixed appointments.</p>
+            <p class="text-muted">Slot is set with fixed time and date — great for webinars, group sessions, fixed
+              appointments.</p>
             <ul class="type-list">
               <li>Organizer sets one fixed start & end time</li>
               <li>Attendees book directly against that exact slot</li>
@@ -247,8 +263,7 @@
 
       <p class="text-center text-muted mt-4">
         <i class="fa-solid fa-circle-info me-1"></i>
-        An invitation can attach <strong>multiple slots</strong> — even across different
-        purposes within the same event.
+        An invitation can attach <strong>multiple slots</strong> within the same event.
       </p>
     </div>
   </section>
@@ -283,9 +298,10 @@
             <h4><i class="fa-solid fa-envelope me-2"></i>Email notifications</h4>
             <p class="text-muted">Automated emails keep everyone in sync:</p>
             <ul class="role-list">
-              <li><i class="fa-solid fa-check"></i> Organizer notified when someone books a slot</li>
-              <li><i class="fa-solid fa-check"></i> Organizer notified when an attendee cancels</li>
-              <li><i class="fa-solid fa-check"></i> Attendee notified if the organizer cancels their booking</li>
+              <li><i class="fa-solid fa-check"></i> Organizer get notified when someone books a slot</li>
+              <li><i class="fa-solid fa-check"></i> Organizer get notified when an attendee cancels</li>
+              <li><i class="fa-solid fa-check"></i> Attendee get booking details when succesfully books a slot</li>
+              <li><i class="fa-solid fa-check"></i> Attendee get notified if the organizer cancels their booking</li>
             </ul>
           </div>
         </div>
@@ -343,15 +359,22 @@
               <li><strong>Spring Boot</strong> as the core framework</li>
               <li><strong>Spring Data JPA</strong> for database access</li>
               <li><strong>Redis</strong> caching layer for read-heavy endpoints, with
-                  event-scoped cache invalidation on writes</li>
+                event-scoped cache invalidation on writes</li>
               <li><strong>JWT authentication</strong> for registered users</li>
+              <li>Sensitive public endpoints (view/create/delete booking) protected with
+                short-lived <strong>temporary JWT tokens</strong></li>
+              <li>Every service method protected via <code>@PreAuthorize</code></li>
               <li>Global <strong>error-handling interceptor</strong> for consistent API responses</li>
               <li><strong>IP-based security bouncer filter</strong> for request filtering</li>
-              <li>Every service method protected via <code>@PreAuthorize</code></li>
-              <li>Sensitive public endpoints (view/create booking) protected with
-                  short-lived <strong>temporary JWT tokens</strong></li>
-              <li><strong>Risk service</strong> monitors failed attempts and signals
-                  the frontend to trigger <strong>Google reCAPTCHA</strong></li>
+              <li><strong>Risk scoring service</strong> that evaluates failed attempts and dynamically triggers
+                <strong>reCAPTCHA</strong> challenges</li>
+              <li><strong>Transactional boundaries</strong> <code>@Transactional</code> to ensures correctness after
+                execution</li>
+              <li><strong>Database-level locking</strong> with <code>@Lock(PESSIMISTIC_WRITE)</code> to prevent slot
+                overbooking,
+                exceeding invitation limits, and ensure consistency during concurrent booking operations</li>
+              <li><strong>Bean Validation</strong> <code>@Valid</code> and <strong>Custom Validator</strong> to prevents
+                invalid data from entering service layer</li>
             </ul>
           </div>
         </div>
@@ -365,9 +388,21 @@
               <li><strong>FullCalendar</strong> for slot & booking visualization</li>
               <li><strong>Leaflet</strong> for event location maps</li>
               <li><strong>Bootstrap</strong> + <strong>Font Awesome</strong> for UI & icons</li>
+              <li>Modern <strong>Angular Signals</strong> and classic <strong>Angular lifecycle</strong> are used to
+                implement a reactive UI experience</li>
               <li>Global <strong>HTTP error interceptor</strong> for consistent error handling</li>
-              <li><strong>Auth interceptor</strong> attaches the correct token per route</li>
+              <li><strong>Auth interceptor</strong> attaches the appropriate JWT token per request based on route
+                context</li>
+              <li><strong>Route guards</strong> for authentication and authorization control</li>
               <li>Conditional <strong>reCAPTCHA</strong> rendering based on backend risk signals</li>
+              <li><strong>Centralized API service layer</strong> for structured backend communication</li>
+              <li><strong>Global loading service</strong> to improve UI experience</li>
+              <li><strong>Structured logging system</strong> with multiple severity levels (INFO, WARN, ERROR, DEBUG)
+                for monitoring and debugging</li>
+              <li><strong>Centralized error mapping service</strong> that normalizes backend HTTP errors into a unified
+                format and maps standardized error codes to user-friendly messages</li>
+              <li><strong>Standardized error code contract</strong> shared between backend and frontend for consistent
+                system-wide error handling</li>
             </ul>
           </div>
         </div>
@@ -384,10 +419,10 @@
       </p>
       <div class="d-flex justify-content-center flex-wrap gap-3">
         <!-- TODO: replace # with your GitHub repo link -->
-        <a href="#" target="_blank" class="btn btn-light btn-lg px-4">
+        <a href="https://github.com/littlek4za/04-booking-system" target="_blank" class="btn btn-light btn-lg px-4">
           <i class="fa-brands fa-github me-2"></i>View on GitHub
         </a>
-        <a href="#how-it-works" class="btn btn-outline-light btn-lg px-4">
+        <a href="#top" class="btn btn-outline-light btn-lg px-4">
           <i class="fa-solid fa-arrow-up me-2"></i>Back to top
         </a>
       </div>

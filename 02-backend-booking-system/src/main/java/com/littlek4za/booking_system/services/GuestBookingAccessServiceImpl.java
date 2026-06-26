@@ -28,12 +28,12 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     private final InvitationRepository invitationRepository;
     private final SlotRepository slotRepository;
     private final BookingRepository bookingRepository;
-    private final RiskService riskService;
+    private final RedisRiskService riskService;
     private final CaptchaService captchaService;
     private final BookingValidator bookingValidator;
     private final JwtTokenService jwtTokenService;
 
-    public GuestBookingAccessServiceImpl(BookingRepository bookingRepository, RiskService riskService,
+    public GuestBookingAccessServiceImpl(BookingRepository bookingRepository, RedisRiskService riskService,
             CaptchaService captchaService, InvitationRepository invitationRepository,
             SlotRepository slotRepository, BookingValidator bookingValidator, JwtTokenService jwtTokenService) {
         this.slotRepository = slotRepository;
@@ -56,7 +56,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
             valid = false;
         }
 
-        boolean captchaRequired = riskService.shouldLimitView(requestDto.email(), ip);
+        boolean captchaRequired = riskService.shouldLimiBookingtView(requestDto.email(), ip);
 
         if(captchaRequired){
             valid = null;
@@ -69,7 +69,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     public GuestAccessTokenDto issueGuestBookingViewAccessToken(GuestBookingViewAccessRequestDto requestDto,
             String ip) {
 
-        boolean captchaRequired = riskService.shouldLimitView(requestDto.email(), ip);
+        boolean captchaRequired = riskService.shouldLimiBookingtView(requestDto.email(), ip);
 
         if (captchaRequired) {
             if (requestDto.captchaToken() == null) {
@@ -79,7 +79,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
             boolean validCaptcha = captchaService.verify(requestDto.captchaToken());
 
             if (!validCaptcha) {
-                riskService.recordAttemptForView(requestDto.email(), ip);
+                riskService.recordAttemptForBookingView(requestDto.email(), ip);
                 throw new AppException("Captcha invalid", HttpStatus.FORBIDDEN, ErrorCode.CAPTCHA_INVALID);
             }
         }
@@ -87,12 +87,12 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         try {
             validateBookingOrRecordFailure(requestDto.email(), requestDto.bookingToken(), ip);
         } catch (Exception e) {
-            riskService.recordAttemptForView(requestDto.email(), ip);
+            riskService.recordAttemptForBookingView(requestDto.email(), ip);
             throw e;
         }
 
-        riskService.resetEmailIpForView(requestDto.email(), ip);
-        riskService.reduceIpPenaltyForView(ip);
+        riskService.resetEmailIpForBookingView(requestDto.email(), ip);
+        riskService.reduceIpPenaltyForBookingView(ip);
 
         System.out.println("Issuing guest token for: " + requestDto.email());
         System.out.println("Captcha required: " + captchaRequired);
@@ -105,12 +105,12 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     private void validateBookingOrRecordFailure(String email, String bookingToken, String ip) {
         Booking booking = bookingRepository.findByBookingToken(bookingToken)
                 .orElseThrow(() -> {
-                    riskService.recordAttemptForView(email, ip);
+                    riskService.recordAttemptForBookingView(email, ip);
                     return new AppException("Booking not found", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND);
                 });
 
         if (!booking.getUser().getEmail().equalsIgnoreCase(email)) {
-            riskService.recordAttemptForView(email, ip);
+            riskService.recordAttemptForBookingView(email, ip);
             throw new AppException("Booking not found", HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND);
         }
     }
@@ -119,7 +119,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     public GuestBookingCreateInitResponseDto initGuestBookingCreateAccess(GuestBookingCreateInitRequestDto requestDto,
             String clientIp) {
 
-        boolean captchaRequired = riskService.shouldLimitCreate(requestDto.email(), clientIp);
+        boolean captchaRequired = riskService.shouldLimitBookingCreate(requestDto.email(), clientIp);
 
         return new GuestBookingCreateInitResponseDto(captchaRequired);
     }
@@ -127,7 +127,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
     @Override
     public GuestAccessTokenDto issueGuestBookingCreateAccessToken(GuestBookingCreateAccessRequestDto requestDto,
             String clientIp) {
-        boolean captchaRequired = riskService.shouldLimitCreate(requestDto.email(), clientIp);
+        boolean captchaRequired = riskService.shouldLimitBookingCreate(requestDto.email(), clientIp);
 
         if (captchaRequired) {
             if (requestDto.captchaToken() == null) {
@@ -137,7 +137,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
             boolean validCaptcha = captchaService.verify(requestDto.captchaToken());
 
             if (!validCaptcha) {
-                riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+                riskService.recordAttemptForBookingCreate(requestDto.email(), clientIp);
                 throw new AppException("Captcha invalid",
                         HttpStatus.FORBIDDEN, ErrorCode.CAPTCHA_INVALID);
             }
@@ -146,7 +146,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         // risk record
         Invitation invitation = invitationRepository.findByIdWithSlots(requestDto.invitationId())
                 .orElseThrow(() -> {
-                    riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+                    riskService.recordAttemptForBookingCreate(requestDto.email(), clientIp);
 
                     return new AppException(
                             "Invitation not found",
@@ -155,7 +155,7 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
                 });
         Slot slot = slotRepository.findById(requestDto.slotId())
                 .orElseThrow(() -> {
-                    riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+                    riskService.recordAttemptForBookingCreate(requestDto.email(), clientIp);
 
                     return new AppException(
                             "Slot not found",
@@ -168,14 +168,14 @@ public class GuestBookingAccessServiceImpl implements GuestBookingAccessService 
         } catch (AppException e) {
 
             if (e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
-                riskService.recordAttemptForCreate(requestDto.email(), clientIp);
+                riskService.recordAttemptForBookingCreate(requestDto.email(), clientIp);
             }
 
             throw e;
         }
 
-        riskService.resetEmailIpForCreate(requestDto.email(), clientIp);
-        riskService.reduceIpPenaltyForCreate(clientIp);
+        riskService.resetEmailIpForBookingCreate(requestDto.email(), clientIp);
+        riskService.reduceIpPenaltyForBookingCreate(clientIp);
 
         return jwtTokenService.toGuestAccessTokenDto(jwtTokenService.createGuestBookingCreateToken(requestDto.email()));
     }

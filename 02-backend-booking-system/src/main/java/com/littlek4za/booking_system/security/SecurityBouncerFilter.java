@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 import com.littlek4za.booking_system.exception.filter.SecurityBouncerFilterException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.services.RiskService;
+import com.littlek4za.booking_system.services.RedisRiskService;
 import com.littlek4za.booking_system.utils.IpResolver;
 
 import jakarta.servlet.Filter;
@@ -18,10 +18,10 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class SecurityBouncerFilter implements Filter {
 
-    private final RiskService riskService;
+    private final RedisRiskService riskService;
     private final IpResolver ipResolver;
 
-    public SecurityBouncerFilter(RiskService riskService, IpResolver ipResolver) {
+    public SecurityBouncerFilter(RedisRiskService riskService, IpResolver ipResolver) {
         this.riskService = riskService;
         this.ipResolver = ipResolver;
     }

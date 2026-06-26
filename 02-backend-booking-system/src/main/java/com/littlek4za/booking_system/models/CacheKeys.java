@@ -30,11 +30,11 @@ public class CacheKeys {
         return "INVITATION_LIST:" + userId + ":" + eventId + ":*";
     }
 
-    public static String invitationByToken(String invitationToken){
+    public static String invitationByToken(String invitationToken) {
         return "INVITATION:" + invitationToken;
     }
 
-    public static String groupInvitationTokens(Long eventId){
+    public static String groupInvitationTokens(Long eventId) {
         return "EVENT:" + eventId + ":INVITATIONS";
     }
 
@@ -46,4 +46,41 @@ public class CacheKeys {
     // VALUE: SET containing {"abc123", "xyz789", ...}
     // TTL: none (unless set)
 
+    // RiskService Caching
+    public static String emailIpAttemptCounterForBookingView(String email, String ip) {
+        return "risk:bookingView:" + email + ":" + ip;
+    }
+
+    public static String ipAttemptCounterForBookingView(String ip) {
+        return "risk:bookingView:" + ip;
+    }
+
+    public static String emailIpAttemptCounterForBookingCreate(String email, String ip) {
+        return "risk:bookingCreate:" + email + ":" + ip;
+    }
+
+    public static String ipAttemptCounterForBookingCreate(String ip) {
+        return "risk:bookingCreate:" + ip;
+    }
+
+    public static String ipCreateSuccessCounter(String ip) {
+        return "risk:bookingCreateSuccess:" + ip;
+    }
+
+    // RiskService Login Attemp
+    public static String usernameIpAttemptCounterForLogin(String ip, String username) {
+        return "risk:login:" + ip + username.toLowerCase();
+    }
+
+    public static String usernameAttemptCounterForLogin(String username) {
+        return "risk:login:" + username.toLowerCase();
+    }
+
+    public static String ipAttemptCounterForLogin(String ip){
+        return "risk:login:" + ip;
+    }
+
+    public static String ipBanForLogin(String ip){
+        return "risk:login:ban:" + ip;
+    }
 }

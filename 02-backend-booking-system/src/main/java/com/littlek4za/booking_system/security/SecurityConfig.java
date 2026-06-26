@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.littlek4za.booking_system.exception.dto.ErrorResponseDto;
 import com.littlek4za.booking_system.exception.filter.ExceptionHandlerFilter;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.services.RiskService;
+import com.littlek4za.booking_system.services.RedisRiskService;
 import com.littlek4za.booking_system.utils.IpResolver;
 
 
@@ -34,10 +34,10 @@ public class SecurityConfig {
     @Value("${allowed.origins}")
     private String[] allowedOrigins;
     private final JwtAuthenticationProvider jwtAuthenticationProvider;
-    private final RiskService riskService;
+    private final RedisRiskService riskService;
     private final IpResolver ipResolver;
 
-    public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider, IpResolver ipResolver, RiskService riskService) {
+    public SecurityConfig(JwtAuthenticationProvider jwtAuthenticationProvider, IpResolver ipResolver, RedisRiskService riskService) {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.riskService = riskService;
         this.ipResolver = ipResolver;

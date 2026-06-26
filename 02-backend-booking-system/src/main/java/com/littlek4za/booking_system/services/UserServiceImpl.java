@@ -26,10 +26,10 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DtoMapper dtoMapper;
-    private final RiskService riskService;
+    private final RedisRiskService riskService;
 
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder, DtoMapper dtoMapper, RiskService riskService) {
+            PasswordEncoder passwordEncoder, DtoMapper dtoMapper, RedisRiskService riskService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;

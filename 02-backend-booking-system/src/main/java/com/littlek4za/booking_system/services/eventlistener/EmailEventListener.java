@@ -41,7 +41,8 @@ public class EmailEventListener {
         public void handleBookingEvent(BookingMailEvent event) {
                 try {
                         if (event.type() == BookingMailEvent.MailType.CONFIRMATION) {
-                                sendBookingConfirmationDetailsViaNormalMail(event.dto());
+                                sendAttendeeBookingConfirmationDetailsViaNormalMail(event.dto());
+                                sendOrganizerBookingConfirmationDetailsViaNormalMail(event.dto());
                         }
 
                         if (event.type() == BookingMailEvent.MailType.ORGANIZER_CANCELLATION) {
@@ -58,8 +59,7 @@ public class EmailEventListener {
 
         }
 
-
-        public void sendBookingConfirmationDetailsViaNormalMail(AttendeeBookingResponseDto dto) {
+        public void sendAttendeeBookingConfirmationDetailsViaNormalMail(AttendeeBookingResponseDto dto) {
 
                 String link = frontendUrl + "/bookingAccess/" + dto.bookingToken();
 
@@ -74,13 +74,13 @@ public class EmailEventListener {
 
         }
 
-        public void sendBookingConfirmationDetailsViaResend(AttendeeBookingResponseDto dto) {
+        public void sendAttendeeBookingConfirmationDetailsViaResend(AttendeeBookingResponseDto dto) {
 
                 String link = frontendUrl + "/bookingAccess/" + dto.bookingToken();
 
                 CreateEmailOptions params = CreateEmailOptions.builder()
                                 .from("onboarding@resend.dev")
-                                .to("littlek4za@hotmail.com")
+                                .to(dto.attendeeEmail())
                                 .subject("Your Booking Confirmation")
                                 .html(
                                                 "<h3>Your booking is confirmed.</h3>" +
@@ -88,6 +88,135 @@ public class EmailEventListener {
                                                                 "<p>View or cancel your booking:</p>" +
                                                                 "<p><a href='" + link
                                                                 + "'>Click here to manage your booking</a></p>")
+                                .build();
+
+                try {
+                        CreateEmailResponse data = resend.emails().send(params);
+                        log.info("RESEND Email sent, id={}", data.getId());
+                } catch (Exception e) {
+                        log.warn("RESEND Email failed", e);
+                }
+        }
+
+        public void sendOrganizerBookingConfirmationDetailsViaNormalMail(AttendeeBookingResponseDto dto) {
+
+                ZonedDateTime zonedStart = dto.bookedStartTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedStart = zonedStart.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                ZonedDateTime zonedEnd = dto.bookedEndTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedEnd = zonedEnd.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setTo(dto.organizerEmail());
+                message.setSubject("New Booking Received");
+
+                String text = String.format(
+                                """
+                                                Dear Organizer,
+
+                                                A new booking has been made for your event.
+
+                                                Booking Details:
+                                                --------------------------------
+                                                Event      : %s
+                                                Slot       : %s
+                                                Time       : %s - %s
+                                                Location   : %s
+                                                Reference  : %s
+
+                                                Attendee Details:
+                                                --------------------------------
+                                                Name       : %s %s
+                                                Email      : %s
+
+                                                Please log in to the system if you need to review or manage this booking.
+
+                                                Thank you.
+                                                """,
+                                dto.eventName(),
+                                dto.slotName(),
+                                formattedZonedStart,
+                                formattedZonedEnd,
+                                dto.eventLocationAddress(),
+                                dto.bookingToken(),
+                                dto.attendeeFirstName(),
+                                dto.attendeeLastName(),
+                                dto.attendeeEmail());
+
+                message.setText(text);
+                mailSender.send(message);
+
+        }
+
+        public void sendOrganizerBookingConfirmationDetailsViaResend(AttendeeBookingResponseDto dto) {
+
+                ZonedDateTime zonedStart = dto.bookedStartTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedStart = zonedStart.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                ZonedDateTime zonedEnd = dto.bookedEndTime()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(ZoneId.of("Asia/Kuala_Lumpur"));
+
+                String formattedZonedEnd = zonedEnd.format(
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a (XXX)"));
+
+                String html = String.format(
+                                "<div style='font-family:Arial,sans-serif; line-height:1.6; color:#333;'>" +
+
+                                                "<p>Dear Organizer,</p>" +
+
+                                                "<p>A new booking has been made for your event.</p>" +
+
+                                                "<h3 style='margin-top:20px;'>Booking Details</h3>" +
+                                                "<hr/>" +
+
+                                                "<p><strong>Event:</strong> %s</p>" +
+                                                "<p><strong>Slot:</strong> %s</p>" +
+                                                "<p><strong>Time:</strong> %s - %s</p>" +
+                                                "<p><strong>Location:</strong> %s</p>" +
+                                                "<p><strong>Reference:</strong> %s</p>" +
+
+                                                "<h3 style='margin-top:20px;'>Attendee Details</h3>" +
+                                                "<hr/>" +
+
+                                                "<p><strong>Name:</strong> %s %s</p>" +
+                                                "<p><strong>Email:</strong> %s</p>" +
+
+                                                "<p style='margin-top:20px;'>" +
+                                                "Please log in to the system if you need to review or manage this booking."
+                                                +
+                                                "</p>" +
+
+                                                "<p>Thank you.</p>" +
+
+                                                "</div>",
+                                dto.eventName(),
+                                dto.slotName(),
+                                formattedZonedStart,
+                                formattedZonedEnd,
+                                dto.eventLocationAddress(),
+                                dto.bookingToken(),
+                                dto.attendeeFirstName(),
+                                dto.attendeeLastName(),
+                                dto.attendeeEmail());
+
+                CreateEmailOptions params = CreateEmailOptions.builder()
+                                .from("onboarding@resend.dev")
+                                .to(dto.organizerEmail())
+                                .subject("New Booking Received")
+                                .html(html)
                                 .build();
 
                 try {
@@ -209,12 +338,11 @@ public class EmailEventListener {
                                 formattedZonedEnd,
                                 bookingMailEvent.eventLocationAddress(),
                                 bookingMailEvent.bookingToken(),
-                                bookingMailEvent.organizerEmail()
-                        );
+                                bookingMailEvent.organizerEmail());
 
                 CreateEmailOptions params = CreateEmailOptions.builder()
                                 .from("onboarding@resend.dev")
-                                .to("littlek4za@hotmail.com")
+                                .to(bookingMailEvent.organizerEmail())
                                 .subject("Booking Cancellation")
                                 .html(html)
                                 .build();
@@ -278,8 +406,7 @@ public class EmailEventListener {
                                 bookingMailEvent.bookingToken(),
                                 bookingMailEvent.attendeeEmail(),
                                 bookingMailEvent.attendeeFirstName(),
-                                bookingMailEvent.attendeeLastName()
-                        );
+                                bookingMailEvent.attendeeLastName());
 
                 message.setText(text);
 
@@ -339,12 +466,11 @@ public class EmailEventListener {
                                 bookingMailEvent.bookingToken(),
                                 bookingMailEvent.attendeeEmail(),
                                 bookingMailEvent.attendeeFirstName(),
-                                bookingMailEvent.attendeeLastName()
-                        );
+                                bookingMailEvent.attendeeLastName());
 
                 CreateEmailOptions params = CreateEmailOptions.builder()
                                 .from("onboarding@resend.dev")
-                                .to("littlek4za@hotmail.com")
+                                .to(bookingMailEvent.attendeeEmail())
                                 .subject("Booking Cancellation")
                                 .html(html)
                                 .build();

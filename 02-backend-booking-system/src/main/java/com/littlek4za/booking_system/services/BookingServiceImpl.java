@@ -58,7 +58,7 @@ public class BookingServiceImpl implements BookingService {
     private final DtoMapper dtoMapper;
     private final BookingValidator bookingValidator;
     private final InvitationValidator invitationValidator;
-    private final RiskService riskService;
+    private final RedisRiskService riskService;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -67,7 +67,7 @@ public class BookingServiceImpl implements BookingService {
             EventRepository eventRepository,
             InvitationUsageRepository invitationUsageRepository, DtoMapper dtoMapper,
             BookingValidator bookingValidator, InvitationValidator invitationValidator,
-            RiskService riskService, ApplicationEventPublisher eventPublisher) {
+            RedisRiskService riskService, ApplicationEventPublisher eventPublisher) {
         this.securityUtil = securityUtil;
         this.userRepository = userRepository;
         this.slotRepository = slotRepository;
@@ -92,7 +92,7 @@ public class BookingServiceImpl implements BookingService {
         Slot slot = slotRepository.findByIdWithEventForUpdate(slotId)
                 .orElseThrow(() -> {
                     if (isGuestBookingCreate) {
-                        riskService.recordAttemptForCreate(dto.email(), clientIp);
+                        riskService.recordAttemptForBookingCreate(dto.email(), clientIp);
                     }
                     return new AppException("Unknown Slot Id", HttpStatus.NOT_FOUND, ErrorCode.SLOT_NOT_FOUND);
                 });
@@ -102,7 +102,7 @@ public class BookingServiceImpl implements BookingService {
         Invitation invitation = invitationRepository.findByIdWithEventAndSlotSetsAndUsersForUpdate(dto.invitationId())
                 .orElseThrow(() -> {
                     if (isGuestBookingCreate) {
-                        riskService.recordAttemptForCreate(dto.email(), clientIp);
+                        riskService.recordAttemptForBookingCreate(dto.email(), clientIp);
                     }
                     return new AppException("Unknown Invitation Id", HttpStatus.NOT_FOUND,
                             ErrorCode.INVITATION_NOT_FOUND);
@@ -128,7 +128,7 @@ public class BookingServiceImpl implements BookingService {
         } catch (AppException e) {
 
             if (isGuestBookingCreate && e.getErrorCode() == ErrorCode.SLOT_INVITATION_MISMATCH) {
-                riskService.recordAttemptForCreate(dto.email(), clientIp);
+                riskService.recordAttemptForBookingCreate(dto.email(), clientIp);
             }
 
             throw e;
@@ -140,7 +140,7 @@ public class BookingServiceImpl implements BookingService {
                 invitationUsage);
         if (!validationResult.isValid()) {
             if (isGuestBookingCreate) {
-                riskService.recordAttemptForCreate(dto.email(), clientIp);
+                riskService.recordAttemptForBookingCreate(dto.email(), clientIp);
             }
             throw new AppException(validationResult.getMessage(), HttpStatus.BAD_REQUEST,
                     validationResult.getErrorCode());
@@ -154,9 +154,9 @@ public class BookingServiceImpl implements BookingService {
         eventPublisher.publishEvent(BookingMailEvent.forConfirmation(attendeeBookingResponseDto));
 
         if (isGuestBookingCreate) {
-            riskService.resetEmailIpForCreate(dto.email(), clientIp);
-            riskService.reduceIpPenaltyForCreate(clientIp);
-            riskService.recordCreateSuccess(clientIp);
+            riskService.resetEmailIpForBookingCreate(dto.email(), clientIp);
+            riskService.reduceIpPenaltyForBookingCreate(clientIp);
+            riskService.recordBookingCreateSuccess(clientIp);
         }
 
         return attendeeBookingResponseDto;
