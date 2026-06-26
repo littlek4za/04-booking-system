@@ -1,0 +1,79 @@
+package com.littlek4za.booking_system.features.invitation;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.littlek4za.booking_system.features.invitation.dto.InvitationRequestDto;
+import com.littlek4za.booking_system.features.invitation.dto.InvitationResponseDto;
+import com.littlek4za.booking_system.features.invitation.dto.InvitationValidationResponseDto;
+
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+
+
+
+@Slf4j
+@RestController
+@RequestMapping("/api")
+public class InvitationController {
+
+    private final InvitationService invitationService;
+
+    public InvitationController(InvitationService invitationService) {
+        this.invitationService = invitationService;
+    }
+
+    @PostMapping(path = "{version}/events/{eventId}/invitations", version="1")
+    public ResponseEntity<InvitationResponseDto> createInvitationV1(@Valid @RequestBody InvitationRequestDto invitationRequestDto, @PathVariable("eventId") Long eventId) {
+        
+        InvitationResponseDto invitationResponseDto = invitationService.createInvitation(invitationRequestDto, eventId);
+        
+        return ResponseEntity.status(HttpStatus.OK).body(invitationResponseDto);
+    }
+
+    @GetMapping(path = "{version}/events/{eventId}/invitations", version="1")
+    public ResponseEntity<List<InvitationResponseDto>> getInvitationsByEventIdV1(@PathVariable("eventId") Long eventId, @RequestParam(required = false) Long slotId) {
+        List<InvitationResponseDto> invitationResponseDtos;
+        if(slotId != null){
+            invitationResponseDtos = invitationService.getInvitationsByEventIdAndSlotId(eventId,slotId);
+        } else {
+            invitationResponseDtos = invitationService.getInvitationsByEventId(eventId);
+        }
+
+        return ResponseEntity.ok(invitationResponseDtos);
+    }
+    
+    @DeleteMapping(path = "{version}/events/{eventId}/invitations/{invitationId}", version="1")
+    public ResponseEntity<Void> deleteInvitationByEventAndIdV1 (@PathVariable("eventId") Long eventId, @PathVariable("invitationId") Long invitationId){
+        invitationService.deleteInvitationByEventAndId(eventId, invitationId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+    
+    // guest and user share
+    @GetMapping(path = "{version}/invitations/by-token/{token}/validate", version="1")
+    public ResponseEntity<InvitationValidationResponseDto> validateInvitation(@PathVariable("token") String token) {
+        InvitationValidationResponseDto validationResponseDto = invitationService.validateInvitationAccess(token);
+        return ResponseEntity.ok(validationResponseDto);
+    }
+
+    // guest and user share
+    @GetMapping(path = "{version}/invitations/by-token/{token}", version="1")
+    public ResponseEntity<InvitationResponseDto> getInvitationByTokenV1(@PathVariable("token") String token) {
+        InvitationResponseDto invitationResponseDto = invitationService.getInvitationByToken(token);
+
+        return ResponseEntity.ok(invitationResponseDto);
+    }
+    
+
+}

@@ -1,0 +1,16 @@
+package com.littlek4za.booking_system.features.event.validator.annotation;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import java.lang.annotation.*;
+
+import com.littlek4za.booking_system.features.event.validator.EventTypeValidator;
+
+@Documented
+@Constraint(validatedBy = EventTypeValidator.class)
+@Target({ ElementType.FIELD })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ValidEventType {
+    String message() default "Invalid event type"; // will appear in fieldErrorList
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+}

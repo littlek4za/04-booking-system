@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 
 import com.littlek4za.booking_system.exception.AppException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.models.TokenType;
+import com.littlek4za.booking_system.features.auth.model.TokenType;
+import com.littlek4za.booking_system.security.model.AuthPrincipal;
+import com.littlek4za.booking_system.security.model.GuestPrincipal;
+import com.littlek4za.booking_system.security.model.UserPrincipal;
 
 import lombok.extern.slf4j.Slf4j;
 

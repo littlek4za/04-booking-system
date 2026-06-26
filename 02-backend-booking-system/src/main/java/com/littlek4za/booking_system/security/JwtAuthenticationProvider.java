@@ -11,12 +11,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.littlek4za.booking_system.entities.User;
 import com.littlek4za.booking_system.exception.filter.JwtAuthFilterException;
 import com.littlek4za.booking_system.exception.model.ErrorCode;
-import com.littlek4za.booking_system.models.RoleType;
-import com.littlek4za.booking_system.models.TokenType;
-import com.littlek4za.booking_system.repos.UserRepository;
+import com.littlek4za.booking_system.features.auth.entity.User;
+import com.littlek4za.booking_system.features.auth.model.RoleType;
+import com.littlek4za.booking_system.features.auth.model.TokenType;
+import com.littlek4za.booking_system.features.auth.repo.UserRepository;
+import com.littlek4za.booking_system.security.model.GuestPrincipal;
+import com.littlek4za.booking_system.security.model.UserPrincipal;
 
 // build authentication
 @Component
