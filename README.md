@@ -1,6 +1,6 @@
 # Booking System — Full-Stack Scheduling Platform
 
-A full-stack booking platform that supports **three distinct scheduling models**: recurring business hours, flexible availability windows, and fixed-time events. Built and deployed across separate managed services.
+A full-stack booking platform where organizers create events, configure schedules, and invite attendees to book available time slots. Events can be constructed in three ways: recurring business hours, flexible availability windows, or fixed-time events.
 
 🔗 **Live Demo:** [04-booking-system.vercel.app](https://04-booking-system.vercel.app)
 
@@ -16,7 +16,7 @@ A full-stack booking platform that supports **three distinct scheduling models**
 - [Security](#security)
 - [Database Schema](#database-schema)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
+- [Deployment Guide](#deployment-guide)
 
 ---
 
@@ -192,98 +192,97 @@ The schema is initialised via `01-starter-file/db-script.sql`. Key tables:
 
 ---
 
-## Getting Started
+## Deployment Guide
+
+Deploy the services in this order: **PostgreSQL -> Redis -> backend -> frontend**.
+This order makes configuration straightforward because the backend needs the
+database and Redis connection details, while the frontend needs the deployed
+backend URL.
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+
 - Node.js 18+
-- PostgreSQL instance (local or [Neon](https://neon.tech))
-- Redis instance (local or [Upstash](https://upstash.com))
-- Gmail account (for SMTP) or [Resend](https://resend.com) API key
-- Google reCAPTCHA v2 site key + secret key
+- GitHub repository
+- Neon PostgreSQL account
+- Upstash account
+- Render account
+- Vercel account
+- Google reCAPTCHA v2 site key and secret key
+- Gmail account with an App Password, if using Gmail SMTP
 
 ---
 
-### 1. Database Setup
+### 1. Deploy the database (Neon)
 
-Run the provided SQL script to create all tables and seed the default admin user:
+Create a PostgreSQL database in [Neon](https://neon.tech), then run [`01-create-tables.sql`](01-starter-file/db-script/01-create-tables.sql) in Neon SQL editor. The script creates the application schema and seeds the three default roles: `ROLE_ADMIN`, `ROLE_ORGANIZER`, and `ROLE_ATTENDEE`.
 
-```bash
-psql -U postgres -d your_database_name -f 01-starter-file/db-script.sql
-```
+Copy these Neon connection details for the backend deployment:
 
-This creates the following tables: `users`, `roles`, `users_roles`, `events`, `slots`, `invitations`, `bookings`, `invitation_slots`, `invitation_usages` — and inserts the 3 default roles (`ROLE_ADMIN`, `ROLE_ORGANIZER`, `ROLE_ATTENDEE`) plus a default admin account.
-
-> **Default admin credentials (for local testing only):**
-> Email: `admin@testcom.testcom` / Username: `admin` / Password: `password` *(change this before any real deployment)*
-
----
-
-### 2. Backend Configuration
-
-The backend uses two property files:
-
-| File | Used when |
+| Backend variable | Value from Neon |
 |---|---|
-| `application.properties` | Local development (points to localhost DB & Redis) |
-| `application-prod.properties` | Production (reads all secrets from environment variables) |
+| `DATABASE_URL` | JDBC PostgreSQL connection URL |
+| `DATABASE_USERNAME` | Database username |
+| `DATABASE_PASSWORD` | Database password |
 
-**File location:** `02-backend-booking-system/src/main/resources/`
+> The seed script also includes a default administrator account for testing.
+Change or remove this account before using the application in a real
+environment.
 
-#### `application.properties` (local development)
+<details>
+<summary>Optional: local PostgreSQL</summary>
 
-```properties
-spring.application.name=booking-system
-server.port=8080
+Create a local database named `booking-system-db`, run the same SQL script, and configure `application.properties` with your local database credentials.
 
-# --- Database (local PostgreSQL) ---
-spring.datasource.url=jdbc:postgresql://localhost:5432/booking-system-db
-spring.datasource.username=postgres
-spring.datasource.password=YOUR_LOCAL_DB_PASSWORD
+</details>
 
-# --- Redis (local) ---
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.redis.timeout=500ms
-spring.data.redis.connect-timeout=500ms
+---
 
-# --- JPA ---
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-spring.jpa.open-in-view=false
+### 2. Deploy the cache (Upstash)
 
-# --- CORS ---
-allowed.origins=http://localhost:4300
-app.frontend.url=http://localhost:4300
+Create a Redis database in [Upstash](https://upstash.com). Redis supports read-heavy caching plus short-lived risk and security counters; production connections use TLS.
 
-# --- JWT ---
-# Generate with: openssl rand -hex 64
-security.jwt.token.secret-key=YOUR_JWT_SECRET
-security.jwt.issuer=booking-system
+Copy these values into the backend deployment:
 
-# --- Email (Gmail SMTP) ---
-# Use a Gmail App Password, not your normal password.
-# Google Account → Security → 2-Step Verification → App Passwords
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=YOUR_GMAIL_ADDRESS
-spring.mail.password=YOUR_GMAIL_APP_PASSWORD
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
+| Backend variable | Value from Upstash |
+|---|---|
+| `REDIS_HOST` | Redis hostname |
+| `REDIS_PORT` | Redis port |
+| `REDIS_PASSWORD` | Redis password |
 
-# --- Resend (optional alternative mail provider) ---
-# The project supports Resend as an alternative to Gmail SMTP.
-# To switch, update the mail sending logic in the email event service to use the Resend API instead.
-# resend.api.key=YOUR_RESEND_API_KEY
+The application continues to serve core functionality if Redis is unavailable, though cache- and counter-dependent behaviour is temporarily unavailable.
 
-# --- Google reCAPTCHA ---
-# Get keys at: https://www.google.com/recaptcha/admin
-recaptcha.secret-key=YOUR_RECAPTCHA_SECRET_KEY
-```
+<details>
+<summary>Optional: local Redis</summary>
 
-#### `application-prod.properties` (production — uses environment variables)
+Run Redis on `localhost:6379` (for example, with Docker) and keep the local Redis values in `application.properties`.
+
+</details>
+
+---
+
+### 3. Deploy the backend (Render)
+
+1. Create a new **Web Service** in [Render](https://render.com) from this repository.
+2. Set its root directory to `02-backend-booking-system` and use Java 21.
+3. Add the environment variables below, then deploy the service.
+4. Copy the deployed backend URL; it is needed for the frontend configuration.
+
+The backend is built with **Spring Boot** and uses separate configuration
+profiles for local development and production.
+
+**Configuration location:**
+
+`02-backend-booking-system/src/main/resources/`
+
+| File | Purpose |
+|---|---|
+| `application-prod.properties` | Production configuration using environment variables |
+| `application.properties` | Optional local development configuration |
+
+> Local configuration is covered in the optional section at the end of this backend guide.
+
+#### Production configuration (`application-prod.properties`)
 
 ```properties
 spring.application.name=booking-system
@@ -330,25 +329,37 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 recaptcha.secret-key=${RECAPTCHA_SECRET}
 ```
 
-#### Production environment variables (set in Render dashboard)
+#### Render environment variables
+
+The following environment variables are configured in the **Render**
+deployment:
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | Full JDBC URL, e.g. `jdbc:postgresql://host/db?sslmode=require` |
-| `DATABASE_USERNAME` | Database username |
-| `DATABASE_PASSWORD` | Database password |
+| `DATABASE_URL` | JDBC connection URL for the production PostgreSQL database |
+| `DATABASE_USERNAME` | Production PostgreSQL username |
+| `DATABASE_PASSWORD` | Production PostgreSQL password |
 | `REDIS_HOST` | Upstash Redis hostname |
-| `REDIS_PORT` | Upstash Redis port (usually `6379`) |
+| `REDIS_PORT` | Upstash Redis port |
 | `REDIS_PASSWORD` | Upstash Redis password |
 | `JWT_SECRET` | Long random string — generate with `openssl rand -hex 64` |
 | `ALLOWED_ORIGINS` | Your frontend URL, e.g. `https://your-app.vercel.app` |
 | `FRONTEND_URL` | Same as above (used for email links) |
 | `MAIL_USERNAME` | Gmail address used for sending emails |
 | `MAIL_PASSWORD` | Gmail App Password (not your normal Gmail password) |
-| `RESEND_API` | *(Optional)* API key from [resend.com](https://resend.com) — only needed if switching from Gmail SMTP to Resend as the mail provider |
+| `RESEND_API` | *(Optional)* API key from [resend.com](https://resend.com) — only needed if switching from Gmail SMTP to Resend as the mail provider, further configuration is needed inside the service |
 | `RECAPTCHA_SECRET` | Secret key from Google reCAPTCHA Admin Console |
 
-#### Running the backend locally
+<details>
+<summary>Optional: run the backend locally</summary>
+
+For local development, `application.properties` points to:
+
+- Local PostgreSQL
+- Redis running on `localhost:6379`
+- Angular frontend running on `localhost:4300`
+
+Start the backend with:
 
 ```bash
 cd 02-backend-booking-system
@@ -356,30 +367,32 @@ cd 02-backend-booking-system
 # Backend starts at http://localhost:8080
 ```
 
-To run with the prod profile locally (e.g. to test against Neon + Upstash):
+To run with the production profile locally (e.g. to test against Neon + Upstash):
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
+</details>
+
 ---
 
-### 3. Frontend Configuration
+### 4. Deploy the frontend (Vercel)
 
-**File location:** `03-frontend-booking-system/booking-system-web/src/environments/`
+The frontend is built with **Angular** and deployed to **Vercel**.
 
-#### `environment.development.ts` (local development)
+1. Update `environment.ts` with the deployed Render API URL and your public reCAPTCHA site key.
+2. Import this repository into Vercel and set the root directory shown below.
+3. Deploy the application.
+4. Copy the Vercel URL into the backend's `ALLOWED_ORIGINS` and `FRONTEND_URL` environment variables, then redeploy the backend.
 
-```typescript
-import { LogLevel } from "@core/model/log-level";
+**Project location:**
 
-export const environment = {
-    production: false,
-    backendApiUrl: "http://localhost:8080/api",
-    logLevel: LogLevel.Debug,
-    captchaSiteKey: 'YOUR_RECAPTCHA_SITE_KEY',
-};
-```
+`03-frontend-booking-system/booking-system-web/`
+
+**Configuration location:** `03-frontend-booking-system/booking-system-web/src/environments/`
+
+The production Angular environment is configured in `environment.ts`:
 
 #### `environment.ts` (production build)
 
@@ -396,7 +409,10 @@ export const environment = {
 
 > `captchaSiteKey` is the **public** site key from [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin). It is safe to commit — only the secret key (used on the backend) must be kept private.
 
-#### Running the frontend locally
+<details>
+<summary>Optional: run the frontend locally</summary>
+
+Set `backendApiUrl` in `environment.development.ts` to `http://localhost:8080/api`, then run:
 
 ```bash
 cd 03-frontend-booking-system/booking-system-web
@@ -405,9 +421,15 @@ ng serve --port 4300
 # Frontend starts at http://localhost:4300
 ```
 
+</details>
+
 ---
 
 ## Email Notifications
+
+> **Note:** Email notifications are not available on the current free-tier
+> deployment because outbound SMTP connections on port 587 are blocked.
+> The application uses Gmail SMTP for email delivery.
 
 | Event | Recipient |
 |---|---|
