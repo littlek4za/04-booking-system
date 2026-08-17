@@ -26,6 +26,7 @@ export class AuthDebug implements OnInit, OnDestroy {
 
     if (session?.accessToken) {
       try {
+        this.token = session.accessToken;
         const parts = session.accessToken.split('.');
         if (parts.length != 3) {
           console.log("invalid token");
