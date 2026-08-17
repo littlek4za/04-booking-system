@@ -51,27 +51,26 @@ Event  →  Slot  →  Invitation  →  Booking
 
 | Layer | Description |
 |---|---|
-| **Event** | The top-level container. Holds event info, location, booking rules, and a **type** that determines how slots behave. |
-| **Slot** | Defines *when* bookings can happen. Shape and configuration depend on the event type. |
-| **Invitation** | A shareable link tied to an event, with one or more slots attached. Sent to attendees to book against. |
-| **Booking** | Stores all booking records, traceable by both organizer and attendee. |
-
-An invitation can attach **multiple slots** within the same event.
+| **Event** | The container for everything. Holds event info, location, booking rules, and a **type** that determines how slots behave. |
+| **Slot** | Created inside an event, slot defines *when* bookings can happen. Holds basic slot info, slot booking rules, slot bookable time. Their shape depends entirely on the chosen event type. |
+| **Invitation** | A shareable link tied to an event, with one or more slots attached. This is what gets sent to attendees to book against. |
+| **Booking** | Storage for all booking info, where booking info can be traced back by organizer and attendee. |
 
 ---
 
 ## Event Types
 
 ### 🏪 Business
-Recurring weekly availability — ideal for clinics, salons, and support slots.
+Child slot will be set as recurring weekly availability — ideal for clinics, salons, support slots etc.
 
-- Define weekly business hours (e.g. Mon–Fri 9am–5pm)
-- Set a **frequency** (e.g. every 5 minutes) and **duration** per booking (e.g. 1 hour)
-- Attendee picks a start time → booking blocks that window automatically
+- Set your weekly business hours (e.g. Mon–Fri 9am–5pm)
+- Define a **frequency** (e.g. every 5 minutes) 
+- Defines a **duration** per booking (e.g. 1 hour)
+- Attendee picks a start time → booking blocks that window automatically (e.g. attendee pick 4:15pm, booking blocks time frame for 4.15pm-5.15pm)
 - *Example: walk-in consultation slots*
 
 ### 🎛 Flexible
-Custom availability windows — ideal for tutoring, freelance calls, and interviews.
+Child slot will be set as custom availability windows — ideal for tutoring, freelance calls, interviews etc.
 
 - Define one or multiple date + time ranges (e.g. Date A 8am–3pm, Date B 11am–12pm)
 - Same **frequency** and **duration** controls as Business
@@ -79,7 +78,7 @@ Custom availability windows — ideal for tutoring, freelance calls, and intervi
 - *Example: 1-on-1 tuition shared across 5 students from a single slot pool*
 
 ### 📌 Fixed
-A single, fixed start and end time — ideal for webinars, group sessions, and set appointments.
+Child slot will be set with a single, fixed start and end time — ideal for webinars, group sessions, and set appointments.
 
 - Organizer sets one fixed start and end time
 - Attendees book directly against that exact slot
@@ -101,31 +100,45 @@ A single, fixed start and end time — ideal for webinars, group sessions, and s
 
 - **Spring Boot** as the core framework
 - **Spring Data JPA** for database access
-- **Redis** caching layer for read-heavy endpoints, with event-scoped cache invalidation on writes
+- **Redis** caching layer for read-heavy endpoints
+  - Event-scoped cache invalidation on writes
 - **JWT authentication** for registered users
-- Sensitive public endpoints protected with short-lived **temporary JWT tokens**
-- Every service method protected via `@PreAuthorize`
-- Global **error-handling interceptor** for consistent API responses
-- **Database-level locking** with `@Lock(PESSIMISTIC_WRITE)` to prevent slot overbooking and ensure consistency during concurrent booking operations
-- `@Transactional` boundaries to ensure correctness after execution
-- **Bean Validation** (`@Valid`) and **custom validators** to prevent invalid data from reaching the service layer
-- **Three-layer booking limits** — organizers can cap bookings per identity at the Event, Slot, and Invitation level independently
+- **Temporary JWT tokens** for sensitive public endpoints
+  - View booking
+  - Create booking
+  - Delete booking
+- **Method-level authorization** using `@PreAuthorize`
+- **Global error handling** for consistent API responses
+- **IP-based security bouncer filter** for request filtering
+- **Risk scoring service** to evaluate failed attempts and dynamically trigger **reCAPTCHA** challenges
+- **Transactional boundaries** using `@Transactional` to ensure data consistency
+- **Database-level locking** using `@Lock(PESSIMISTIC_WRITE)`
+  - Prevents slot overbooking
+  - Prevents exceeding invitation limits
+  - Maintains consistency during concurrent booking operations
+- **Bean Validation** using `@Valid` and **custom validators**
+  - Prevents invalid data from reaching the service layer
 
 ### Frontend
 
-- **Angular** with a component-based structure mirroring the domain model
+- **Angular** with a component-based structure mirroring the UI
 - **FullCalendar** for slot and booking visualization
 - **Leaflet** for event location maps
-- **Bootstrap** + **Font Awesome** for UI and icons
-- Modern **Angular Signals** and classic lifecycle hooks for a reactive UI experience
-- **Auth interceptor** that attaches the appropriate JWT token per request based on route context
+- **Bootstrap** + **Font Awesome** for UI components and icons
+- **Angular Signals** and **Angular lifecycle hooks** for a reactive UI experience
+- **Global HTTP error interceptor** for consistent error handling
+- **Auth interceptor** to attach the appropriate JWT token based on route context
 - **Route guards** for authentication and authorization control
-- **HTTP error interceptor** for consistent error handling
+- **Conditional reCAPTCHA rendering** based on backend risk signals
 - **Centralized API service layer** for structured backend communication
-- **Centralized error mapping service** that normalizes backend HTTP errors into a unified format
-- **Standardized error code contract** shared between backend and frontend for system-wide consistency
-- **Global loading service** to improve UI experience
-- **Structured logging** with multiple severity levels (INFO, WARN, ERROR, DEBUG)
+- **Global loading service** to improve the user experience
+- **Structured logging system** with multiple severity levels
+  - `INFO`
+  - `WARN`
+  - `ERROR`
+  - `DEBUG`
+- **Centralized error mapping service** to normalize backend HTTP errors and map standardized error codes to user-friendly messages
+- **Standardized error code contract** shared between backend and frontend for consistent system-wide error handling
 
 ---
 
