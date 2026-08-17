@@ -15,13 +15,15 @@
             <i class="fa-solid fa-calendar-check me-2"></i>FULL-STACK BOOKING PLATFORM
           </span>
           <h1 class="hero-title mb-3">
-            Schedule anything.<br>
-            <span class="text-gradient">Three ways.</span>
+            Create events.<br>
+            <span class="text-gradient">Invite. Book. Done.</span>
           </h1>
+
           <p class="hero-sub mb-4">
-            A multi-layered booking system built for real-world scheduling, equipped with three concrete way for event
-            time construction:
-            recurring business hours, flexible availability windows, and fixed-time events.
+            A full-stack booking platform where organizers create events, configure
+            schedules, and invite attendees to book available time slots.
+            Events can be constructed in three ways: recurring business hours,
+            flexible availability windows, or fixed-time events.
           </p>
           <div class="d-flex flex-wrap gap-3">
             <a href="#how-it-works" class="btn btn-light btn-lg px-4">
@@ -208,12 +210,14 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-shop"></i></div>
             <h4>Business</h4>
-            <p class="text-muted">Child slot will be set as recurring weekly hours — great for clinics, salons, support slots etc.</p>
+            <p class="text-muted">Child slot will be set as recurring weekly hours — great for clinics, salons, support
+              slots etc.</p>
             <ul class="type-list">
               <li>Set your weekly business hours — e.g. Mon–Fri 9am–5pm</li>
               <li>Define a <strong>frequency</strong> — e.g. every 5 minutes</li>
               <li>Define a <strong>duration</strong> per booking — e.g. 1 hour</li>
-              <li>Attendee picks a start time → booking blocks that window automatically — e.g. attendee pick 4:15pm, booking blocks time frame for 4.15pm-5.15pm</li>
+              <li>Attendee picks a start time → booking blocks that window automatically — e.g. attendee pick 4:15pm,
+                booking blocks time frame for 4.15pm-5.15pm</li>
             </ul>
             <div class="example-tag">
               <i class="fa-solid fa-lightbulb"></i> Example: walk-in consultation slots
@@ -226,7 +230,8 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-sliders"></i></div>
             <h4>Flexible</h4>
-            <p class="text-muted">Child slot will be set as custom availability windows — great for tutoring, freelance calls,
+            <p class="text-muted">Child slot will be set as custom availability windows — great for tutoring, freelance
+              calls,
               interviews etc.</p>
             <ul class="type-list">
               <li>Define one or multiple date + time ranges — e.g. Date A 8am–3pm, Date B 11am–12pm</li>
@@ -244,7 +249,8 @@
           <div class="type-card h-100">
             <div class="type-icon"><i class="fa-solid fa-thumbtack"></i></div>
             <h4>Fixed</h4>
-            <p class="text-muted">Child slot will be set with a single, fixed start and end time — ideal for webinars, group sessions, set appointments etc.</p>
+            <p class="text-muted">Child slot will be set with a single, fixed start and end time — ideal for webinars,
+              group sessions, set appointments etc.</p>
             <ul class="type-list">
               <li>Organizer sets one fixed start & end time</li>
               <li>Attendees book directly against that exact slot</li>
@@ -364,7 +370,8 @@
               <li>Global <strong>error-handling interceptor</strong> for consistent API responses</li>
               <li><strong>IP-based security bouncer filter</strong> for request filtering</li>
               <li><strong>Risk scoring service</strong> that evaluates failed attempts and dynamically triggers
-                <strong>reCAPTCHA</strong> challenges</li>
+                <strong>reCAPTCHA</strong> challenges
+              </li>
               <li><strong>Transactional boundaries</strong> <code>@Transactional</code> to ensures correctness after
                 execution</li>
               <li><strong>Database-level locking</strong> with <code>@Lock(PESSIMISTIC_WRITE)</code> to prevent slot
